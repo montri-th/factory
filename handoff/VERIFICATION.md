@@ -46,7 +46,21 @@ failed requests were the stubs.
 
 ## 4. Live
 
-Recorded after publication.
+- `npm run verify:live` against the manifest of `b492515` (the release commit): 240 ok, 0 failed (one transient 503 on
+  `data/build-report.json` at the first run; 200 on retry). `data/factories.json` is served gzip: 2,123,860 B over the wire.
+- Owner's Chrome, desktop 1568 × 749, dark (auto), on the live origin with tag `20261105-r2`:
+  - first screen as specified (72 % · 330,987 จาก 457,353 คน · บางพลี · เมืองสมุทรปราการ · พระประแดง · ยานพาหนะ 18 % ·
+    สิ่งทอ 17 % · โลหะ 16 %; “2,298 ในจอ”; รายชื่อ 5,041);
+  - `?size=p90`: 74 % · 220,980 จาก 299,796 คน · เมืองสมุทรปราการ · บางพลี · พระประแดง · ยานพาหนะ 20 % (the picture of
+    release 0.1.0) with the chip “คนงาน 95 คนขึ้นไป”;
+  - `?size=none`: “2,923 ทะเบียน · ไม่มีตัวเลขคนงาน” with นับเป็นทะเบียน, the hatch on the provinces that hold them, the
+    legend “ไม่มีตัวเลขคนงาน”;
+  - `?factory=00110800125327`: the two-point view on the nearest drawn CityMETER Building V4 building (pitch 75, zoom 18.29,
+    “อาคารใกล้หมุด”), terrain read “6 ม. ต่างระดับ 8 ม.”, “อันดับ 12 จาก 71,124”;
+  - the console reader held no message other than a probe message written to confirm it;
+  - JS heap after load (`performance.memory`, same browser and conditions): Factory 0.2.0 877 MB, CityMETER · Hotel 965 MB
+    — the map engine both demos share dominates, not the 74,047 rows.
+- The tab opened for the walk was closed; the theme setting was not changed.
 
 ## 5. Not verified in this release
 
