@@ -38,15 +38,23 @@ back. No page error; the only console messages were the stub's missing source la
 ## 4. Live
 
 - GitHub Pages enabled 2026-11-05 on `main` / root (repository settings). `https://montri-th.github.io/factory/` 200.
-- `npm run verify:live` against the manifest of `3fa74de`: 239 ok, 0 failed (every published file byte-identical).
+- `npm run verify:live` against the manifest of `3fa74de`: 239 ok, 0 failed (every published file byte-identical);
+  against `bf7cf9c` (the first version of this file): 240 ok, 0 failed.
 - Owner's Chrome, desktop 1440 × 783, dark (auto): the first screen as specified — focus 1101 · 1103 · 1104, city preset
   (pitch 56, zoom 10.43), 63,173 focus buildings drawn of which 44,651 CityMETER Building V4, pictograms and navigation
   icons loaded, status “โรงงานที่มีจุดในจอ 445 ทะเบียน · นอกโฟกัส 1,861 ทะเบียน”, no Latin-only text block.
 - Owner's Chrome again, after a reload with the console reader on, theme switched to light: the first screen as
   specified (Aha 74 % · 220,980 จาก 299,796 คน · ยานพาหนะ 20 % · สิ่งทอ 19 % · พลาสติก/ยาง 14 % · outside #1
   เมืองสมุทรสาคร 169,944 คน · อาหาร 55 %; legend 95 – 169,944 with the measured zero 0; “445 ในจอ”; “รายชื่อ 714”). The
-  console reader returned no message for the reload and the theme switch. The extension then disconnected before a probe
-  message could confirm the reader, and before the district and factory walk.
+  console reader returned no message for the reload and the theme switch; the extension then disconnected for a while.
+- Owner's Chrome, light, once the extension reconnected: `?area=1103` (อำเภอบางพลี on the OpenFreeMap basemap), then
+  factory `00110800125327`: the two-point view on the nearest drawn CityMETER Building V4 building (legend
+  “อาคารใกล้หมุด”, pitch 75, zoom 18.20, the point in the frame), terrain read “ภูมิประเทศ 6 ม. ต่างระดับ 8 ม.”, one
+  provenance line — dataset (CityMETER Factory · โรงงาน 95+ คน), source (ทะเบียน กรอ. นอกนิคมอุตสาหกรรม · อก. · SRTM
+  30 ม. (2543) · OSM 1 พ.ย. 2569), date (4 พ.ย. 2569), boundary (อำเภอเมืองสมุทรปราการ สมุทรปราการ), วิธีนับ; then the
+  chart view `mix` and the table. A probe message confirmed the console reader; it held no other message from these
+  loads, the theme switch, the building view, the charts or the table. The theme was set back to auto (the setting
+  found) and the tabs opened for the walk were closed.
 - Live bytes + local render (Node fetches the published files and the CityMETER Building V4 tiles; OpenFreeMap stubbed):
   factory `00110800125327` (บริษัท ซีเกทเทคโนโลยี (ประเทศไทย) จำกัด) opens the two-point view on the nearest drawn
   CityMETER building (legend “อาคารใกล้หมุด”, pitch 75, zoom 18.48 desktop / 17.44 phone, the point in the frame);
@@ -63,10 +71,9 @@ back. No page error; the only console messages were the stub's missing source la
 
 ## 5. Not verified in this release
 
-- On the live origin in a real browser: the light theme beyond the first screen, a phone device, and a console reader
-  confirmed by a probe message (the Chrome extension disconnected twice). These were walked with the live bytes in the
-  container instead (§4).
-- Terrain (DEM tiles are blocked in the container) and the OpenFreeMap basemap in the container renders.
+- A phone device: the phone layout (393 × 852) was walked with the live bytes in the container under mobile emulation
+  (§4), not on a device or on the live origin.
+- Terrain at a hilly site: read live at one flat site only (§4); DEM tiles are blocked in the container.
 - Company logos (not in this release; `DATA_METHOD.md` §9).
 
 ## 6. Seen in the walk, not changed
