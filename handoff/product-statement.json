@@ -1,0 +1,127 @@
+{
+  "$schema": "./handoff.schema.json",
+  "schemaVersion": "1.5.0",
+  "documentType": "product-statement",
+  "productId": "citymeter-factory",
+  "productVersion": "0.1.0",
+  "updatedOn": "2026-11-05",
+  "dataset_id": "research.TH.factory",
+  "productionDatasetCode": "factory",
+  "language": "th",
+  "liveUrl": "https://montri-th.github.io/factory/",
+  "markdown": "PRODUCT_STATEMENT.md",
+  "positioning": {
+    "one_line_highlight": "แผนที่เมือง 3 มิติของคนงานโรงงานทั่วไทย ที่บอกว่ากระจุกตรงไหน ทำอุตสาหกรรมอะไร และมีโรงงานใดอยู่รอบ ๆ พร้อมแหล่งของทุกตัวเลข",
+    "unique_advantage": "คนงานตามทะเบียนต่ออำเภอ (ไม่ใช่จำนวนป้าย) พร้อมอุตสาหกรรมทางการของ กรอ. สถานะของ อก. และทะเบียนทุกขนาดเป็นบริบท ในหน้าเดียว ตรวจย้อนได้ถึงทะเบียน",
+    "unique_vs_competitors": "แหล่งทางการตอบทีละทะเบียนและแยกหน่วยงาน; Factory รวมเป็นภาพรายอำเภอที่ผูกรหัสพื้นที่ของ CityMETER และเปิดต่อในระบบจริงได้ (Inference)"
+  },
+  "users": {
+    "primary_users": [
+      "ผู้พัฒนาที่อยู่อาศัย หอพัก และพื้นที่ค้าปลีก/บริการ",
+      "ผู้พัฒนาและนักลงทุนอสังหาฯ อุตสาหกรรม",
+      "จังหวัด อปท. และหน่วยงานพัฒนาเศรษฐกิจพื้นที่",
+      "ผู้ประเมินมูลค่า สถาบันการเงิน ที่ปรึกษา"
+    ],
+    "functional_needs": [
+      "คนงานตามทะเบียนรอบแปลงและต่ออำเภอ",
+      "อุตสาหกรรมเด่นของพื้นที่",
+      "รายชื่อโรงงานขนาดใหญ่ใกล้เคียง",
+      "สถานะตาม อก. และแหล่งของทะเบียน"
+    ],
+    "emotional_needs": [
+      "มั่นใจว่าแหล่งงานมีอยู่ตามทะเบียน",
+      "อธิบายต่อผู้บริหารได้ด้วยหลักฐาน"
+    ],
+    "trigger_voice_in_head": "“แถวนี้มีโรงงานใหญ่กี่แห่ง คนงานรวมเท่าไร ทำอุตสาหกรรมอะไร”",
+    "value_proposition": "เห็นภายในนาทีว่าคนงานโรงงานขนาดใหญ่ตามทะเบียนกระจุกอำเภอใด อุตสาหกรรมใด พร้อมแหล่งของทุกตัวเลข",
+    "evidence": "Hypothesis — not yet validated with external users (PRODUCT_STATEMENT.md §7)"
+  },
+  "problem": {
+    "statement": "ทะเบียนโรงงานแยกอยู่ใน กรอ. (แยกจำพวก) อก. และ กนอ. ตอบได้ทีละทะเบียน ไม่มีภาพคนงานต่ออำเภอและอุตสาหกรรม",
+    "urgency": "การลงทุนที่อยู่อาศัย ร้านค้า และบริการรอบแหล่งงานขึ้นกับที่ตั้งและอุตสาหกรรมของแหล่งงาน (Inference)",
+    "severity": "อ่านจากจำนวนป้ายทำให้โรงงานเล็กหลายแห่งดูสำคัญเท่าโรงงานใหญ่แห่งเดียว (Inference)"
+  },
+  "competitor_landscape": {
+    "present_competitors": [
+      {
+        "name": "ข้อมูลเปิดและบริการค้นหาโรงงานของ กรอ.",
+        "how_users_use_it": "ดาวน์โหลด CSV หรือค้นทีละโรงงาน",
+        "strength": "ทะเบียนทางการ ตัวเลขคนงาน ประเภท",
+        "gap": "ไม่มีภาพรวมรายอำเภอ ไม่รวมสถานะ อก. (Inference)"
+      },
+      {
+        "name": "GD Catalog ของกระทรวงอุตสาหกรรม",
+        "how_users_use_it": "ดาวน์โหลดข้อมูลที่ตั้งและการอนุญาต",
+        "strength": "สถานะประกอบกิจการและวันที่ปรับปรุง",
+        "gap": "ไม่มีคนงานรวมต่อพื้นที่ ต้องกระทบรหัสเอง (Inference)"
+      },
+      {
+        "name": "Google Maps",
+        "how_users_use_it": "ค้นชื่อโรงงานรอบแปลง",
+        "strength": "รูป รีวิว เส้นทาง",
+        "gap": "ไม่มีคนงานตามทะเบียนหรือทะเบียนที่ไม่มีหมุด (Inference)"
+      },
+      {
+        "name": "รายงานตลาดอสังหาฯ อุตสาหกรรมของที่ปรึกษา",
+        "how_users_use_it": "อ่านภาพรวมนิคมและโกดังรายไตรมาส",
+        "strength": "มุมมองตลาดพื้นที่ให้เช่า",
+        "gap": "ไม่ลงถึงทะเบียนโรงงานนอกนิคมรายอำเภอ (Hypothesis)"
+      }
+    ],
+    "aspirational_competitors": [
+      "ชั้นข้อมูลแรงงานรายพื้นที่ที่ผูกทะเบียนโรงงาน นิคม ที่อยู่อาศัย และขนส่งด้วย id เดียว (Hypothesis)"
+    ],
+    "expected_quality_bar": "ตัวเลขทุกตัวตรวจย้อนถึงทะเบียนได้ใน 2 คลิก ขอบเขตอยู่ในชื่อชุดข้อมูล ไม่มีทะเบียนหายจากยอดเพราะไม่มีจุด"
+  },
+  "winning_strategy": [
+    "คนงานก่อนป้าย (สลับเป็นทะเบียนได้)",
+    "อุตสาหกรรมอยู่ในประโยคเดียวกับทำเล พร้อมตัวตั้งตัวหาร",
+    "ทะเบียนครบแม้ไม่มีจุด",
+    "บริบทจากชีตเดียวกันแยกจากตัวเลขของผลิตภัณฑ์เสมอ",
+    "ต่อยอด: นิคม กนอ. คีย์ไซต์ โลโก้บริษัท"
+  ],
+  "firstFinding": {
+    "evidence": "Observed fact (data/factories.json, release 0.1.0)",
+    "text": "74% ของคนงานโรงงาน 95+ คนในสมุทรปราการ (220,980 จาก 299,796 คน) อยู่ใน 3 อำเภอ — เมืองสมุทรปราการ บางพลี พระประแดง; อุตสาหกรรม: ยานพาหนะและเครื่องจักร 20% · สิ่งทอ 19% · พลาสติก ยาง เคมี 14%; อันดับ 1 นอกจังหวัด: เมืองสมุทรสาคร 169,944 คน (อาหาร 55%)"
+  },
+  "data_transparency": {
+    "row": "one FID of 18_WORKERS_P90 (registration, not a plant or a company)",
+    "workers": "DIW-reported workers (no date for the figure)",
+    "scope": "DIW class 2/3 open data = registrations outside IEAT estates",
+    "status": "MOI location status with its date (not a field check)",
+    "points": "source points inside the registration’s own district only",
+    "method": "DATA_METHOD.md"
+  },
+  "known_limitations": [
+    "IEAT estate factories are outside the dataset",
+    "the worker figure has no date",
+    "430 registrations share an exact name and address with another FID",
+    "functional class is rule-based, not human-verified",
+    "4,869 registrations have no published point",
+    "estate geometry not published",
+    "company logos not in this release"
+  ],
+  "claimBoundary": [
+    "never employment, labour market, capacity, output, sales, market share or density",
+    "never “a plant” or “a company” for a registration count",
+    "never which registration lies in an estate",
+    "never a natural person’s name"
+  ],
+  "hypotheses_to_validate": [
+    {
+      "hypothesis": "ผู้พัฒนาที่อยู่อาศัยและค้าปลีกใช้คนงานตามทะเบียนรอบแปลงในการคัดกรองทำเล",
+      "test": "สัมภาษณ์ 5 ทีมพร้อมงานคัดกรองจริง",
+      "criterion": "อย่างน้อย 3 ทีมใช้ตัวเลขจากหน้านี้ในเอกสารคัดกรอง"
+    },
+    {
+      "hypothesis": "อุตสาหกรรมหลักในข้อค้นพบช่วยให้เข้าใจคลัสเตอร์เร็วกว่าตาราง",
+      "test": "งาน “บอกอุตสาหกรรมหลักของ 3 อำเภอ” กับผู้ใช้ 6 คน",
+      "criterion": "ตอบถูกภายใน 30 วินาที ≥ 5 จาก 6 คน"
+    },
+    {
+      "hypothesis": "สถานะ อก. หยุดดำเนินการ กรองโรงงานที่ไม่ควรนับได้",
+      "test": "ตรวจแหล่งที่สองของ 30 ทะเบียนที่สถานะหยุด",
+      "criterion": "≥ 80% ยืนยันก่อนใช้เป็นตัวกรองหลัก"
+    }
+  ]
+}

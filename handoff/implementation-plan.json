@@ -1,0 +1,375 @@
+{
+  "$schema": "./handoff.schema.json",
+  "schemaVersion": "1.5.0",
+  "documentType": "implementation-plan",
+  "productId": "citymeter-factory",
+  "productVersion": "0.1.0",
+  "updatedOn": "2026-11-05",
+  "architecture": {
+    "runtime": "static site (GitHub Pages), ES modules with an import map, no build step; Node ≥ 20 for tests, Python 3 for data builds",
+    "commands": {
+      "test": "node --test tests/*.test.js",
+      "start": "python3 -m http.server 4173 --bind 127.0.0.1",
+      "build:base": "python3 -I scripts/fetch-base.py --help",
+      "build:boundaries": "python3 -I scripts/build-boundaries.py --help",
+      "build:receipts": "python3 -I scripts/build-receipts.py --help",
+      "build:data": "python3 -I scripts/build-data.py --help",
+      "check:lds": "node scripts/check-lds-parity.mjs",
+      "handoff:manifest": "node scripts/build-handoff.mjs",
+      "handoff:bundle": "node scripts/build-handoff.mjs --zip dist/CityMETER-Factory-Developer-Handoff.zip",
+      "verify:live": "node scripts/verify-live.mjs",
+      "build:units": "python3 -I scripts/build-building-units.py --help"
+    },
+    "libraries": {
+      "maplibre": "MapLibre GL JS 5.6.2 (unpkg, pinned; js/maplibre-guard.js)",
+      "earcut": "js/vendor/earcut.js (ISC)",
+      "tiles": "OpenFreeMap planet (OpenMapTiles schema)"
+    },
+    "modules": {
+      "app.js": "orchestration: selection, URL state, map, panels, building camera",
+      "area-insight.js": "first Aha with industry shares and the outside finding",
+      "areas.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "ask.js": "Google actions per view (never a person’s name)",
+      "breadcrumb.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "building-join.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "building-units.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "camera.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "chart-model.js": "district bars, district × family matrix, DIW group ranking",
+      "charts.js": "chart views (areas · mix · industries) as plain HTML",
+      "cues.js": "industry family → LDS series and shape cue",
+      "frames.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "geometry.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "labels.js": "factory names near the middle of the view and the hover card",
+      "launch.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "map-layers.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "map-style.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "maplibre-guard.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "massing.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "model.js": "vocabulary (SCOPE, METRICS, SIZE_BANDS, MOI_TH), decodeDataset, filterRows, summarize, mixOf, familyShares, pin sizes, production links",
+      "mvt.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "navigation.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "panel.js": "panel views as HTML strings: overview, area, building, factory; provenance; filter chips",
+      "pins.js": "one cue symbol per registration with a point, sized by workers; HTML pins at detail zoom",
+      "profile-model.js": "overview, area, building and factory models; registry and estate context; nearby set",
+      "provinces.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "scales.js": "LDS count family, 41-sample rank ramp",
+      "terrain.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "vendors.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
+      "venue-xray.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role"
+    },
+    "data": [
+      "data/factories.json",
+      "data/area-index.json",
+      "data/frames/{CODE}.json",
+      "data/provinces.geojson",
+      "data/boundary-receipts.json",
+      "data/building-units/"
+    ]
+  },
+  "selection": {
+    "filterFields": [
+      "search",
+      "group (industry family)",
+      "size (worker band)",
+      "province",
+      "cls (function)"
+    ],
+    "queryFields": [
+      "metric",
+      "area",
+      "areas",
+      "view",
+      "factory",
+      "view3d",
+      "search",
+      "group",
+      "size",
+      "province",
+      "cls"
+    ],
+    "rowScopes": {
+      "scopeRows": "rows after search · industry family · size · province · function, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
+      "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
+      "rows": "baseRows narrowed by the district focus: pins with detail, counters, the table"
+    },
+    "panelActions": [
+      "select-area",
+      "select-factory",
+      "select-building",
+      "select-province",
+      "filter-group",
+      "set-metric",
+      "back",
+      "explore-top",
+      "clear-focus",
+      "open-charts",
+      "open-table",
+      "clear-filter",
+      "leave-area"
+    ]
+  },
+  "tasks": [
+    {
+      "id": "T1",
+      "title": "Export the research tabs and build data/factories.json",
+      "dependsOn": [],
+      "files": [
+        "scripts/build-data.py",
+        "data/factories.json",
+        "data/build-report.json"
+      ],
+      "acceptanceCriteria": [
+        "AC1",
+        "AC2",
+        "AC3"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T2",
+      "title": "Decode, filter and summarize (model)",
+      "dependsOn": [
+        "T1"
+      ],
+      "files": [
+        "js/model.js",
+        "js/areas.js"
+      ],
+      "acceptanceCriteria": [
+        "AC2"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T3",
+      "title": "First Aha with industry shares",
+      "dependsOn": [
+        "T2"
+      ],
+      "files": [
+        "js/area-insight.js"
+      ],
+      "acceptanceCriteria": [
+        "AC4",
+        "AC5"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T4",
+      "title": "Panel views and provenance",
+      "dependsOn": [
+        "T3"
+      ],
+      "files": [
+        "js/panel.js",
+        "js/profile-model.js"
+      ],
+      "acceptanceCriteria": [
+        "AC6",
+        "AC7",
+        "AC8"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T5",
+      "title": "Charts and table",
+      "dependsOn": [
+        "T2"
+      ],
+      "files": [
+        "js/chart-model.js",
+        "js/charts.js",
+        "js/app.js"
+      ],
+      "acceptanceCriteria": [
+        "AC9"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T6",
+      "title": "Map: choropleth, pins, labels, building view",
+      "dependsOn": [
+        "T2"
+      ],
+      "files": [
+        "js/map-layers.js",
+        "js/pins.js",
+        "js/labels.js",
+        "js/app.js"
+      ],
+      "acceptanceCriteria": [
+        "AC10",
+        "AC11"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T7",
+      "title": "Pictogram subset with factory glyphs",
+      "dependsOn": [],
+      "files": [
+        "scripts/build-pictogram-font.py",
+        "assets/icons/material-pictogram-300.woff2",
+        "js/navigation.js",
+        "styles.css"
+      ],
+      "acceptanceCriteria": [
+        "AC12"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T8",
+      "title": "Docs and handoff",
+      "dependsOn": [
+        "T4"
+      ],
+      "files": [
+        "README.md",
+        "PRODUCT_STATEMENT.md",
+        "DATA_METHOD.md",
+        "AGENTS.md",
+        "llms.txt",
+        "handoff/"
+      ],
+      "acceptanceCriteria": [
+        "AC13"
+      ],
+      "status": "done"
+    },
+    {
+      "id": "T9",
+      "title": "Publish on GitHub Pages and verify live",
+      "dependsOn": [
+        "T1",
+        "T4",
+        "T5",
+        "T6",
+        "T7",
+        "T8"
+      ],
+      "files": [
+        "scripts/verify-live.mjs",
+        "handoff/VERIFICATION.md"
+      ],
+      "acceptanceCriteria": [
+        "AC14",
+        "AC15"
+      ],
+      "status": "done"
+    }
+  ],
+  "acceptanceCriteria": [
+    {
+      "id": "AC1",
+      "scenario": "build from the CSV exports",
+      "expected": "every P90 FID joined to 02_FACTORIES; the build stops on a missing FID, a province mismatch or a figure below the threshold",
+      "verificationType": "build"
+    },
+    {
+      "id": "AC2",
+      "scenario": "decode data/factories.json",
+      "expected": "7,175 rows, unique FIDs, Σ workers 2,435,798, nothing dropped",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC3",
+      "scenario": "publication hygiene",
+      "expected": "no person name, address, raw operator field, private link or credential in the tree",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC4",
+      "scenario": "first screen, workers",
+      "expected": "74% · 220,980 จาก 299,796 คน · 3 อำเภอ of Samut Prakan, industry bars with both bases, outside #1 Mueang Samut Sakhon",
+      "verificationType": "unit + render"
+    },
+    {
+      "id": "AC5",
+      "scenario": "ties and spread",
+      "expected": "the focus never cuts a tie; equal districts read as spread",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC6",
+      "scenario": "every panel view",
+      "expected": "exactly one provenance line with dataset · source · date · boundary and the method link; no caveat words; no hotel words",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC7",
+      "scenario": "person-only registration",
+      "expected": "reads ผู้ประกอบการบุคคลธรรมดา, no point, no Google search by name",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC8",
+      "scenario": "point outside its district",
+      "expected": "withheld (ไม่แสดงพิกัด), the registration stays in its district",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC9",
+      "scenario": "charts",
+      "expected": "district bars in the map colour; matrix cells add up to the district; every DIW group ranked",
+      "verificationType": "unit + render"
+    },
+    {
+      "id": "AC10",
+      "scenario": "district model",
+      "expected": "41-sample count ramp; 375 measured-zero districts; never no_data",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC11",
+      "scenario": "choose a registration with a point",
+      "expected": "the map turns 3D and frames its building (or the nearest drawn building) in two-point perspective",
+      "verificationType": "render + live"
+    },
+    {
+      "id": "AC12",
+      "scenario": "icon fonts",
+      "expected": "file = contract; stylesheet URL carries the content hash; codepoints checked against the source cmap",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC13",
+      "scenario": "handoff JSON",
+      "expected": "statement, brief and plan satisfy handoff.schema.json; one product version",
+      "verificationType": "unit"
+    },
+    {
+      "id": "AC14",
+      "scenario": "live files",
+      "expected": "every file on GitHub Pages matches the repository (npm run verify:live)",
+      "verificationType": "live"
+    },
+    {
+      "id": "AC15",
+      "scenario": "live walk",
+      "expected": "desktop and phone, light and dark, Thai copy readable, no console error, the Aha and a factory panel as specified",
+      "verificationType": "live"
+    }
+  ],
+  "developerWorkflow": [
+    "edit the research sheet, export the tabs of DATA_METHOD.md §1 as CSV (outside the repository)",
+    "npm run build:data (see DATA_METHOD.md §10)",
+    "npm test",
+    "npm run check:lds -- --lds <base> --li <profile>",
+    "bump ?v= tag + package.json + design-intent + handoff JSON",
+    "push main",
+    "npm run verify:live",
+    "walk the live site at 1440 and 390 px, light and dark"
+  ],
+  "backlog": [
+    "IEAT estate factories with dated worker figures",
+    "site key for the 430 same-site registrations",
+    "company logos (457 FIDs selected in the sheet)",
+    "estate boundaries once selected and cleared",
+    "building units for the units that hold factories only (scripts/build-building-units.py)",
+    "a dated worker figure"
+  ]
+}

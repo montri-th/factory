@@ -1,0 +1,69 @@
+{
+  "builtOn": "2026-11-05",
+  "output": "factories.json",
+  "outputSha256": "60ed6f5b4e57a84741f4da189d38b8522eb6ed446b8d40c6ad96e3e74ed05f6b",
+  "counts": {
+    "rows": 7175,
+    "workers": 2435798,
+    "points": 2306,
+    "persons": 58,
+    "admin": {
+      "name": 7175
+    },
+    "moi": {
+      "ดำเนินการ": 2894,
+      "none": 3944,
+      "หยุดดำเนินการ": 137,
+      "ได้รับใบอนุญาต": 200
+    },
+    "basis": {
+      "DIW2026_listed_and_MOI_operating": 2894,
+      "DIW2026_listed": 4281
+    },
+    "possibleSameSite": 430,
+    "ties": 122,
+    "registry": 74047,
+    "registryPlaced": 74045,
+    "registryUnplaced": 2,
+    "estates": 106,
+    "sizes": {
+      "w1": 3998,
+      "w2": 2216,
+      "w3": 585,
+      "w4": 244,
+      "w5": 108,
+      "w6": 24
+    },
+    "estateContext": {
+      "outside_estate_source_scope_DIW_catalog": 7175
+    }
+  },
+  "checks": {
+    "pointWithheld": {
+      "otherDistrict": 61,
+      "otherProvince": 18
+    }
+  },
+  "inputs": {
+    "18_WORKERS_P90": {
+      "file": "18_WORKERS_P90.csv",
+      "sha256": "8b01cf75fdd2138bb3f35a5f12fa869159d6adffe878043749bcdb61b535c5a1"
+    },
+    "02_FACTORIES_cols": {
+      "file": "02_FACTORIES_cols.csv",
+      "sha256": "c9489bde2157db6ff18b47e89fe06443c1dae6474446b844d2ec7821f809bd74"
+    },
+    "02_TYPES": {
+      "file": "02_TYPES.csv",
+      "sha256": "5565620b1c162d5358cdeced83007ee2e1d2c7c88f8bbbd76d419bdeaaccdaa9"
+    },
+    "99_SOURCE_FILES": {
+      "file": "99_SOURCE_FILES.csv",
+      "sha256": "d71d7aa13f22ff18c582f553e2f0a881caa02a1d394af785462d5d503a416c9e"
+    },
+    "01_ESTATES": {
+      "file": "01_ESTATES.csv",
+      "sha256": "faee12b2411006adecb34181a5cfa7f5cd8672042f1f6449e8706de6f533b191"
+    }
+  }
+}

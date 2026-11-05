@@ -1,0 +1,76 @@
+{
+  "artifact": "CityMETER Factory — 3D-first, district-first map of DIW-reported workers at factory registrations with 95+ workers (DIW registry outside IEAT industrial estates) across Thailand, with official industry groups, the full registry and the industrial-area register as context and a nearby set per registration",
+  "productVersion": "0.1.0",
+  "updatedOn": "2026-11-05",
+  "ldsVersion": "0.9.7",
+  "release": "v0.9.7-owner.1",
+  "revision": "standalone-0.9.7-r1",
+  "colorSetId": "color-srgb-10",
+  "baseDocumentSha256": "d3085cbc0a50195f1cbf0c77b1d77c0d19b84364daf2948eb367348d65432d96",
+  "locationIntelligenceProfile": "hash-verified only (location-intelligence-profile-lds-0.9.7-r1, sha256 5d4856041709735d3a04d4a510a88b551df86c211fdcab8a0707e8fe7c9efc3b; baseDocument d3085cbc…96): both measures are totals of the base count family (workers of registrations, registrations); no LI metric scale applies (no capacity, demand or catchment is drawn)",
+  "layoutReference": "https://landometer.com/v3/citymeter",
+  "fontRoles": {
+    "body": "Bai Jamjuree 400/600",
+    "thaiHeadings": "IBM Plex Sans Thai Looped 700",
+    "latinHeadings": "Arvo 700",
+    "dataAndMetrics": "JetBrains Mono 400; tabular numerals",
+    "navigation": "Material Symbols Rounded approved nav-7 subset; FILL 0 / wght 300 / GRAD 0 / opsz 24",
+    "pictograms": "Material Symbols Rounded 21-glyph pictogram subset built from the same source font (3148 B, sha256 267debecc08b…): area (map), province (location_city), segment (category), ai (auto_awesome), streetview (streetview), maps (location_on), building (apartment), factory (factory), workers (groups), estate (warehouse), status (fact_check), class (badge), compare (compare_arrows), sea (waves), elevation (landscape), relief (height), forest (forest), rank (leaderboard), date (event), distance (straighten), dataset (database); owner test exception 2026-10-22; factory glyphs 2026-11-05 for CityMETER Factory"
+  },
+  "colors": {
+    "applied": "assets/theme.css — foundation pairs, semantic states, map roles, dataState (noData, zero), categorical series 1–10 (landometer-series-10-v8 soft fill + ink), count classes, basemap-only tokens",
+    "analytical": "js/scales.js — count for both measures (scaleVersion 4ff5c1fb4be71ecd13c48685b38371b528bcd4ce369ce964a75354c2eb4d0980; DATAVIZ-02 “count for totals, not density”): exact 41-sample LUT; identical HEX on both themes; all 41 samples by rank among the measured nonzero values (buildRamp; owner standing rule “Color scale ขอให้ใช้ 41 scales ตาม LDS เสมอ”), legend with every sample and value ticks; numbers on low-contrast samples on a plate; a district with no registration is measured_zero (sample 0 + zero outline), never no_data",
+    "categorical": "js/cues.js — industry family id → series (food 1 circle, electrical 2 square, vehicle 3 triangle, textile 4 diamond, metal 5 cross, polymer 6 star, wood 7 hexagon, mineral 8 ring, other 9 dash, plant 10 plus)",
+    "status": "no status pills: the Ministry of Industry status is a fact chip with its date (“อก. ระบุดำเนินการ”), never a colour",
+    "reportedDifference": "LDS analytical scale records list dark noData #3B4849 / zeroOutline #BAC6C0, while machine.tokens.dataState lists dark #404844 / #93A398; the map follows the EVID-05 treatment (dataState), as in Restaurants, Pharmacy and Hotel, and the difference stays reported to the owner",
+    "parity": "scripts/check-lds-parity.mjs against the LDS base file (and the LI profile hash): handoff/VERIFICATION.md",
+    "notDistributed": "full LDS library, the Location Intelligence Profile, other analytical families",
+    "context": "registry context and the industrial-area register as neutral bars, chips and lists; size cue of pins by workers; foundation fill for ordinal bars (worker bands, functional classes, DIW groups)"
+  },
+  "firstAha": "share of the leading province’s workers at 95+ registrations placed at district level that sit in up to three districts with the most workers (never cutting a tie, never every district holding workers), the industry families of those rows as bars with each share (numerator and denominator in titles and accessible text), and the district(s) with the most workers outside it with its first family; the same with registrations under the count measure; computed per selection; the map opens in the 3D city preset with those districts focused automatically and the rest quiet",
+  "countingUnit": "measure switch: workers (คน, default; Σ DIW-reported workers) or registrations (ทะเบียน, FIDs — not unique plants)",
+  "focusAndQuiet": {
+    "implementation": "app.js focus modes (auto/explicit/none) and row scopes; map-layers.js filled/quiet/province feature-state; pins.js cue symbols vs grey context dots; massing.js quiet city tier vs rounded focus tier, see-through front buildings in the building view (setScene eye); venue-xray.js draws the building being looked at over everything else; camera.js presets and the building view (fitBuilding, twoPointBearing); provinces.js frames below zoom 8 without a จังหวัด filter"
+  },
+  "geometryAndMetricContract": "one row per symbol, only rows with a published point (inside the registration’s own district); membership = production district matched at build time (row.admin: name · province); totals only (workers or registrations); outlines per province on demand",
+  "accessibility": [
+    "native form labels and disclosure",
+    "visible focus on every control including pins, area labels and chart marks",
+    "keyboard pin tour (arrow keys) at detail zoom, excluding quiet context dots",
+    "roving tablist for the chart views",
+    "reduced motion respected",
+    "table equivalent for every map view",
+    "categorical shape cues beside colour; text labels in every legend and list",
+    "empty, map-failure, frame-failure and load-error paths with actions",
+    "Thai labels for the map’s own controls (MapLibre locale)",
+    "measure switch as a radio group (arrow keys), its state announced"
+  ],
+  "validation": {
+    "status": "release verification recorded in handoff/VERIFICATION.md",
+    "renderedHarness": "Playwright + MapLibre 5.6.2 from the npm package; OpenFreeMap and unpkg blocked in the build container (stub TileJSON with empty tiles: no basemap, no OSM buildings there); 1440×900 and 393×852, light and dark; live walk on GitHub Pages for the real basemap",
+    "scope": "Applied LDS values, fonts and actual rendered interfaces. No blanket LDS, CVD, native-device or market-completeness claim."
+  },
+  "layoutContract": {
+    "headerPx": 48,
+    "readingPanelWidth": "min(max(300px, 28%), 440px)",
+    "map": "full remaining viewport below header",
+    "chartTray": "collapsible bottom overlay",
+    "mobilePortrait": "full map, five toolbar buttons in one row (วิธีใช้ and Product statement at the top of the sheet); one compact dock at the foot of the map — the Aha finding in two lines with its action, over one legend row (measure switch | level + zero swatch over the 41-sample ramp) — above the attribution while it is open, dropped to the tray once it folds; zoom buttons off on touch phones (pinch; the compass stays); bottom sheet 56% of the screen with a sticky close, opening on the registration, building or area (Hotel 0.3.5 layout)"
+  },
+  "mapContract": {
+    "basemap": "generated at runtime by js/map-style.js on https://tiles.openfreemap.org/planet with --basemap-* tokens",
+    "choropleth": "count for both measures, all 41 samples by rank over the measured nonzero values; beneath the basemap’s first line layer; zoom 8–14.5 (8–12.5 in terrain mode, hard switch), the selected จังหวัด from zoom 4; EVID-05 measured / measured_zero (sample 0 + 2 px zero outline)",
+    "provinces": "the same measure per province frame below zoom 8 without a จังหวัด filter, outlines to zoom 12, ink-chip labels to zoom 9, panel list",
+    "symbols": "focus rows with a published point as cue icons whose area grows with the workers; context rows as grey circles by workers, ≤ 6 px radius; HTML pins from zoom 15.5; the pin label is the registration’s name · workers",
+    "buildings": "per อปท. (Bangkok: เขต) as decided for the CityMETER: Hotel units: CityMETER Building V4 where it holds ≥ 1.15 × the OSM buildings of the unit, else OSM (data/building-units/); every other unit OSM; OSM buildings mapped in parts kept; the attribution names CityMETER Building V4 while drawn",
+    "buildingView": "eye preset corner-on to the building on the least-occluded diagonal, zoom to fit the free part of the map on every way in (js/camera.js#fitBuilding); every registration with a point opens it — the building its point falls in, else the drawn building nearest the point within 300 m (800 m after one widen) with the point in the frame (legend “อาคารใกล้หมุด”); choosing a registration or a building switches the map to 3D (Hotel 0.3.2 rule)",
+    "breadcrumb": "ประเทศไทย › จังหวัด › เขต/อำเภอ with production codes and /D/ deep links, ?d=factory",
+    "symbolSize": "area ∝ workers (js/model.js#pinRadius, unit 400 workers, cap 6,400), quiet context ≤ 6 px; legend key 200 · 1,000 · 5,000 คน",
+    "labels": "from zoom 12.5: ≤ 9 (phone 5) labels in the central ellipse ranked by the workers percentile; text only — the family cue, the short name (no company form words) and the workers pictogram with the workers; measured placement that never covers the chrome, the district chips, the popup, another label or the building being looked at; hover or focus opens a card of icon chips (family, workers, DIW group, MOI status, terrain)",
+    "terrain": "terrain mode at hilly sites (zoom ≥ 12.5, 3D, relief ≥ 30 m in view) and round a building or registration being looked at (relief ≥ 30 m within ±1 km of the site, 0.3.0): 3D ground × 1.5 + hillshade in basemap tones; the district fill switches off at 12.5 (hard switch, never a fade); buildings, the x-ray and the building camera stand on the drawn ground; switched only while the camera is still (js/terrain.js, js/camera.js)",
+    "iconFirstText": "district chips carry the measure pictogram, the status is a pin + number, legend items are a symbol + 1–2 words; sentences live in titles and accessible names (owner 2026-11-01)",
+    "water": "light water --basemap-water #CFDDE7 (basemap-only, 1.22:1 from the ground) with the water-shore line --basemap-shore #B2C7D6 above the district fill; dark keeps surface.blueTint #18333E (0.3.4, owner “ใน light theme ทำให้ทะเล/water body ดูเหมือนน้ำมากกว่านี้ … แต่ยัง clean and quiet”); the coast line, district outlines and legend separate the sea from low li.supply classes, never the water hue alone"
+  },
+  "outboundActions": "js/ask.js — Google Search answered by Google’s AI Overview (registration: still running, what it makes, staff size, expansion or lay-off news · district: industries, where workers live, shops and services round the plants, new or closed plants · overview: investment and closures), Maps and Street View per view; never a natural person’s name",
+  "copy": "short natural Thai: คน / ทะเบียน / โรงงาน / คนงาน / อุตสาหกรรม / กลุ่ม กรอ. / ขนาด / จำพวก / หน้าที่ / สถานะ อก. / นิคม / โรงงานใกล้เคียง / เขต·อำเภอ / ระยะตรง; the scope in the name (โรงงาน 95+ คน · ทะเบียน กรอ. นอกนิคมอุตสาหกรรม); units on every number; one provenance line per panel view"
+}

@@ -1,0 +1,658 @@
+{
+  "$schema": "./handoff.schema.json",
+  "schemaVersion": "1.5.0",
+  "documentType": "product-brief",
+  "productId": "citymeter-factory",
+  "productVersion": "0.1.0",
+  "updatedOn": "2026-11-05",
+  "datasetCheckedOn": "2026-11-04",
+  "language": "th",
+  "productName": "CityMETER · Factory",
+  "repository": "https://github.com/montri-th/factory",
+  "liveUrl": "https://montri-th.github.io/factory/",
+  "productStatement": "PRODUCT_STATEMENT.md",
+  "job": "คนงานโรงงานกระจุกอยู่ตรงไหน และทำงานในอุตสาหกรรมอะไร — แล้วเจาะลงถึงอำเภอ โรงงาน และโรงงานใกล้เคียง",
+  "audiences": [
+    "ผู้พัฒนาที่อยู่อาศัย หอพัก และพื้นที่ค้าปลีก/บริการ",
+    "ผู้พัฒนาและนักลงทุนอสังหาฯ อุตสาหกรรม",
+    "จังหวัด อปท. และหน่วยงานพัฒนาเศรษฐกิจพื้นที่",
+    "ผู้ประเมินมูลค่า สถาบันการเงิน ที่ปรึกษา"
+  ],
+  "journey": [
+    "first Aha (3D city scene, workers + industries)",
+    "switch the measure (คนงาน | โรงงาน)",
+    "district → industries, DIW groups, sizes, registry context, estates, factories",
+    "factory → building view, facts, nearby set",
+    "Google next question",
+    "charts / table",
+    "CityMETER production"
+  ],
+  "changesSince": "0.1.0 (2026-11-05): first release, built from CityMETER · Hotel 0.3.6 (montri-th/hotel@177e592) on the owner request to do “แบบเดียวกัน” for CityMETER: Factory; hotel-only parts (stations, chains, logos, prices, sites) removed; factory pictograms added to the subset.",
+  "rowScopes": {
+    "scopeRows": "rows after search · industry family · size · province · function, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
+    "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
+    "rows": "baseRows narrowed by the district focus: pins with detail, counters, the table"
+  },
+  "firstAha": {
+    "scope": "scopeRows",
+    "measure": "workers (default) | count",
+    "ranking": "เขต/อำเภอ by the measure (then the other measure, then name) inside the home province = the province holding the most of the measure among rows placed at district level; up to three and never every district holding the measure (N ≤ 3 → top N − 1); never cut through a tie; none left → spread",
+    "headlineTemplate": "{share}% ของ{คนงานโรงงาน 95+ คน|โรงงาน 95+ คน}ใน{home} อยู่ใน {n} {เขต|อำเภอ}นี้ (one district: อยู่ใน{เขต|อำเภอ}{name})",
+    "numerator": "Σ measure of the focused districts (matched membership)",
+    "denominator": "Σ measure of every row of the home province in the selection (homeValue)",
+    "personality": "industries: up to three industry families of the focus rows ranked by the measure, each a bar in the family’s series colour with its cue and its share of the focus total; numerator and denominator in each bar’s title and accessible text",
+    "secondaryFinding": "district(s) with the most of the measure outside the home province (every district tied); “อันดับ 1 นอก{home}”, “มากกว่าทุก{อำเภอ}ของ{home}” when it exceeds the first focus district, and its first family with its share; hidden with a province filter and when the top is < 2",
+    "defaultFocus": "auto",
+    "defaultCamera": "city preset, fitPitched over the focused districts",
+    "action": "ดูทุกพื้นที่ (?areas=all); เปรียบเทียบพื้นที่ (opens charts); district names are links",
+    "model": "js/area-insight.js#summarizeAreaInsight",
+    "filter": "js/area-insight.js#filterAreaRows",
+    "defaultSnapshot": {
+      "asOf": "2026-11-04",
+      "builtOn": "2026-11-05",
+      "workers": {
+        "home": "SPK",
+        "areas": [
+          {
+            "id": "1101",
+            "name": "เมืองสมุทรปราการ",
+            "value": 85921
+          },
+          {
+            "id": "1103",
+            "name": "บางพลี",
+            "value": 79620
+          },
+          {
+            "id": "1104",
+            "name": "พระประแดง",
+            "value": 55439
+          }
+        ],
+        "value": 220980,
+        "homeValue": 299796,
+        "sharePct": 74,
+        "industry": [
+          {
+            "id": "vehicle",
+            "value": 43591
+          },
+          {
+            "id": "textile",
+            "value": 42493
+          },
+          {
+            "id": "polymer",
+            "value": 31330
+          }
+        ],
+        "industryBase": 220980,
+        "outside": {
+          "id": "7401",
+          "name": "เมืองสมุทรสาคร",
+          "province": "SKN",
+          "value": 169944,
+          "family": "food",
+          "familyValue": 92869
+        }
+      },
+      "registrations": {
+        "home": "SPK",
+        "areas": [
+          {
+            "id": "1103",
+            "name": "บางพลี",
+            "value": 287
+          },
+          {
+            "id": "1101",
+            "name": "เมืองสมุทรปราการ",
+            "value": 249
+          },
+          {
+            "id": "1104",
+            "name": "พระประแดง",
+            "value": 178
+          }
+        ],
+        "value": 714,
+        "homeValue": 997,
+        "sharePct": 72,
+        "industry": [
+          {
+            "id": "textile",
+            "value": 141
+          },
+          {
+            "id": "polymer",
+            "value": 121
+          },
+          {
+            "id": "vehicle",
+            "value": 120
+          }
+        ],
+        "industryBase": 714,
+        "outside": {
+          "id": "7401",
+          "name": "เมืองสมุทรสาคร",
+          "province": "SKN",
+          "value": 474,
+          "family": "food",
+          "familyValue": 182
+        }
+      },
+      "note": "regression fixtures (tests/insight.test.js), never UI constants"
+    },
+    "fallbacks": {
+      "spread": "every district of the home province holds the same value → spread finding, the camera frames them",
+      "unplaced": "no district can be ranked → the count and a table action",
+      "empty": "no row → clear filters action"
+    }
+  },
+  "countingUnitContract": {
+    "default": "workers (Σ DIW-reported workers of the registrations, คน)",
+    "alternatives": [
+      "registrations (ทะเบียน)"
+    ],
+    "words": {
+      "workers": "คน",
+      "count": "ทะเบียน"
+    },
+    "rule": "one row = one FID of 18_WORKERS_P90 (workers ≥ 95, the sheet’s P90); a registration is not a plant or a company; every row has a worker figure, so no total is partial"
+  },
+  "metricContract": {
+    "areas": "Σ measure per เขต/อำเภอ (LDS count for both measures)",
+    "provinces": "Σ measure per province frame (same family)",
+    "eligibility": "none — totals; ties are never cut (firstAha.ranking)",
+    "combined": "Σ focus ÷ the home province’s whole total in the selection; the industry shares ÷ the focus total",
+    "noDensity": "no per-km² or per-resident ratio is drawn"
+  },
+  "coverageContract": {
+    "covered": "every เขต/อำเภอ of the 77 provinces is in the registry’s national scope",
+    "states": {
+      "measured": "ramp sample by rank",
+      "measured_zero": "sample 0 + zero outline — no registration of the dataset is placed there under the filters (375 of 928 districts unfiltered)"
+    },
+    "noData": "not used: every row has a worker figure"
+  },
+  "categoricalCueContract": {
+    "registry": "landometer-series-10-v8",
+    "bindBy": "industry family id (js/cues.js#GROUP_SERIES)",
+    "groups": {
+      "food": {
+        "series": 1,
+        "th": "อาหารและเครื่องดื่ม",
+        "diwGroups": [
+          "อุตสาหกรรมอาหาร",
+          "อุตสาหกรรมเครื่องดื่ม"
+        ]
+      },
+      "electrical": {
+        "series": 2,
+        "th": "เครื่องใช้ไฟฟ้าและอุปกรณ์",
+        "diwGroups": [
+          "ผลิตเครื่องใช้ไฟฟ้าและอุปกรณ์"
+        ]
+      },
+      "vehicle": {
+        "series": 3,
+        "th": "ยานพาหนะและเครื่องจักร",
+        "diwGroups": [
+          "ผลิตยานพาหนะและอุปกรณ์รวมทั้งการซ่อมยานพาหนะและอุปกรณ์",
+          "ผลิตเครื่องจักรและเครื่องกล"
+        ]
+      },
+      "textile": {
+        "series": 4,
+        "th": "สิ่งทอ เครื่องแต่งกาย หนัง",
+        "diwGroups": [
+          "ผลิตหนังสัตว์และผลิตภัณฑ์จากหนังสัตว์",
+          "สิ่งทอ",
+          "อุตสาหกรรมเครื่องแต่งกายยกเว้นรองเท้า"
+        ]
+      },
+      "metal": {
+        "series": 5,
+        "th": "โลหะ",
+        "diwGroups": [
+          "ผลิตภัณฑ์โลหะ",
+          "ผลิตโลหะขั้นมูลฐาน"
+        ]
+      },
+      "polymer": {
+        "series": 6,
+        "th": "พลาสติก ยาง เคมี",
+        "diwGroups": [
+          "ผลิตภัณฑ์จากปิโตรเลียม",
+          "ผลิตภัณฑ์พลาสติก",
+          "ยางและผลิตภัณฑ์ยาง",
+          "เคมีภัณฑ์และผลิตภัณฑ์เคมี"
+        ]
+      },
+      "wood": {
+        "series": 7,
+        "th": "ไม้ กระดาษ การพิมพ์",
+        "diwGroups": [
+          "การพิมพ์ การเย็บเล่ม ทำปกหรือการทำแม่พิมพ์",
+          "ผลิตกระดาษและผลิตภัณฑ์กระดาษ",
+          "เครื่องเรือนหรือเครื่องตบแต่งในอาคารจากไม้ แก้ว ยาง หรือโลหะอื่นๆ",
+          "แปรรูปไม้และผลิตภัณฑ์จากไม้"
+        ]
+      },
+      "mineral": {
+        "series": 8,
+        "th": "ผลิตภัณฑ์อโลหะ",
+        "diwGroups": [
+          "ผลิตภัณฑ์อโลหะ"
+        ]
+      },
+      "plant": {
+        "series": 10,
+        "th": "ผลิตภัณฑ์จากพืช",
+        "diwGroups": [
+          "ผลิตภัณฑ์จากพืช"
+        ]
+      },
+      "other": {
+        "series": 9,
+        "th": "การผลิตอื่น ๆ",
+        "diwGroups": [
+          "ไม่ระบุกลุ่มอุตสาหกรรม",
+          "การผลิตอื่นๆ"
+        ]
+      }
+    }
+  },
+  "framesContract": {
+    "index": "data/area-index.json — 928 districts and 77 provinces, no geometry (codes, names, production areaSqm, label, bbox)",
+    "frames": "data/frames/{CODE}.json — district outlines per province (77 files)",
+    "loading": "the selection’s provinces at once; the provinces under the map at district zoom (≤ 6 per move); never all 77 up front; versioned with the release tag",
+    "failure": "reported and retried on the next request; panels, charts and table never depend on outlines"
+  },
+  "mapFocusContract": {
+    "principle": "detail only for the focused part — the selected district, the registration, the automatic or explicit focus; everything else visible but quiet",
+    "states": {
+      "auto": "default top districts; released when none of them is on screen",
+      "explicit": "?areas=a,b,c",
+      "none": "?areas=all"
+    },
+    "choropleth": "count (workers or registrations), 41-sample ramp by rank, under the basemap’s first line layer; zoom 8–14.5; the selected จังหวัด from zoom 4; measured_zero = sample 0 + 2 px zero outline"
+  },
+  "contextContract": {
+    "registry": {
+      "source": "02_FACTORIES of the research master (74,047 core FIDs, all sizes)",
+      "by": "functional class (ผลิต · บริการ · อื่น ๆ · รอตรวจหน้าที่)",
+      "shown": "district and province panels, the overview; the share of 95+ registrations in it from the same universe before any filter",
+      "neverAdded": "never added to the product’s workers or registrations"
+    },
+    "estates": {
+      "source": "01_ESTATES of the estate research master (106 rows, checked 2026-10-25/26)",
+      "shown": "province list with type and official page; national: counts by type",
+      "geometry": "not published (19_MAP_EXPORT selects none; rights not cleared)",
+      "neverClaims": "which registration lies in an estate"
+    }
+  },
+  "nearbyContract": {
+    "module": "js/profile-model.js#nearbyOf",
+    "rule": "same industry family, workers ½–2× the registration’s, within 3,000 m straight line, nearest first, up to 10, every row of the dataset",
+    "around": "every 95+ registration within 3,000 m (any family) with its workers",
+    "words": "โรงงานใกล้เคียง · rule as chips (family · workers · ≤ 3 กม.); never คู่แข่ง or a supply chain"
+  },
+  "statusContract": {
+    "field": "moi_location_status_raw with its update date (02_FACTORIES / 18_WORKERS_P90)",
+    "words": "chip “อก. ระบุ…”, source details “สถานะ อก. … · date”; “ไม่พบใน อก.” when the FID is not in the MOI export",
+    "never": "a field check, a closure claim or a colour"
+  },
+  "privacyContract": {
+    "persons": "a name written as a natural person’s (scripts/build-data.py#PERSON) is withheld with its point; the row reads “ผู้ประกอบการบุคคลธรรมดา” and is never searched by name in Google",
+    "excluded": [
+      "address",
+      "operator_name_moi_raw",
+      "historical_operator_name_2025",
+      "operator_context_id",
+      "operator_context_basis",
+      "legal_operator_id",
+      "immediate_parent",
+      "ultimate_parent",
+      "human_review_status",
+      "human_decision",
+      "human_notes",
+      "evidence_conflict_flags",
+      "status_evidence_conflict_flags",
+      "source_ids",
+      "record_id",
+      "logo_use_id",
+      "logo_url",
+      "workers_CDF_at_or_below",
+      "raw coordinates of rows whose coordinate_quality is not within_TH_bbox_unverified",
+      "names and points of natural-person operators",
+      "internal Drive / Sheet URLs"
+    ]
+  },
+  "contextActionsContract": {
+    "module": "js/ask.js#contextActions",
+    "views": [
+      "factory",
+      "building",
+      "area",
+      "overview"
+    ],
+    "ai": "Google Search with a question written for the view (/search?q=, answered at the top by Google’s AI Overview; never udm=50)",
+    "maps": "name + district + province, or “โรงงาน” + place",
+    "streetview": "only with a published point",
+    "never": "a natural person’s name, an internal id, or Google’s answers copied into the data"
+  },
+  "buildingJoinContract": {
+    "buildings": "focus-tier footprints: OpenStreetMap (pieces of one outline cut by tile edges, building:parts, podium + tower grouped) or, inside a CityMETER unit, CityMETER Building V4 (whole buildings, keys cm:)",
+    "points": "published registration points of the scope",
+    "rule": "display-time point-in-footprint (js/building-join.js#joinBuildings)",
+    "click": "one registration → the registration; several → the building panel “โรงงานในอาคารนี้” (“สูงราว”, the outline source in the title and the provenance line)",
+    "neverChanges": "any count or district membership",
+    "nearest": "a registration whose point falls in no outline is framed on the nearest drawn building (cameraContract.buildingView.target) — never joined, counted or listed in “โรงงานในอาคารนี้”"
+  },
+  "interactionContract": {
+    "mapClicks": "focus pin → the building being looked at (x-ray: frame again) → focus building → province view district / province frame (below zoom 8) → district",
+    "reframe": "every way into a building view frames it again",
+    "quietDots": "never focusable or clickable",
+    "keyboard": "roving tabindex over HTML pins from zoom 15.5; roving tablist for chart views; arrow keys on the measure switch; visible focus everywhere"
+  },
+  "basemapContract": {
+    "generator": "js/map-style.js (no hosted style URL)",
+    "tiles": "https://tiles.openfreemap.org/planet (OpenMapTiles schema)",
+    "palette": "--basemap-* tokens of assets/theme.css; data colours never set there",
+    "water": "light: --basemap-water #CFDDE7 (basemap-only, 1.22:1 from the ground) and the shore line water-shore --basemap-shore #B2C7D6 (1.26:1 from the water), drawn above the district fill and beneath footprints and roads; rivers --basemap-water-line; dark: LDS surface.blueTint #18333E with shore #1F3F4C (owner 2026-11-02 “… ดูเหมือนน้ำมากกว่านี้ … แต่ยัง clean and quiet”)"
+  },
+  "massingContract": {
+    "cityTier": "basemap building extrusions, quiet, faded with distance from the focus; OpenFreeMap features replaced by CityMETER buildings are hidden (one hashed match) and their buildings outside the focus come back in a context layer drawn the same way",
+    "focusTier": "rounded footprints from z14 tiles in the focus regions (≤ 16 tiles nearest the camera; from zoom 12 in 3D when complete, else 13): OpenStreetMap, or CityMETER Building V4 tiles (≤ 40 requests, per อปท. or แขวง) inside CityMETER units",
+    "hostTier": "unused (no host geometry in this product)",
+    "rounding": "roundingRadiusM(zoom) 3–12 m",
+    "enclosure": "encloseOffsetM keeps the rounded shape around the original outline",
+    "buildingSource": "per unit from data/building-units/ (copied from montri-th/hotel@177e592; units that hold a hotel with a point): CityMETER Building V4 when its count ≥ 1.15 × the OSM count of the unit, else OSM; every other unit OSM; OSM buildings mapped in parts stay inside CityMETER units; a missing CityMETER tile leaves its part on OSM",
+    "terrain": "fill-extrusions stand on the terrain at their centroid (MapLibre); the building camera fits on the anchor's ground plane and the landed centre's ground; the x-ray solid is lifted the same way"
+  },
+  "cameraContract": {
+    "presets": {
+      "plan": "pitch 0 (3D off)",
+      "city": "pitch 56 · bearing 28 · fov 36.87 (overview)",
+      "model": "pitch 60 · fov 14 (district, registration without a point)",
+      "eye": "pitch 75 · fov 24 (the building view: venue, building, registration with a point)"
+    },
+    "fitting": "fitPitched (overview, district): flat fit, then zoom out until every outline vertex is inside the padded viewport, then in while it still fits; pitch ≤ 90 − fov/2 − 3",
+    "buildingView": {
+      "owner": "2026-10-29 19:47 “อาคารที่เลือก หรือ on focus ให้แสดงด้วยมุมมอง 2-point perspective เสมอ zoom to fit viewport เสมอด้วย”",
+      "module": "js/camera.js#fitBuilding, twoPointBearing, wallAzimuth, occlusionScore, screenBounds (from CityMETER · Shopping centers); js/app.js#frameFocus",
+      "target": "js/app.js#focusTarget — the open building; the building the open registration’s point falls in, else the drawn building nearest the point: js/building-join.js#nearestBuilding — within 300 m (REACH_M), the largest piece within 10 m of the nearest; when nothing is drawn within 300 m the focus tier is loaded once more for 800 m round the point (REACH_FAR_M); legend “อาคารใกล้หมุด”, framed with the point; a camera choice only, never a join, a count or a located-in claim",
+      "bearing": "dominant wall azimuth + 45°, on the diagonal where the drawn focus buildings (massing.obstaclesNear, 400 m) hide least of it, then the one nearest the current bearing",
+      "fit": "eye preset; shift lens (0.3.2, js/camera.js#lensPadding): padding moves the principal point up to the free box’s centre, never below the canvas centre (pitch + fov/2 < 90 keeps the horizon out), so the camera looks straight at the building at pitch 75 on a phone’s strip above the sheet as on a desktop; fit points = the pieces as the focus tier draws them at building zoom (massing.fitPointsOf → js/massing.js#footprintFitPoints: the offset and fillets of zoom 18, ground and roof), never the shape drawn at the starting zoom (up to 3.6 m wider on every side); every one inside the free box (js/app.js#visibleBox: below the toolbar, above the Aha card, legend, chart tray, table or open phone sheet, left of the zoom control), one side filling 94% of it; maxZoom 21 when the building is known (js/camera.js#BUILDING_MAX_ZOOM — Hotel: hotels stand in shophouses and small buildings; the Shopping centers limit 19.5 left a 40 m building at half the box) / 18 while unknown, minZoom 14",
+      "unknown": "a 90 m box round the point (12 m tall) framed the same way while the buildings load, and where nothing is drawn within 800 m; the camera turns to the building when it arrives, at most three times, never after a user camera move",
+      "plan": "3D off: the same footprint fitted flat (fitPitched plan, maxZoom 21 known / 18 unknown)",
+      "click": "selectFactory (pin, label, list row, search) and selectBuilding switch the map to 3D (js/app.js#ensure3d) before framing; a link keeps view3d=0 when it asks for it",
+      "terrain": "on terrain each fit point carries the ground it is drawn on (4th value: roof at the piece centroid’s ground, base at the lowest ground under its outline, the pin at its own ground); fitBuilding damps its landed rounds (half steps) and js/maplibre-guard.js#guardElevationFreeze lands the centre on the ground after every programmatic ease (MapLibre 5.6.2 leaves map._elevationFreeze on); refitted when the ground changes by ≥ 3 m, a new building arrives or the free box changes once the camera is still (js/app.js#watchFreeBox: legend, trays, phone sheet), at most 3 times, never after a user camera move",
+      "lift": "0.3.2: MapLibre 5.6.2 lifts a camera that would stand inside the terrain (Map#_elevateCameraIfInsideTerrain: lower pitch, other zoom) on every jump; fitBuilding computes with it off (withoutLift) and asks MapLibre’s own check about the camera it found — the alternates (the other corners, opposite first: js/app.js#frameFocus) when that camera would be lifted, else the pitch MapLibre allows; the target carries its pitch and the centre’s elevation (an instant jump checks from the right height)"
+    }
+  },
+  "tileCoverGuard": {
+    "module": "js/maplibre-guard.js#guardRetainedTiles(map, version) → boolean; padOverscaledChildren(idealTileIDs, zoom, maxzoom)",
+    "bug": "MapLibre GL JS 5.6.2 SourceCache._updateRetainedTiles checks the four children of a missing ideal tile whenever the cover zoom + 1 ≤ the source maxzoom; a pitched cover can already hold an ideal tile at the maxzoom, whose children() is ONE overscaled child; when that child is retained, children[1] is undefined and the frame throws “Cannot read properties of undefined (reading 'key')”",
+    "seen": "live 2026-10-29 (Claude desktop browser, real OpenFreeMap tiles): openmaptiles (vector, maxzoom 14), cover zoom 13, camera 13.79–13.95, pitch 75, while the building camera flew between branches; reproduced in the build container by stepping the pitched camera out from 19.5 to 13.6 over a building (7–8 errors on 0.2.0, 0 with the guard)",
+    "fix": "pad the child list of exactly those ideal tiles to four copies of the overscaled child, so the check reads as MapLibre's own overzoom branch; installed on the shared SourceCache prototype at every style load; only for version 5.6.2",
+    "test": "tests/maplibre-guard.test.js",
+    "elevationFreeze": "js/maplibre-guard.js#guardElevationFreeze(map, version), 0.3.2: MapLibre 5.6.2 easeTo/flyTo on terrain without freezeElevation leave map._elevationFreeze on (only a gesture or _finalizeElevation clears it), so the render loop stops clamping the centre to the ground and the framed building drifts (seen 2026-11-02: camera 80.97 m vs ground 62.41 m at Sri Panwa); the guard wraps map._afterEase: when the ease ended (not superseded) and no terrain gesture is running, it clears the freeze and sets the centre elevation to the ground; only for version 5.6.2 (tests/maplibre-guard.test.js)"
+  },
+  "venueXrayContract": {
+    "owner": "2026-10-29 19:47 “เช็คอย่าให้ 3d building mass ตึกอื่นบังอาคารที่กำลังดูอยู่”",
+    "module": "js/venue-xray.js#installVenueXray(map, {beforeId, toMercator, colors}) → {update(features, {colors}), setEnabled, hitTest(point), dispose, count, enabled, failed} (from CityMETER · Shopping centers / Luxury Brands)",
+    "layer": "venue-xray (custom, renderingMode 3d) before place-quarter (js/map-style.js#VENUE_XRAY_BEFORE): drawn over every building and over road names",
+    "input": "the features of the building being looked at (massing.featuresOf(target.refs)) with display_height_m / display_base_m; on terrain the roof is lifted by the ground at the piece centroid (as MapLibre lifts fill-extrusions) and the walls go down to the lowest ground under the outline (0.3.2; a fixed 10 m showed through the slope)",
+    "depth": "scissored depth clear inside the building’s screen box, then its own depth test",
+    "seeThrough": "massing.setScene('eye', rings): the focus buildings standing in front of it turn see-through (SCENE.eye)",
+    "labels": "district label chips never sit on the building (refreshLabelView avoid box); since 0.3.2 neither do the registrations’ name labels (js/labels.js#installFactoryLabels avoid → buildingScreenBox)",
+    "visibility": "3D only, zoom ≥ 13 (XRAY_MIN_ZOOM); empty outside the building view",
+    "colours": "map.activeLayer faces, map.selectedStroke edges — map roles, not data colours",
+    "failSafe": "a GL error disables it (failed = true); the massing highlight keeps drawing",
+    "geojsonMaxzoom": "every GeoJSON source uses maxzoom 24 (js/map-layers.js#GEOJSON_MAXZOOM, the most geojson-vt allows), two levels above BUILDING_MAX_ZOOM: MapLibre 5.6.2 throws in SourceCache._updateRetainedTiles when the near tiles of a pitched cover reach a GeoJSON source maxzoom before they have data (seen in CityMETER · Shopping centers 2026-10-25); under the eye preset the near tiles sit up to about half a level above the camera (tests/release.test.js)"
+  },
+  "breadcrumbContract": {
+    "levels": [
+      "ประเทศไทย",
+      "จังหวัด",
+      "เขต/อำเภอ"
+    ],
+    "productionPath": "/v3/citymeter/{code}/D/{district}?d=factory",
+    "demoQuery": "?province=SPK&area=1103",
+    "provinceCodes": "production route codes (base info lv0 abbrEn)",
+    "datasetCode": "factory (web-v3/src/modules/citymeter/datasets.ts, theshifters/landometer@fc9173a, category location)"
+  },
+  "provinceContract": {
+    "frames": "data/provinces.geojson",
+    "fill": "the measure below zoom 8 without a province filter",
+    "labels": "ink chips to zoom 9",
+    "zero": "Mae Hong Son holds no registration of 95+ workers (measured zero)"
+  },
+  "pictogramContract": {
+    "file": "assets/icons/material-pictogram-300.woff2",
+    "sha256": "267debecc08b8b278bb7888b15cafd6821bab4019f593104cfac5ece7cdd71ad",
+    "glyphs": [
+      "area",
+      "province",
+      "segment",
+      "ai",
+      "streetview",
+      "maps",
+      "building",
+      "factory",
+      "workers",
+      "estate",
+      "status",
+      "class",
+      "compare",
+      "sea",
+      "elevation",
+      "relief",
+      "forest",
+      "rank",
+      "date",
+      "distance",
+      "dataset"
+    ],
+    "source": "google/material-design-icons variablefont/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf",
+    "sourceSha256": "7e74e36533ccee12c2b81e75bfcf3ccf123d3bb7e7e46d65d94445f23db0c97c",
+    "status": "test exception to LDS nav-7 (owner 2026-10-22; actions and building added 2026-10-29; terrain glyphs 2026-11-01 for the map labels; rank, date, distance and dataset 2026-11-01 for short copy; factory, workers, estate, status and class 2026-11-05 for CityMETER Factory); nav-7 subset unchanged"
+  },
+  "panel": {
+    "modes": [
+      "overview",
+      "area",
+      "building",
+      "factory"
+    ],
+    "actions": [
+      "select-area",
+      "select-factory",
+      "select-building",
+      "select-province",
+      "filter-group",
+      "set-metric",
+      "back",
+      "explore-top",
+      "clear-focus",
+      "open-charts",
+      "open-table",
+      "clear-filter",
+      "leave-area"
+    ],
+    "models": {
+      "overview": "js/profile-model.js#buildOverview",
+      "area": "buildAreaProfile",
+      "building": "buildBuildingProfile",
+      "factory": "buildFactoryDetail (+ nearbyOf)"
+    },
+    "provenance": "exactly one line per view: dataset (CityMETER Factory · โรงงาน 95+ คน) · source (ทะเบียน กรอ. นอกนิคมอุตสาหกรรม · อก. + the estate register / terrain when shown) · date · boundary, then วิธีนับ",
+    "phoneSheet": "56dvh bottom sheet, sticky close; in the factory, building and area modes the dataset heading is visually hidden (kept for screen readers) and the search form is off — the filter chips stay"
+  },
+  "data": {
+    "file": "data/factories.json",
+    "sha256": "60ed6f5b4e57a84741f4da189d38b8522eb6ed446b8d40c6ad96e3e74ed05f6b",
+    "rows": 7175,
+    "counts": {
+      "rows": 7175,
+      "workers": 2435798,
+      "points": 2306,
+      "persons": 58,
+      "admin": {
+        "name": 7175
+      },
+      "moi": {
+        "ดำเนินการ": 2894,
+        "none": 3944,
+        "หยุดดำเนินการ": 137,
+        "ได้รับใบอนุญาต": 200
+      },
+      "basis": {
+        "DIW2026_listed_and_MOI_operating": 2894,
+        "DIW2026_listed": 4281
+      },
+      "possibleSameSite": 430,
+      "ties": 122,
+      "registry": 74047,
+      "registryPlaced": 74045,
+      "registryUnplaced": 2,
+      "estates": 106,
+      "sizes": {
+        "w1": 3998,
+        "w2": 2216,
+        "w3": 585,
+        "w4": 244,
+        "w5": 108,
+        "w6": 24
+      },
+      "estateContext": {
+        "outside_estate_source_scope_DIW_catalog": 7175
+      }
+    },
+    "inputs": {
+      "18_WORKERS_P90": {
+        "file": "18_WORKERS_P90.csv",
+        "sha256": "8b01cf75fdd2138bb3f35a5f12fa869159d6adffe878043749bcdb61b535c5a1"
+      },
+      "02_FACTORIES_cols": {
+        "file": "02_FACTORIES_cols.csv",
+        "sha256": "c9489bde2157db6ff18b47e89fe06443c1dae6474446b844d2ec7821f809bd74"
+      },
+      "02_TYPES": {
+        "file": "02_TYPES.csv",
+        "sha256": "5565620b1c162d5358cdeced83007ee2e1d2c7c88f8bbbd76d419bdeaaccdaa9"
+      },
+      "99_SOURCE_FILES": {
+        "file": "99_SOURCE_FILES.csv",
+        "sha256": "d71d7aa13f22ff18c582f553e2f0a881caa02a1d394af785462d5d503a416c9e"
+      },
+      "01_ESTATES": {
+        "file": "01_ESTATES.csv",
+        "sha256": "faee12b2411006adecb34181a5cfa7f5cd8672042f1f6449e8706de6f533b191"
+      }
+    },
+    "scope": {
+      "threshold": 95,
+      "percentile": "PERCENTILE.INC 0.9",
+      "withWorkers": 71124,
+      "core": 74047,
+      "workersPeriod": "DIW class 2/3 exports, resource metadata updated 2026-10-01; observation date of the figure not exported",
+      "estates": "estate_context of 02_FACTORIES (counts.estateContext): outside_estate_source_scope_DIW_catalog — the DIW class 2/3 open-data exports cover registrations outside IEAT industrial estates; plants registered with IEAT are not in these exports",
+      "note": "Registrations (FID) at or above the P90 of DIW-reported workers; not a census of operating plants."
+    },
+    "checks": {
+      "pointWithheld": {
+        "otherDistrict": 61,
+        "otherProvince": 18
+      }
+    }
+  },
+  "visualSystem": {
+    "lds": "Landometer-Design-System-v0.9.7.md (standalone-0.9.7-r1, v0.9.7-owner.1, color-srgb-10, sha256 d3085cbc…96)",
+    "locationIntelligence": "Location-Intelligence-Profile-for-LDS-v0.9.7.md (location-intelligence-profile-lds-0.9.7-r1, sha256 5d485604…3c): hash and base document checked; no LI metric applies (both measures are base count totals)",
+    "parity": "scripts/check-lds-parity.mjs (handoff/VERIFICATION.md)",
+    "themes": "light and dark; analytical HEX identical on both",
+    "fonts": "Bai Jamjuree · IBM Plex Sans Thai Looped · Arvo · JetBrains Mono (assets/lds/build-kit)"
+  },
+  "invariants": [
+    {
+      "id": "F1",
+      "rule": "the scope is part of the name: โรงงาน 95+ คน · ทะเบียน กรอ. นอกนิคมอุตสาหกรรม, in the heading and every provenance line"
+    },
+    {
+      "id": "F2",
+      "rule": "workers are DIW-reported registry figures; never employment, labour market, capacity, output, sales, market share or density"
+    },
+    {
+      "id": "F3",
+      "rule": "membership is the district matched at build time (row.admin); never re-assigned on screen; a point outside its district is withheld"
+    },
+    {
+      "id": "F4",
+      "rule": "distances are straight lines; never travel time, commuting zone or catchment"
+    },
+    {
+      "id": "F5",
+      "rule": "the Aha never cuts a tie and never focuses every district holding the measure"
+    },
+    {
+      "id": "F6",
+      "rule": "every panel view ends with exactly one provenance line and the method link"
+    },
+    {
+      "id": "F7",
+      "rule": "one symbol = one registration with a published point; never clustered"
+    },
+    {
+      "id": "F8",
+      "rule": "registry and estate context are never added to the product’s figures; no estate geometry; no claim of which registration lies in an estate"
+    },
+    {
+      "id": "F9",
+      "rule": "colours only from assets/theme.css, js/scales.js, js/cues.js; 41 samples by rank; same HEX on both themes"
+    },
+    {
+      "id": "F10",
+      "rule": "no natural person’s name, address, raw operator field, researcher text, private document link or Landometer commercial term in the repository"
+    },
+    {
+      "id": "F11",
+      "rule": "a stopped or removed MOI status is never read as a closure; it is the ministry’s record with its date"
+    }
+  ],
+  "chartContracts": [
+    {
+      "viewKey": "areas",
+      "title": "เขต/อำเภอ",
+      "question": "เขต/อำเภอไหนมีคนงาน (หรือโรงงาน) มากที่สุด",
+      "encoding": "bars in the map’s ramp colour, top 20 of every ranked district",
+      "metric": "the current measure",
+      "scope": "scopeRows"
+    },
+    {
+      "viewKey": "mix",
+      "title": "อุตสาหกรรม",
+      "question": "แต่ละเขต/อำเภอเป็นอุตสาหกรรมอะไร",
+      "encoding": "district × industry family matrix with equal cells, its own 41-sample ramp over the cells, measured zero outlined",
+      "metric": "the current measure",
+      "scope": "scopeRows"
+    },
+    {
+      "viewKey": "industries",
+      "title": "กลุ่ม กรอ.",
+      "question": "กลุ่มอุตสาหกรรมของ กรอ. ไหนมีคนงาน (หรือโรงงาน) มากที่สุด",
+      "encoding": "bars in one neutral fill with the family cue, every group ranked (21 groups + unspecified)",
+      "metric": "the current measure",
+      "scope": "scopeRows"
+    }
+  ],
+  "delivery": {
+    "site": "GitHub Pages from main /root",
+    "handoff": "dist/CityMETER-Factory-Developer-Handoff.zip (START_HERE.md, RELEASE_RECEIPT.json, evidence/, source/)",
+    "liveCheck": "npm run verify:live",
+    "cacheTag": "?v=20261105-r1 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
+  }
+}
