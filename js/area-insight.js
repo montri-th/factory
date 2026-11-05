@@ -1,10 +1,11 @@
 /**
- * First Aha: where the workforce of the factories with 95+ workers concentrates — the top เขต/อำเภอ of the leading
- * province — and which industries it works in.
+ * First Aha: where the workforce of the registered factories concentrates — the top เขต/อำเภอ of the leading province —
+ * and which industries it works in.
  *
- * Measure: Σ workers of the registrations per district by default (DIW-reported workers, LDS `count`), or
- * registrations (`count`) when the reader switches the measure. The figure is “how many workers the DIW registry
- * records at registrations with 95+ workers”, never employment of the district, a labour market or a density.
+ * Measure: Σ workers of the registrations per district by default (DIW-reported workers, LDS `count`; a registration
+ * without a figure adds nothing), or registrations (`count`) when the reader switches the measure. The figure is “how
+ * many workers the DIW registry records at the registrations”, never employment of the district, a labour market or a
+ * density.
  *
  * One 3D frame: the leading province is the province holding the most of the measure among rows placed at district
  * level; the Aha shows up to three districts of that province with the most of it (one coherent city scene) and

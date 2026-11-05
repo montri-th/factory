@@ -1,57 +1,86 @@
 {
   "builtOn": "2026-11-05",
   "output": "factories.json",
-  "outputSha256": "60ed6f5b4e57a84741f4da189d38b8522eb6ed446b8d40c6ad96e3e74ed05f6b",
+  "outputSha256": "f82e2ee5ab262baf0083d513becbd54bd53812c8434ef3fc1dfcc2fdd1004b1b",
   "counts": {
-    "rows": 7175,
-    "workers": 2435798,
-    "points": 2306,
-    "persons": 58,
+    "rows": 74047,
+    "withWorkers": 71124,
+    "workers": 3755632,
+    "zeroWorkers": 391,
+    "p90": 7175,
+    "p90Workers": 2435798,
+    "points": 15654,
+    "persons": 6036,
     "admin": {
-      "name": 7175
+      "name": 74045,
+      "province": 2
     },
     "moi": {
-      "ดำเนินการ": 2894,
-      "none": 3944,
-      "หยุดดำเนินการ": 137,
-      "ได้รับใบอนุญาต": 200
+      "ดำเนินการ": 27007,
+      "none": 42508,
+      "หยุดดำเนินการ": 902,
+      "ได้รับใบอนุญาต": 3621,
+      "จำหน่าย": 9
     },
     "basis": {
-      "DIW2026_listed_and_MOI_operating": 2894,
-      "DIW2026_listed": 4281
+      "DIW2026_listed_and_MOI_operating": 24086,
+      "DIW2026_listed": 47040,
+      "MOI_operating_only": 2921
     },
-    "possibleSameSite": 430,
+    "classes": {
+      "manufacturing": 54229,
+      "review": 7729,
+      "service": 5122,
+      "other": 6967
+    },
+    "possibleSameSite": 3328,
     "ties": 122,
-    "registry": 74047,
-    "registryPlaced": 74045,
-    "registryUnplaced": 2,
     "estates": 106,
     "sizes": {
-      "w1": 3998,
-      "w2": 2216,
-      "w3": 585,
-      "w4": 244,
+      "w6": 24,
       "w5": 108,
-      "w6": 24
+      "w4": 244,
+      "w3": 585,
+      "w2": 2216,
+      "w1": 3998,
+      "s3": 7309,
+      "s2": 33178,
+      "s1": 23462,
+      "none": 2923
     },
     "estateContext": {
-      "outside_estate_source_scope_DIW_catalog": 7175
+      "outside_estate_source_scope_DIW_catalog": 71126,
+      "unknown_estate_context": 2921
+    },
+    "p90Parity": {
+      "workers": 7175,
+      "nameDiffers": 0,
+      "moiDiffers": 0
     }
   },
   "checks": {
     "pointWithheld": {
-      "otherDistrict": 61,
-      "otherProvince": 18
+      "otherDistrict": 585,
+      "otherProvince": 128,
+      "outsideFrames": 5
     }
   },
   "inputs": {
-    "18_WORKERS_P90": {
-      "file": "18_WORKERS_P90.csv",
-      "sha256": "8b01cf75fdd2138bb3f35a5f12fa869159d6adffe878043749bcdb61b535c5a1"
-    },
     "02_FACTORIES_cols": {
       "file": "02_FACTORIES_cols.csv",
       "sha256": "c9489bde2157db6ff18b47e89fe06443c1dae6474446b844d2ec7821f809bd74"
+    },
+    "02_FACTORIES_names": {
+      "file": "02_FACTORIES_names.csv",
+      "sha256": "022fe92cfde03c48a416c4b9d4bc896c2f4f577e0e1449ec3e74ab26f33983c8"
+    },
+    "02_FACTORIES_ops": {
+      "file": "02_FACTORIES_ops.csv",
+      "sha256": "2425284b6752ced7cf13f933cbca96707266886e4360913c1298b0f9ca72670d"
+    },
+    "18_WORKERS_P90": {
+      "file": "18_WORKERS_P90.csv",
+      "sha256": "8b01cf75fdd2138bb3f35a5f12fa869159d6adffe878043749bcdb61b535c5a1"
     },
     "02_TYPES": {
       "file": "02_TYPES.csv",
@@ -60,6 +89,22 @@
     "99_SOURCE_FILES": {
       "file": "99_SOURCE_FILES.csv",
       "sha256": "d71d7aa13f22ff18c582f553e2f0a881caa02a1d394af785462d5d503a416c9e"
+    },
+    "DIW_workers": {
+      "file": "diw_workers.csv",
+      "sha256": "2dc634f9fb2454c9937c076a49ee5ea18cc7f21f3bf8e0193cb09116c1013f35",
+      "derivedFrom": [
+        {
+          "source": "DIW_factype2",
+          "sha256": "7ad219ed5a3808db7acb9508de52e7f95dd281195da7283c5259c0e3dd167701",
+          "field": "คนงานรวม"
+        },
+        {
+          "source": "DIW_factype3",
+          "sha256": "4c3243bcd8dc6a9f3ac0d473f23491fdc475e11ae48960291b6f0db607c8f4af",
+          "field": "คนงานรวม"
+        }
+      ]
     },
     "01_ESTATES": {
       "file": "01_ESTATES.csv",

@@ -17,7 +17,8 @@
  *
  * EVID-05 per frame: measured (ramp sample) · measured_zero (no registration of the dataset is placed there under the
  * filters → lowest fill + zero outline, “0 ที่พบ”; every district is in the national scope of the registry) ·
- * no_data does not occur (every row has a worker figure) · out_of_scope does not occur.
+ * no_data (the workers measure of a district whose registrations have no worker figure → the 135° hatch, never 0) ·
+ * out_of_scope does not occur.
  */
 import {summarizeAreas} from './areas.js';
 import {buildMetricRamp, classify} from './scales.js';
@@ -85,9 +86,11 @@ export function buildAreaModel(rows, index, {province = '', noDataIds = null, me
   const unit = metricOf(metric).one;
   // One 41-sample rank ramp over the เขต/อำเภอ being read (js/scales.js#buildRamp); the legend, the labels and the charts read it.
   const ramp = buildMetricRamp(summaries.map(s => valueOf(s, metric)), {metric, unit});
+  // Workers of a district whose registrations all lack a figure are unknown (no_data), not a measured 0.
+  const unknown = s => noDataIds?.has(s.id) || (metric === 'workers' && s.count > 0 && !s.figured);
   const areas = summaries.map(s => {
     const value = valueOf(s, metric);
-    const c = noDataIds?.has(s.id) ? classify(null, ramp, 'no_data') : classify(value, ramp);
+    const c = unknown(s) ? classify(null, ramp, 'no_data') : classify(value, ramp);
     return {id: s.id, name: s.name, nameEn: s.nameEn, province: s.province,
       value, count: s.count, workers: s.workers, km2: s.km2,
       state: c.state, fill: c.fill, ink: c.ink, outline: c.outline || null, label: s.label, bbox: s.bbox};

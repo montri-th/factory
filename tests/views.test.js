@@ -16,7 +16,7 @@ const ctxFor = (data, index, metric = 'workers', filtered = false) => ({meta: da
 const FACTORY = '00110800125327';
 /** บริษัท ชำนิเฟอร์นิเจอร์ จำกัด: registered in เขตบางขุนเทียน, its source point lies in another เขต — withheld. */
 const OFF_POINT = '10100017125556';
-const contextOf = data => ({registry: data.registry, classes: data.classes, estates: data.estates, allRows: data.rows});
+const contextOf = data => ({classes: data.classes, estates: data.estates});
 
 function views(metric = 'workers') {
   const {data, index} = load();
@@ -40,7 +40,7 @@ test('every panel view ends with one provenance line — dataset · source · da
     for (const [name, html] of Object.entries(views(metric))) {
       const t = text(html);
       for (const k of ['dataset', 'source', 'date', 'boundary']) assert.equal((html.match(new RegExp(`data-prov="${k}"`, 'g')) || []).length, 1, `${name}: ${k}`);
-      assert.ok(t.includes('ชุดข้อมูล CityMETER Factory · โรงงาน 95+ คน'), `${name}: dataset and its scope`);
+      assert.ok(t.includes('ชุดข้อมูล CityMETER Factory · ทะเบียนโรงงาน'), `${name}: dataset and its scope`);
       assert.ok(/แหล่ง\s*จาก ทะเบียน กรอ\. นอกนิคมอุตสาหกรรม · อก\./.test(t), `${name}: source`);
       assert.ok(t.includes('ตรวจ 4 พ.ย. 2569'), `${name}: date`);
       assert.ok(/ขอบเขต \S/.test(t), `${name}: boundary`);
@@ -56,37 +56,39 @@ test('every panel view ends with one provenance line — dataset · source · da
 
 test('first screen (workers): the Aha with numerator and denominator, the industries of the focus as bars with both bases, the outside finding', () => {
   const o = text(views().overview);
-  assert.ok(o.includes('74% ของคนงานโรงงาน 95+ คนในสมุทรปราการ อยู่ใน 3 อำเภอนี้'), o.slice(0, 300));
-  assert.ok(o.includes('เมืองสมุทรปราการ · บางพลี · พระประแดง') && o.includes('220,980 จาก 299,796 คน'), 'the share of the province’s whole total');
-  assert.ok(o.includes('อุตสาหกรรมหลัก ยานพาหนะ 20% ยานพาหนะและเครื่องจักร: 43,591 จาก 220,980 คน ใน 3 อำเภอนี้'), 'each share with its numerator and denominator in the accessible text');
-  assert.ok(o.includes('อันดับ 1 นอกสมุทรปราการ: อำเภอเมืองสมุทรสาคร สมุทรสาคร 169,944 คน · มากกว่าทุกอำเภอของสมุทรปราการ · อาหาร 55%'));
-  assert.ok(o.includes('ทะเบียนโรงงานทุกขนาด 74,047 ทะเบียน ผลิต 54,229 บริการ 5,122 อื่น ๆ 6,967 รอตรวจหน้าที่ 7,729'), 'the registry context, by function');
-  assert.ok(o.includes('คนงาน 95 คนขึ้นไป 7,175 ทะเบียน · 10% (7,175 จาก 74,047 ทะเบียนทุกขนาด)'), 'this product within the registry: numerator and denominator');
+  assert.ok(o.includes('72% ของคนงานโรงงานในสมุทรปราการ อยู่ใน 3 อำเภอนี้'), o.slice(0, 300));
+  assert.ok(o.includes('บางพลี · เมืองสมุทรปราการ · พระประแดง') && o.includes('330,987 จาก 457,353 คน'), 'the share of the province’s whole total');
+  assert.ok(o.includes('อุตสาหกรรมหลัก ยานพาหนะ 18% ยานพาหนะและเครื่องจักร: 57,959 จาก 330,987 คน ใน 3 อำเภอนี้'), 'each share with its numerator and denominator in the accessible text');
+  assert.ok(o.includes('อันดับ 1 นอกสมุทรปราการ: อำเภอเมืองสมุทรสาคร สมุทรสาคร 264,666 คน · มากกว่าทุกอำเภอของสมุทรปราการ · อาหาร 42%'));
+  assert.ok(o.includes('0–9 คน 23,462 10–49 คน 33,178 50–94 คน 7,309 95–199 คน 3,998') && o.includes('5,000 คนขึ้นไป 24 ไม่มีตัวเลขคนงาน 2,923'), 'size bands in registrations, the registrations without a figure last');
+  assert.ok(o.includes('คนงาน 95 คนขึ้นไป 7,175 ทะเบียน · 65% ของคนงาน (คนงาน 95 คนขึ้นไป 7,175 จาก 74,047 ทะเบียน · 2,435,798 จาก 3,755,632 คน ในประเทศไทย)'), 'the 95+ lens: numerators and denominators');
+  assert.ok(o.includes('หน้าที่ของโรงงาน ทะเบียน ผลิต 54,229 บริการ 5,122 อื่น ๆ 6,967 รอตรวจหน้าที่ 7,729'), 'registrations by function, from the same rows');
   assert.ok(o.includes('นิคม สวน เขตอุตสาหกรรม 106 แห่ง · 21 จังหวัด นิคมอุตสาหกรรม 84 สวนอุตสาหกรรม 16 เขตอุตสาหกรรม 6'));
-  assert.ok(o.includes('95–199 คน 3,998') && o.includes('5,000 คนขึ้นไป 24'), 'size bands in registrations');
   const c = text(views('count').overview);
-  assert.ok(c.includes('72% ของโรงงาน 95+ คนในสมุทรปราการ อยู่ใน 3 อำเภอนี้') && c.includes('714 จาก 997 ทะเบียน'));
+  assert.ok(c.includes('71% ของโรงงานในสมุทรปราการ อยู่ใน 3 อำเภอนี้') && c.includes('5,110 จาก 7,171 ทะเบียน'));
   const p = views().province;
   assert.ok(text(p).includes('นิคม สวน เขตอุตสาหกรรม 6 แห่ง นิคมอุตสาหกรรม 6'), 'a province lists its industrial areas');
   assert.ok(text(p).includes('นิคมอุตสาหกรรมบางปู') && /href="https:\/\/www\.industrial-estates\.ieat\.go\.th\/[^"]+"[^>]*>หน้า กนอ\.</.test(p), 'each with its public page');
   assert.ok(!/<svg[^>]*estate|data-estate-geometry/.test(p), 'a list, never a drawn boundary');
 });
 
-test('district and factory panels: ranks, shares, registry context, the nearby set and the source details', () => {
+test('district and factory panels: ranks, shares, the 95+ lens, the nearby set and the source details', () => {
   const v = views();
   const a = text(v.area);
-  assert.ok(a.includes('อำเภอบางพลี') && a.includes('อันดับ 6 จาก 553 ทั่วประเทศ · 2 จาก 6 ในสมุทรปราการ'), a.slice(0, 240));
-  assert.ok(a.includes('27% ของสมุทรปราการ 79,620 จาก 299,796 คนของสมุทรปราการ'), 'the share tile carries numerator and denominator');
-  assert.ok(a.replace(/\u200B/g, '').includes('2,114 ทะเบียน ทุกขนาด คนงาน 95 คนขึ้นไป 287 จาก 2,114 ทะเบียนทุกขนาดในอำเภอบางพลี'), 'registry tile with its detail');
-  assert.ok(a.includes('1,000 คนขึ้นไป 7 ทะเบียน') && a.includes('ดูทั้งหมด 287 ทะเบียน'));
+  assert.ok(a.includes('อำเภอบางพลี') && a.includes('อันดับ 3 จาก 915 ทั่วประเทศ · 1 จาก 6 ในสมุทรปราการ'), a.slice(0, 240));
+  assert.ok(a.includes('28% ของสมุทรปราการ 130,258 จาก 457,353 คนของสมุทรปราการ'), 'the share tile carries numerator and denominator');
+  assert.ok(a.includes('287 ทะเบียน 95+ คน คนงาน 95 คนขึ้นไป 287 จาก 2,114 ทะเบียน · 79,620 จาก 130,258 คน ในอำเภอบางพลี'), 'the 95+ tile with both bases');
+  assert.ok(v.area.includes('ทะเบียน 95+\u00A0คน'), 'the tile label never splits 95+ from คน');
+  assert.ok(a.includes('คนงาน 95 คนขึ้นไป 287 ทะเบียน · 61% ของคนงาน'), 'the 95+ share of the district’s workers');
+  assert.ok(a.includes('1,000 คนขึ้นไป 7 ทะเบียน') && a.includes('ดูทั้งหมด 2,114 ทะเบียน'));
   const f = text(v.factory);
-  assert.ok(f.includes('บริษัท ซีเกทเทคโนโลยี (ประเทศไทย) จำกัด') && f.includes('6,486 คน · 5,000+') && f.includes('อันดับ 12 จาก 7,175'), f.slice(0, 300));
+  assert.ok(f.includes('บริษัท ซีเกทเทคโนโลยี (ประเทศไทย) จำกัด') && f.includes('6,486 คน · 5,000+') && f.includes('อันดับ 12 จาก 71,124'), f.slice(0, 300));
   assert.ok(f.includes('อำเภอเมืองสมุทรปราการ · สมุทรปราการ') && f.includes('จำพวก 3') && f.includes('อก. ระบุดำเนินการ'));
   assert.ok(f.includes('ประเภท 06900') && f.includes('สถานะ อก. ดำเนินการ · 3 พ.ย. 2569') && f.includes('พิกัด 13.62418, 100.63312 จุดจากแหล่ง'));
-  assert.ok(f.includes('ในอำเภอเมืองสมุทรปราการอีก 248 ทะเบียน · 79,435 คน'));
+  assert.ok(f.includes('ในอำเภอเมืองสมุทรปราการอีก 1,986 ทะเบียน · 117,656 คน'));
   assert.ok(f.includes('ทะเบียนจำพวก 3') && v.factory.includes('href="https://diw-dataset.diw.go.th/th/dataset/factype3"'), 'the public DIW dataset page of its class');
   assert.ok(f.includes('โรงงานใกล้เคียง 0 ทะเบียน') && f.includes('3,243–12,972 คน') && f.includes('≤ 3 กม.'), 'the nearby rule as chips');
-  assert.ok(f.includes('โรงงาน 95+ คนทุกอุตสาหกรรมรอบ 3 กม. 18 ทะเบียน · 6,149 คน'));
+  assert.ok(f.includes('โรงงานทุกอุตสาหกรรมรอบ 3 กม. 110 ทะเบียน · 8,459 คน'));
   assert.ok(v.factory.includes('pic-distance'), 'the straight-line radius carries the distance pictogram');
   assert.deepEqual([meters(84), meters(1291), meters(3000)], ['80 ม.', '1.3 กม.', '3 กม.']);
 });
@@ -126,29 +128,38 @@ test('missing stays missing: no point says so; an empty district is a measured 0
   const t = text(renderFactory(buildFactoryDetail(noPoint, {scopeRows: data.rows, allRows: data.rows, index, families: data.families}), ctx));
   assert.ok(t.includes('ไม่มีพิกัด') && !t.includes('โรงงานใกล้เคียง'), 'no point: no nearby set (the chip says why)');
   const u = unplacedOf(data.rows);
-  assert.deepEqual([u.noArea, u.noProvince], [0, 0]);
+  assert.deepEqual([u.noArea, u.noProvince], [2, 0], 'two registrations name no district of their province');
+  // No worker figure: said in words, never 0; the nearby set drops the size rule.
+  const noFigure = data.rows.find(r => r.workers === null && hasPoint(r) && !r.person);
+  const n = text(renderFactory(buildFactoryDetail(noFigure, {scopeRows: data.rows, allRows: data.rows, index, families: data.families}), ctx));
+  assert.ok(n.includes('ไม่มีตัวเลขคนงาน') && !/\b0 คน\b/.test(n.slice(0, n.indexOf('โรงงานใกล้เคียง'))), n.slice(0, 200));
+  assert.ok(n.includes('ทุกขนาด ≤ 3 กม.'), 'nearby: same family within 3 km, any size');
+  const noneRows = filterRows(data.rows, {size: 'none'});
+  const ins = summarizeAreaInsight(noneRows, index, {families: data.families});
+  const nv = text(renderOverview({insight: ins, summary: summarize(noneRows), overview: buildOverview(noneRows, index, {families: data.families, ...contextOf(data)}), focusMode: 'auto', ctx}));
+  assert.ok(nv.includes('2,923 ทะเบียน · ไมมีตัวเลขคนงาน'.replace('ไมมี', 'ไม่มี')) && nv.includes('นับเป็นทะเบียน') && nv.includes('— คน'), 'workers unknown: the Aha offers the registrations instead');
   const empty = buildAreaProfile([], '1039', index, data.families, contextOf(data));
   assert.equal(empty.coverageState, 'measured_zero');
   const e = text(renderArea(empty, () => '#000', ctx));
-  assert.ok(e.includes('ไม่พบโรงงาน 95+ คนในเขตวัฒนา'), e.slice(0, 300));
+  assert.ok(e.includes('ไม่พบโรงงานในเขตวัฒนา'), e.slice(0, 300));
 });
 
 test('charts: districts by the measure, district × industry matrix with equal cells, DIW groups by the measure', () => {
   const {data, index} = load();
   const m = buildChartModel(data.rows, index, data.families);
   assert.equal(m.areas.length, 20);
-  assert.equal(m.totalAreas, 553);
-  assert.equal(m.unplacedValue, 0);
+  assert.equal(m.totalAreas, 915);
+  assert.equal(m.unplacedValue, 7, 'the workers of the two registrations placed only at province level');
   for (let i = 1; i < m.areas.length; i++) assert.ok(m.areas[i - 1].value >= m.areas[i].value);
   const mx = areaMatrix(m);
   assert.equal(mx.cells.length, 12 * data.families.length);
   for (const a of mx.areas) assert.equal(mx.cells.filter(c => c.areaId === a.id).reduce((s, c) => s + c.value, 0), a.value, 'cells add up to the district');
-  assert.ok(!mx.cells.some(c => 'unknown' in c), 'every registration has workers: no unknown cell');
+  assert.ok(!mx.cells.some(c => 'unknown' in c), 'no invented unknown cell: a registration without a figure adds nothing');
   const counts = buildChartModel(data.rows, index, data.families, {metric: 'count'});
   assert.equal(counts.areas[0].name, 'เมืองสมุทรสาคร');
   const ir = industryRanking(data.rows);
   assert.equal(ir.total, 22);
-  assert.deepEqual(ir.industries.slice(0, 2).map(c => [c.industry.th, c.workers]), [['อุตสาหกรรมอาหาร', 481408], ['ผลิตเครื่องใช้ไฟฟ้าและอุปกรณ์', 307963]]);
+  assert.deepEqual(ir.industries.slice(0, 2).map(c => [c.industry.th, c.workers]), [['อุตสาหกรรมอาหาร', 621572], ['การผลิตอื่นๆ', 377414]]);
 });
 
 test('breadcrumb follows production: ประเทศไทย › จังหวัด › เขต/อำเภอ with /D/ deep links and the factory dataset', () => {

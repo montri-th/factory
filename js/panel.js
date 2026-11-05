@@ -16,7 +16,7 @@
  * titles). A registration's point inside a drawn building is “โรงงานในอาคารนี้”, never “ตั้งอยู่ใน”. Sources, methods and
  * ids sit in one closed <details>. A natural person's name is never shown (js/model.js#PERSON_LABEL).
  */
-import {productionLink, provinceByCode, hasPoint, SIZE_BANDS, SCOPE, MOI_TH} from './model.js';
+import {productionLink, provinceByCode, hasPoint, SIZE_BANDS, SCOPE, MOI_TH, NO_FIGURE} from './model.js';
 import {areaWord} from './areas.js';
 import {cueMarkup} from './cues.js';
 import {actionBar} from './ask.js';
@@ -66,8 +66,10 @@ export const words = areas => {
 };
 const valueText = (v, unit) => nw(`<strong class="data-number">${num(v)}</strong> ${esc(unit.one)}`);
 const workersText = r => (Number.isFinite(r?.workers) ? `${num(r.workers)} คน` : '');
+/** Workers of an aggregate in words; registrations that all lack a figure say so (never “0 คน”). */
+const workersWords = x => (x.count && x.figured === 0 ? NO_FIGURE.th : `${num(x.workers)} คน`);
 /** The other measure of an aggregate, in words ("85,921 คน" beside registrations, "211 ทะเบียน" beside workers). */
-const otherOf = (x, unit) => (unit.id === 'count' ? `${num(x.workers)} คน` : `${num(x.count)} ทะเบียน`);
+const otherOf = (x, unit) => (unit.id === 'count' ? workersWords(x) : `${num(x.count)} ทะเบียน`);
 
 /* ---------- vocabularies (source details only) ---------- */
 
@@ -98,7 +100,7 @@ export function provenance(ctx = {}, boundary = '', {terrain = false, estates = 
 function familyBars(byGroup, unit) {
   const val = g => (unit.id === 'count' ? g.count : g.workers);
   const list = byGroup.filter(g => val(g) > 0).sort((a, b) => val(b) - val(a) || a.index - b.index);
-  if (!list.length) return `<p class="hint">ไม่มี${esc(unit.subject)}</p>`;
+  if (!list.length) return `<p class="hint">${unit.id === 'workers' && byGroup.some(g => g.count) && !byGroup.some(g => g.figured) ? esc(NO_FIGURE.th) : `ไม่มี${esc(unit.subject)}`}</p>`;
   const max = Math.max(1, ...list.map(val));
   return `<ul class="mix-list" aria-label="อุตสาหกรรม (${esc(unit.one)})">${list.map(g => `
     <li><button type="button" class="mix-row" data-action="filter-group" data-value="${esc(g.id)}" title="${esc(g.th)}: ${esc(`${num(g.count)} ทะเบียน · ${num(g.workers)} คน`)} (ดูเฉพาะอุตสาหกรรมนี้)"><span class="mix-label">${cueMarkup(g.series)}${esc(g.th)}</span>
@@ -106,41 +108,51 @@ function familyBars(byGroup, unit) {
       <span class="mix-value data-number">${num(val(g))}</span></button></li>`).join('')}</ul>`;
 }
 
-/** Registrations per worker band (one neutral fill: the bands are ordinal, not categories). */
+/**
+ * Registrations per worker band (one neutral fill: the bands are ordinal, not categories); the registrations without a
+ * worker figure last, only when there are any, in the no-data hatch (never a band of 0).
+ */
 function sizeBars(sizes) {
   if (!sizes.bands.some(b => b.count)) return '';
   const max = Math.max(1, ...sizes.bands.map(b => b.count));
   const width = n => (n ? Math.max(3, Math.round((n / max) * 100)) : 0);
-  return `<ul class="mix-list size-list" aria-label="ขนาดตามคนงาน (ทะเบียน)">${sizes.bands.map(b => `
-    <li title="${esc(b.th)}: ${num(b.count)} ทะเบียน · ${num(b.workers)} คน"><span class="mix-label">${esc(b.th)}</span>
-      <span class="mix-track" aria-hidden="true"><span class="mix-fill size-fill" style="width:${width(b.count)}%"></span></span>
-      <span class="mix-value data-number">${num(b.count)}</span></li>`).join('')}</ul>`;
+  const bands = sizes.bands.filter(b => b.id !== NO_FIGURE.id || b.count);
+  return `<ul class="mix-list size-list" aria-label="ขนาดตามคนงาน (ทะเบียน)">${bands.map(b => {
+    const none = b.id === NO_FIGURE.id;
+    return `
+    <li title="${esc(b.th)}: ${num(b.count)} ทะเบียน${none ? '' : ` · ${num(b.workers)} คน`}"><span class="mix-label">${esc(b.th)}</span>
+      <span class="mix-track" aria-hidden="true"><span class="mix-fill ${none ? 'nodata-fill' : 'size-fill'}" style="width:${width(b.count)}%"></span></span>
+      <span class="mix-value data-number">${num(b.count)}</span></li>`;
+  }).join('')}</ul>`;
+}
+
+/** The 95+ lens of a place: its registrations and their share of the place's workers (both bases in the title). */
+function lensLine(lens, place = '') {
+  if (!lens?.base?.count) return '';
+  const detail = `คนงาน 95 คนขึ้นไป ${num(lens.count)} จาก ${num(lens.base.count)} ทะเบียน · ${num(lens.workers)} จาก ${num(lens.base.workers)} คน${place ? ` ใน${place}` : ''}`;
+  return `<p class="fact-line" title="${esc(detail)}">${pic('workers', 'fact-icon')}คนงาน 95 คนขึ้นไป ${nw(`<strong class="data-number">${num(lens.count)}</strong> ทะเบียน`)}${lens.base.workers ? ` · ${nw(`${pct(lens.workers, lens.base.workers)} ของคนงาน`)}` : ''}<span class="sr-only"> (${esc(detail)})</span></p>`;
+}
+
+/** Registrations by function (ผลิต · บริการ · อื่น ๆ · รอตรวจหน้าที่), the research's rule-based classification. */
+function classSection(classes, total) {
+  const list = (classes || []).filter(c => c.count > 0);
+  if (!list.length) return '';
+  const max = Math.max(1, ...list.map(c => c.count));
+  return `<section class="panel-section"><div class="section-heading">${heading('class', 'หน้าที่ของโรงงาน')}<span class="hint">ทะเบียน</span></div>
+    <ul class="mix-list registry-list" aria-label="ทะเบียนตามหน้าที่">${list.map(c => `<li title="${esc(c.th)}: ${num(c.count)} จาก ${num(total)} ทะเบียน · ${num(c.workers)} คน"><span class="mix-label">${esc(c.th)}</span>
+      <span class="mix-track" aria-hidden="true"><span class="mix-fill size-fill" style="width:${Math.max(3, Math.round((c.count / max) * 100))}%"></span></span>
+      <span class="mix-value data-number">${num(c.count)}</span></li>`).join('')}</ul></section>`;
 }
 
 /** Official DIW industry groups (กลุ่มอุตสาหกรรม กรอ.) ranked by the measure; the family cue beside each, one neutral fill. */
 function industryBars(list, unit) {
   if (!list.length) return '';
   const max = Math.max(1, ...list.map(c => c.value));
+  const unknown = c => unit.id === 'workers' && c.count && !c.figured;
   return `<ul class="mix-list industry-list" aria-label="กลุ่มอุตสาหกรรม กรอ. (${esc(unit.one)})">${list.map(c => `
-    <li title="${esc(c.industry.th)}: ${esc(`${num(c.count)} ทะเบียน · ${num(c.workers)} คน`)}"><span class="mix-label">${c.industry.familyRec ? cueMarkup(c.industry.familyRec.series) : ''}${esc(c.industry.th)}</span>
-      <span class="mix-track" aria-hidden="true"><span class="mix-fill industry-fill" style="width:${Math.max(3, Math.round((c.value / max) * 100))}%"></span></span>
-      <span class="mix-value data-number">${num(c.value)}</span></li>`).join('')}</ul>`;
-}
-
-/**
- * Registry context (02_FACTORIES, every size): registrations of the place by functional class, and the registrations of
- * this product among them (`p90` = every row of the dataset in the place, before the filters — the same universe as the
- * registry count, so the share is exact).
- */
-function registrySection(reg, {p90 = null, place = ''} = {}) {
-  if (!reg?.total) return '';
-  const max = Math.max(1, ...reg.byClass.map(c => c.count));
-  const bars = reg.byClass.filter(c => c.count > 0).map(c => `<li title="${esc(c.th)}: ${num(c.count)} จาก ${num(reg.total)} ทะเบียน"><span class="mix-label">${esc(c.th)}</span>
-      <span class="mix-track" aria-hidden="true"><span class="mix-fill size-fill" style="width:${Math.max(3, Math.round((c.count / max) * 100))}%"></span></span>
-      <span class="mix-value data-number">${num(c.count)}</span></li>`).join('');
-  const share = Number.isFinite(p90) ? `<p class="fact-line" title="${esc(`${num(p90)} จาก ${num(reg.total)} ทะเบียนทุกขนาด${place ? `ใน${place}` : ''}`)}">${pic('workers', 'fact-icon')}คนงาน 95 คนขึ้นไป ${nw(`<strong class="data-number">${num(p90)}</strong> ทะเบียน`)} · ${nw(pct(p90, reg.total))}<span class="sr-only"> (${esc(`${num(p90)} จาก ${num(reg.total)} ทะเบียนทุกขนาด`)})</span></p>` : '';
-  return `<section class="panel-section"><div class="section-heading">${heading('factory', 'ทะเบียนโรงงานทุกขนาด')}<span class="hint">${nw(`${num(reg.total)} ทะเบียน`)}</span></div>
-    <ul class="mix-list registry-list" aria-label="ทะเบียนโรงงานทุกขนาดตามหน้าที่">${bars}</ul>${share}</section>`;
+    <li title="${esc(c.industry.th)}: ${esc(`${num(c.count)} ทะเบียน · ${workersWords(c)}`)}"><span class="mix-label">${c.industry.familyRec ? cueMarkup(c.industry.familyRec.series) : ''}${esc(c.industry.th)}</span>
+      <span class="mix-track" aria-hidden="true"><span class="mix-fill industry-fill" style="width:${unknown(c) ? 0 : Math.max(3, Math.round((c.value / max) * 100))}%"></span></span>
+      <span class="mix-value data-number">${unknown(c) ? '—' : num(c.value)}</span></li>`).join('')}</ul>`;
 }
 
 /** The industrial-area register (01_ESTATES) of a province — names, types and their pages; national: types only. */
@@ -246,6 +258,9 @@ export function renderOverview({insight, summary, overview, focusMode = 'auto', 
       <p class="aha-copy">${valueText(insight.value, unit)} · ${nw(esc(otherOf({count: insight.count, workers: insight.workers ?? 0}, unit)))}</p>
       ${industryCompare(insight, unit, `${num(count)} ${w}นี้`)}
       <div class="aha-actions"><button type="button" data-action="clear-focus" class="btn">ดูทุกพื้นที่</button><button type="button" data-action="open-charts" class="btn quiet">เปรียบเทียบพื้นที่</button></div></section>`;
+  } else if (unit.id === 'workers' && summary.count && !summary.figured) {
+    aha = `<section class="aha" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p><h2><span class="aha-number data-number">${num(summary.count)}</span><span class="aha-headline">ทะเบียน · ${esc(NO_FIGURE.th)}</span></h2>
+      <div class="aha-actions"><button type="button" data-action="set-metric" data-value="count" class="btn">นับเป็นทะเบียน</button><button type="button" data-action="open-table" class="btn quiet">ดูรายชื่อ</button></div></section>`;
   } else if (!count && insight.spread) {
     const sw = areaWord(insight.home), sp = insight.spread;
     aha = `<section class="aha" aria-label="ข้อค้นพบ"><p class="eyebrow">ข้อค้นพบ</p>
@@ -270,7 +285,7 @@ export function renderOverview({insight, summary, overview, focusMode = 'auto', 
   }
   const narrowed = focusMode !== 'none' && count > 0 && summary.count !== overview.count;
   const metrics = `<section class="metrics" aria-label="${narrowed ? 'ตัวเลขของพื้นที่ที่โฟกัส' : 'ตัวเลขรวมของข้อมูลที่เลือก'}">
-    ${metricTile(summary.workers, `คน${narrowed ? ' ในโฟกัส' : ''}`, 'workers')}
+    ${metricTile(summary.count && !summary.figured ? '—' : summary.workers, `คน${narrowed ? ' ในโฟกัส' : ''}`, 'workers', summary.count && !summary.figured ? NO_FIGURE.th : '')}
     ${metricTile(summary.count, `ทะเบียน${narrowed ? ' ในโฟกัส' : ''}`, 'factory')}
     ${metricTile(summary.areas, narrowed ? w : 'เขต/อำเภอ', 'area')}
     ${metricTile(summary.provinces, 'จังหวัด', 'province')}
@@ -288,10 +303,10 @@ export function renderOverview({insight, summary, overview, focusMode = 'auto', 
   const ranking = areaRanking(overview.ranking, classOf, unit, {title: `${rw}ที่มี${unit.subject}มากที่สุด`, note: `${num(overview.ranking.filter(a => a.value > 0).length)} ${rw}`, showProvince: !province});
   const mix = overview.count ? `<section class="panel-section"><div class="section-heading">${heading('segment', 'อุตสาหกรรม')}<span class="hint">${esc(unit.one)}</span></div>${familyBars(overview.mix.byGroup, unit)}</section>` : '';
   const groups = overview.industries.length ? `<section class="panel-section"><div class="section-heading">${heading('factory', 'กลุ่มอุตสาหกรรม กรอ.')}<span class="hint"><button type="button" class="link-button" data-action="open-charts" data-value="industries">ดูทุกกลุ่ม</button></span></div>${industryBars(overview.industries, unit)}</section>` : '';
-  const sizes = overview.count ? `<section class="panel-section"><div class="section-heading">${heading('workers', 'ขนาดตามคนงาน')}<span class="hint">ทะเบียน</span></div>${sizeBars(overview.sizes)}</section>` : '';
-  const registry = registrySection(overview.registry, {p90: overview.p90, place: scopeText});
+  const sizes = overview.count ? `<section class="panel-section"><div class="section-heading">${heading('workers', 'ขนาดตามคนงาน')}<span class="hint">ทะเบียน</span></div>${sizeBars(overview.sizes)}${lensLine(overview.lens, scopeText)}</section>` : '';
+  const classes = classSection(overview.classes, overview.count);
   const estates = estatesSection(overview.estates, {province});
-  return `${aha}${metrics}${provinceList}${ranking}${mix}${groups}${sizes}${registry}${estates}${actionBar({kind: 'overview', province: province ? provinceName(province) : ''})}${provenance(ctx, scopeText, {estates: Boolean(estates)})}`;
+  return `${aha}${metrics}${provinceList}${ranking}${mix}${groups}${sizes}${classes}${estates}${actionBar({kind: 'overview', province: province ? provinceName(province) : ''})}${provenance(ctx, scopeText, {estates: Boolean(estates)})}`;
 }
 
 /* ---------- Empty selections (EVID-05) ---------- */
@@ -305,7 +320,7 @@ function selectionNote(p, place, ctx) {
   const elsewhere = p.scopeCount > 0
     ? `<span>พบในพื้นที่อื่น <strong class="data-number">${num(p.scopeCount)}</strong> ทะเบียน</span><button type="button" class="btn quiet" data-action="leave-area">ดูพื้นที่ที่พบ</button>`
     : '';
-  return `<div class="empty-note" role="note"><strong>ไม่พบ${esc(SCOPE.short)}ใน${esc(place)}${ctx.filtered ? 'ตามตัวกรองนี้' : ''}</strong>${elsewhere}</div>`;
+  return `<div class="empty-note" role="note"><strong>ไม่พบโรงงานใน${esc(place)}${ctx.filtered ? 'ตามตัวกรองนี้' : ''}</strong>${elsewhere}</div>`;
 }
 
 /* ---------- District (เขต/อำเภอ) ---------- */
@@ -318,31 +333,30 @@ export function renderArea(p, classOf, ctx = {}) {
   const listLimit = 30;
   const share = p.count && p.provinceValue ? pct(p.value, p.provinceValue) : '—';
   const shareText = p.count && p.provinceValue ? `${num(p.value)} จาก ${num(p.provinceValue)} ${unit.one}ของ${prov}` : '';
-  const reg = p.registry;
-  // U+200B: the label breaks between ทุก and ขนาด only (Chrome's Thai segmenter split “ทุกข|นาด” on a narrow tile).
-  const regTile = reg?.total ? metricTile(reg.total, 'ทะเบียน ทุก\u200Bขนาด', 'factory', Number.isFinite(p.p90) ? `คนงาน 95 คนขึ้นไป ${num(p.p90)} จาก ${num(reg.total)} ทะเบียนทุกขนาดใน${place}` : '') : '';
+  // The 95+ lens of the district (U+00A0 keeps “95+ คน” on one line on a narrow tile).
+  const lensTile = p.count ? metricTile(p.lens.count, 'ทะเบียน 95+\u00A0คน', 'workers', `คนงาน 95 คนขึ้นไป ${num(p.lens.count)} จาก ${num(p.count)} ทะเบียน · ${num(p.lens.workers)} จาก ${num(p.workers)} คน ใน${place}`) : '';
+  const workersTile = p.count && !p.figured ? metricTile('—', 'คน', 'workers', NO_FIGURE.th) : metricTile(p.workers, 'คน', 'workers');
   const head = `<section class="detail-head">
       <button type="button" class="btn quiet back" data-action="back">กลับ</button>
       <p class="eyebrow">${esc(w.area)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(a.province)}">${esc(prov)}</button></p>
       <h2>${esc(place)}</h2>${a.nameEn ? `<p class="subtle">${esc(a.nameEn)}</p>` : ''}
       ${rank}
-      <div class="metrics compact">${metricTile(p.workers, 'คน', 'workers')}${metricTile(p.count, 'ทะเบียน', 'factory')}${metricTile(share, `ของ${prov}`, 'province', shareText)}${regTile}</div>
+      <div class="metrics compact">${workersTile}${metricTile(p.count, 'ทะเบียน', 'factory')}${metricTile(share, `ของ${prov}`, 'province', shareText)}${lensTile}</div>
       ${selectionNote(p, place, ctx)}
       ${actionBar({kind: 'area', area: {place, province: prov}})}
       <div class="detail-actions">${p.count ? '<button type="button" class="btn" data-action="open-table">ดูรายชื่อ</button><button type="button" class="btn quiet" data-action="open-charts">เปรียบเทียบพื้นที่</button>' : ''}${link(productionLink({province: a.province, area: a.id}), 'ดูใน CityMETER', 'btn quiet source-link')}</div>
     </section>
 `;
   const boundary = `${place} ${prov}`;
-  const registry = registrySection(reg, {p90: p.p90, place});
   const estates = estatesSection(p.estates, {province: a.province});
-  if (!p.count) return `${head}${registry}${estates}${provenance(ctx, boundary, {estates: Boolean(estates)})}`;
+  if (!p.count) return `${head}${estates}${provenance(ctx, boundary, {estates: Boolean(estates)})}`;
   const big = p.big ? `<p class="fact-line" title="ทะเบียนที่มีคนงานตั้งแต่ 1,000 คน">${pic('workers', 'fact-icon')}1,000 คนขึ้นไป ${nw(`${num(p.big)} ทะเบียน`)}</p>` : '';
   return `${head}    <section class="panel-section"><div class="section-heading">${heading('segment', 'อุตสาหกรรม')}<span class="hint">${esc(unit.one)}</span></div>${familyBars(p.byGroup, unit)}</section>
     ${p.industries.length ? `<section class="panel-section"><div class="section-heading">${heading('factory', 'กลุ่มอุตสาหกรรม กรอ.')}<span class="hint">${esc(unit.one)}</span></div>${industryBars(p.industries.slice(0, 6), unit)}</section>` : ''}
-    <section class="panel-section"><div class="section-heading">${heading('workers', 'ขนาดตามคนงาน')}<span class="hint">ทะเบียน</span></div>${sizeBars(p.sizes)}${big}</section>
+    <section class="panel-section"><div class="section-heading">${heading('workers', 'ขนาดตามคนงาน')}<span class="hint">ทะเบียน</span></div>${sizeBars(p.sizes)}${lensLine(p.lens, place)}${big}</section>
     <section class="panel-section"><div class="section-heading">${heading('factory', 'โรงงาน')}<span class="hint">เรียงตามคนงาน</span></div>${factoryList(p.rows.slice(0, listLimit))}
       ${p.count > listLimit ? moreButton(p.count) : ''}</section>
-    ${registry}${estates}
+    ${classSection(p.classes, p.count)}${estates}
     ${provenance(ctx, boundary, {estates: Boolean(estates)})}`;
 }
 
@@ -378,14 +392,15 @@ export function renderBuilding(b, ctx = {}) {
 /** Nearby set: the rule as chips (family · workers · radius), nearest first, and every registration round it. */
 function nearbySection(c, family) {
   if (!c) return '';
-  const rule = [`${family ? cueMarkup(family.series) : pic('segment')}${esc(family?.short || 'อุตสาหกรรมเดียวกัน')}`, `${pic('workers')}${num(c.rule.min)}–${num(c.rule.max)} คน`,
+  const sized = c.rule.min != null;
+  const rule = [`${family ? cueMarkup(family.series) : pic('segment')}${esc(family?.short || 'อุตสาหกรรมเดียวกัน')}`, `${pic('workers')}${sized ? `${num(c.rule.min)}–${num(c.rule.max)} คน` : 'ทุกขนาด'}`,
     `${pic('distance')}≤ ${esc(meters(c.radius))}`].map(t => `<span class="rule-chip">${t}</span>`).join('');
   const list = c.rows.length
     ? `<ul class="outlet-list compset">${c.rows.map(({row: r, m}) => `<li><button type="button" class="brand-row" data-action="select-factory" data-id="${esc(r.id)}">${cueMarkup(r.series, {className: 'row-cue'})}<span class="row-text"><strong>${esc(r.title)}</strong><span class="row-meta">${esc([meters(m), workersText(r), r.industry?.th || ''].filter(Boolean).join(' · '))}</span></span></button></li>`).join('')}</ul>`
     : '<p class="hint">ไม่พบโรงงานตามเกณฑ์นี้</p>';
   return `<section class="panel-section"><div class="section-heading">${heading('compare', 'โรงงานใกล้เคียง')}<span class="hint">${num(c.matches)} ทะเบียน</span></div>
-    <p class="rule-chips" title="อุตสาหกรรมเดียวกัน คนงานครึ่งเท่าถึงสองเท่า ในระยะตรง ${esc(meters(c.radius))} เรียงใกล้ก่อน">${rule}</p>${list}
-    <p class="fact-line">${pic('factory', 'fact-icon')}โรงงาน 95+ คนทุกอุตสาหกรรมรอบ ${esc(meters(c.radius))} ${nw(`<strong class="data-number">${num(c.around.count)}</strong> ทะเบียน`)} · ${nw(`${num(c.around.workers)} คน`)}</p></section>`;
+    <p class="rule-chips" title="อุตสาหกรรมเดียวกัน${sized ? ' คนงานครึ่งเท่าถึงสองเท่า' : ''} ในระยะตรง ${esc(meters(c.radius))} เรียงใกล้ก่อน">${rule}</p>${list}
+    <p class="fact-line">${pic('factory', 'fact-icon')}โรงงานทุกอุตสาหกรรมรอบ ${esc(meters(c.radius))} ${nw(`<strong class="data-number">${num(c.around.count)}</strong> ทะเบียน`)} · ${nw(`${num(c.around.workers)} คน`)}</p></section>`;
 }
 
 export function renderFactory(d, ctx = {}) {
@@ -397,8 +412,10 @@ export function renderFactory(d, ctx = {}) {
     ? `<button type="button" class="fact-chip" data-action="select-area" data-id="${esc(d.area.id)}">${pic('area')}${esc(w.area)}${esc(d.area.name)} · ${esc(prov)}</button>`
     : r.province ? `<button type="button" class="fact-chip" data-action="select-province" data-id="${esc(r.province)}">${pic('province')}${esc(prov)}</button>` : '<span class="fact-chip is-quiet">ไม่ระบุจังหวัด</span>';
   const size = SIZE_BANDS.find(b => b.id === r.size);
-  const workersChip = `<span class="fact-chip" title="คนงานตามทะเบียน กรอ.">${pic('workers')}${esc(workersText(r))}${size ? ` · ${esc(size.short)}` : ''}</span>`;
-  const rankChip = r.rank ? `<span class="fact-chip" title="อันดับตามคนงาน ในโรงงาน 95+ คนทั่วประเทศ ${num(d.rankOf)} ทะเบียน">${pic('rank')}อันดับ ${num(r.rank)} จาก ${num(d.rankOf)}</span>` : '';
+  const workersChip = r.workers == null
+    ? `<span class="fact-chip is-quiet" title="ทะเบียนนี้ไม่มีตัวเลขคนงานในข้อมูล กรอ.">${pic('workers')}${esc(NO_FIGURE.th)}</span>`
+    : `<span class="fact-chip" title="คนงานตามทะเบียน กรอ.">${pic('workers')}${esc(workersText(r))}${size ? ` · ${esc(size.short)}` : ''}</span>`;
+  const rankChip = r.rank ? `<span class="fact-chip" title="อันดับตามคนงาน จาก ${num(d.rankOf)} ทะเบียนที่มีตัวเลขคนงานทั่วประเทศ">${pic('rank')}อันดับ ${num(r.rank)} จาก ${num(d.rankOf)}</span>` : '';
   const familyChip = fam ? `<button type="button" class="fact-chip" data-action="filter-group" data-value="${esc(fam.id)}" title="${esc(r.industry?.th || fam.th)} (ดูเฉพาะ${esc(fam.th)})">${cueMarkup(fam.series)}${esc(fam.th)}</button>` : '';
   const classChip = r.fcls ? `<span class="fact-chip" title="โรงงานจำพวก ${num(r.fcls)} ตามทะเบียน กรอ.">${pic('class')}จำพวก ${num(r.fcls)}</span>` : '';
   const functionChip = r.cls ? `<span class="fact-chip" title="หน้าที่ของโรงงานตามประเภทโรงงาน (การจัดกลุ่มของงานวิจัย)">${pic('factory')}${esc(r.cls.th)}</span>` : '';

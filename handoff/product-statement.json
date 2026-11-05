@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-statement",
   "productId": "citymeter-factory",
-  "productVersion": "0.1.0",
+  "productVersion": "0.2.0",
   "updatedOn": "2026-11-05",
   "dataset_id": "research.TH.factory",
   "productionDatasetCode": "factory",
@@ -12,7 +12,7 @@
   "markdown": "PRODUCT_STATEMENT.md",
   "positioning": {
     "one_line_highlight": "แผนที่เมือง 3 มิติของคนงานโรงงานทั่วไทย ที่บอกว่ากระจุกตรงไหน ทำอุตสาหกรรมอะไร และมีโรงงานใดอยู่รอบ ๆ พร้อมแหล่งของทุกตัวเลข",
-    "unique_advantage": "คนงานตามทะเบียนต่ออำเภอ (ไม่ใช่จำนวนป้าย) พร้อมอุตสาหกรรมทางการของ กรอ. สถานะของ อก. และทะเบียนทุกขนาดเป็นบริบท ในหน้าเดียว ตรวจย้อนได้ถึงทะเบียน",
+    "unique_advantage": "คนงานตามทะเบียนต่ออำเภอ (ไม่ใช่จำนวนป้าย) ของทะเบียนโรงงานทุกขนาด พร้อมอุตสาหกรรมทางการของ กรอ. สถานะของ อก. และเลนส์ 95+ คน ในหน้าเดียว ตรวจย้อนได้ถึงทะเบียน",
     "unique_vs_competitors": "แหล่งทางการตอบทีละทะเบียนและแยกหน่วยงาน; Factory รวมเป็นภาพรายอำเภอที่ผูกรหัสพื้นที่ของ CityMETER และเปิดต่อในระบบจริงได้ (Inference)"
   },
   "users": {
@@ -33,7 +33,7 @@
       "อธิบายต่อผู้บริหารได้ด้วยหลักฐาน"
     ],
     "trigger_voice_in_head": "“แถวนี้มีโรงงานใหญ่กี่แห่ง คนงานรวมเท่าไร ทำอุตสาหกรรมอะไร”",
-    "value_proposition": "เห็นภายในนาทีว่าคนงานโรงงานขนาดใหญ่ตามทะเบียนกระจุกอำเภอใด อุตสาหกรรมใด พร้อมแหล่งของทุกตัวเลข",
+    "value_proposition": "เห็นภายในนาทีว่าคนงานโรงงานตามทะเบียนกระจุกอำเภอใด อุตสาหกรรมใด ขนาดใด พร้อมแหล่งของทุกตัวเลข",
     "evidence": "Hypothesis — not yet validated with external users (PRODUCT_STATEMENT.md §7)"
   },
   "problem": {
@@ -71,23 +71,25 @@
     "aspirational_competitors": [
       "ชั้นข้อมูลแรงงานรายพื้นที่ที่ผูกทะเบียนโรงงาน นิคม ที่อยู่อาศัย และขนส่งด้วย id เดียว (Hypothesis)"
     ],
-    "expected_quality_bar": "ตัวเลขทุกตัวตรวจย้อนถึงทะเบียนได้ใน 2 คลิก ขอบเขตอยู่ในชื่อชุดข้อมูล ไม่มีทะเบียนหายจากยอดเพราะไม่มีจุด"
+    "expected_quality_bar": "ตัวเลขทุกตัวตรวจย้อนถึงทะเบียนได้ใน 2 คลิก ขอบเขตอยู่ในชื่อชุดข้อมูล ไม่มีทะเบียนหายจากยอดเพราะไม่มีจุด ตัวเลขคนงานที่ไม่มีไม่ถูกแสดงเป็น 0"
   },
   "winning_strategy": [
+    "ทุกทะเบียนของชีตวิจัย (74,047) — จำนวนเดียวกับที่ทีมเห็น",
     "คนงานก่อนป้าย (สลับเป็นทะเบียนได้)",
     "อุตสาหกรรมอยู่ในประโยคเดียวกับทำเล พร้อมตัวตั้งตัวหาร",
     "ทะเบียนครบแม้ไม่มีจุด",
-    "บริบทจากชีตเดียวกันแยกจากตัวเลขของผลิตภัณฑ์เสมอ",
-    "ต่อยอด: นิคม กนอ. คีย์ไซต์ โลโก้บริษัท"
+    "เลนส์ 95+ คนในตัวกรองและทุกแผงพื้นที่",
+    "ต่อยอด: นิคม กนอ. คีย์ไซต์ โลโก้บริษัท พิกัดของทะเบียนที่แหล่งไม่มีจุด"
   ],
   "firstFinding": {
-    "evidence": "Observed fact (data/factories.json, release 0.1.0)",
-    "text": "74% ของคนงานโรงงาน 95+ คนในสมุทรปราการ (220,980 จาก 299,796 คน) อยู่ใน 3 อำเภอ — เมืองสมุทรปราการ บางพลี พระประแดง; อุตสาหกรรม: ยานพาหนะและเครื่องจักร 20% · สิ่งทอ 19% · พลาสติก ยาง เคมี 14%; อันดับ 1 นอกจังหวัด: เมืองสมุทรสาคร 169,944 คน (อาหาร 55%)"
+    "evidence": "Observed fact (data/factories.json, release 0.2.0)",
+    "text": "72% ของคนงานโรงงานในสมุทรปราการ (330,987 จาก 457,353 คน) อยู่ใน 3 อำเภอ — บางพลี เมืองสมุทรปราการ พระประแดง; อุตสาหกรรม: ยานพาหนะและเครื่องจักร 18% · สิ่งทอ 17% · โลหะ 16%; อันดับ 1 นอกจังหวัด: เมืองสมุทรสาคร 264,666 คน (อาหาร 42%); โรงงานคนงาน 95 คนขึ้นไป 7,175 ทะเบียนมีคนงาน 65%"
   },
   "data_transparency": {
-    "row": "one FID of 18_WORKERS_P90 (registration, not a plant or a company)",
-    "workers": "DIW-reported workers (no date for the figure)",
-    "scope": "DIW class 2/3 open data = registrations outside IEAT estates",
+    "row": "one FID of 02_FACTORIES (registration, not a plant or a company), every size",
+    "workers": "DIW-reported workers (คนงานรวม; no date for the figure); 2,923 registrations without a figure are never 0",
+    "lens": "95+ = the P90 of the figures (the FIDs of 18_WORKERS_P90)",
+    "scope": "DIW class 2/3 open data = registrations outside IEAT estates, plus MOI-only registrations",
     "status": "MOI location status with its date (not a field check)",
     "points": "source points inside the registration’s own district only",
     "method": "DATA_METHOD.md"
@@ -95,9 +97,10 @@
   "known_limitations": [
     "IEAT estate factories are outside the dataset",
     "the worker figure has no date",
-    "430 registrations share an exact name and address with another FID",
+    "2,923 registrations have no worker figure",
+    "3,328 registrations share an exact name and address with another FID",
     "functional class is rule-based, not human-verified",
-    "4,869 registrations have no published point",
+    "58,393 registrations have no published point (the sources have none for 55,772)",
     "estate geometry not published",
     "company logos not in this release"
   ],

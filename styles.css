@@ -673,6 +673,9 @@ button.fact-chip:hover { background: var(--surface-alt); }
 /* Ordinal size bands, functional classes and official industry groups are not categories of the map: one neutral
    foundation fill (the family cue sits beside a group). */
 .size-fill, .rail-fill, .industry-fill { background: var(--border-emphasis); }
+/* Registrations without a worker figure: the EVID-05 no-data hatch of the map legend, never a bar of 0. */
+.matrix-cell.is-no_data { background: repeating-linear-gradient(135deg, var(--border-emphasis) 0 1.5px, var(--data-no-data) 1.5px 5px); color: var(--text-primary, inherit); }
+.nodata-fill { background: repeating-linear-gradient(135deg, var(--border-emphasis) 0 1.5px, var(--data-no-data) 1.5px 5px); }
 .size-list .mix-label { font-variant-numeric: tabular-nums; }
 .chip-pic { width: 16px; height: 16px; font-size: 16px; vertical-align: 0; }
 .brand-chip.is-static { border: 1px solid var(--border-hairline); cursor: default; }

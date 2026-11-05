@@ -1,27 +1,28 @@
 # CityMETER · Factory
 
-> DIW-reported workers at factory registrations with 95+ workers across Thailand by district (เขต/อำเภอ), from the DIW class 2/3 open-data registry (registrations outside IEAT industrial estates) and the Ministry of Industry's location status, with official DIW industry groups, worker bands, the full registry and the industrial-area register as context, and a nearby set per registration. A Landometer CityMETER public demo, release 0.1.0 (2026-11-05). Research master checked 2026-11-04.
+> DIW-reported workers at every core factory registration of the research master across Thailand by district (เขต/อำเภอ), from the DIW class 2/3 open-data registry (registrations outside IEAT industrial estates), the registrations the Ministry of Industry records as operating and its location status, with official DIW industry groups, worker bands (incl. the 95+ lens), functional classes, the industrial-area register as context, and a nearby set per registration. A Landometer CityMETER public demo, release 0.2.0 (2026-11-05). Research master checked 2026-11-04.
 
 What one figure means:
-- workers (คน) = Σ workers of the registrations as the DIW registry records them (no date for the figure in the open data). Not current employment, a labour market, residents, capacity or output.
-- registrations (ทะเบียน) = factory registration numbers (FID) of the research tab 18_WORKERS_P90: workers at or above the sheet's P90 threshold (95 workers; PERCENTILE.INC 0.9 of the 71,124 FIDs with a worker figure). A registration is not a verified plant, a company or proof of operation today.
-- scope = DIW open-data class 2/3 exports, which cover registrations outside IEAT industrial estates; plants registered with IEAT are not in this dataset.
+- workers (คน) = Σ workers of the registrations as the DIW registry records them (คนงานรวม; no date for the figure in the open data). 2,923 registrations have no figure: they add nothing and are never shown as 0. Not current employment, a labour market, residents, capacity or output.
+- registrations (ทะเบียน) = factory registration numbers (FID) of the research tab 02_FACTORIES (74,047 core FIDs). A registration is not a verified plant, a company or proof of operation today.
+- 95+ lens (?size=p90) = the 7,175 registrations at or above the P90 of the 71,124 worker figures (95 workers; the research tab 18_WORKERS_P90); they hold 65% of the workers.
+- scope = DIW open-data class 2/3 exports, which cover registrations outside IEAT industrial estates, plus 2,921 registrations only the MOI records as operating; plants registered with IEAT are not in this dataset.
 - status = the Ministry of Industry's location status (GD Catalog) with its date; not a field check.
 - industry = the official DIW industry group per type code; ten families group them for the map's colour and shape cue.
 - points = source points screened inside Thailand and inside the registration's own district (others withheld); not verified plant locations. Distances are straight lines.
 - districts = CityMETER production districts (codes as in https://landometer.com/v3/citymeter/{province}/D/{district}?d=factory).
 
-Snapshot (release 0.1.0; fixtures, recompute from data):
-- 7,175 registrations, 2,435,798 workers, 553 of 928 districts, 76 of 77 provinces; 2,306 registrations with a published point.
-- Samut Prakan: 74% of the province's workers at 95+ registrations (220,980 of 299,796) are in Mueang Samut Prakan, Bang Phli and Phra Pradaeng; their industries: vehicles and machinery 20%, textiles/apparel/leather 19%, plastics/rubber/chemicals 14%.
-- The district with the most workers: Mueang Samut Sakhon (169,944; 55% in food and beverages).
+Snapshot (release 0.2.0; fixtures, recompute from data):
+- 74,047 registrations, 3,755,632 workers (71,124 with a figure), 915 of 928 districts, 77 of 77 provinces; 15,654 registrations with a published point.
+- Samut Prakan: 72% of the province's workers (330,987 of 457,353) are in Bang Phli, Mueang Samut Prakan and Phra Pradaeng; their industries: vehicles and machinery 18%, textiles/apparel/leather 17%, metals 16%. With the 95+ lens: 74% (220,980 of 299,796).
+- The district with the most workers: Mueang Samut Sakhon (264,666; 42% in food and beverages).
 
 Deep links (https://montri-th.github.io/factory/):
 - ?metric=count — measure registrations instead of workers
 - ?province={code} — e.g. SPK, SKN, CBI (production codes)
 - ?area={district code} — e.g. 1103 (อำเภอบางพลี)
 - ?areas={code},{code} | ?areas=all — focus districts / every district
-- ?group={food|electrical|vehicle|textile|metal|polymer|wood|mineral|plant|other} · ?size={w1…w6} · ?cls={manufacturing|service|other|review}
+- ?group={food|electrical|vehicle|textile|metal|polymer|wood|mineral|plant|other} · ?size={p90|s1|s2|s3|w1…w6|none} · ?cls={manufacturing|service|other|review}
 - ?factory={FID} · ?view={areas|mix|industries} · ?search={text}
 
 Data and method:

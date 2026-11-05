@@ -7,10 +7,11 @@
  *   baseRows  — scopeRows narrowed by the selected เขต/อำเภอ (if any).
  *   rows      — baseRows narrowed by the district focus (if any): pins with detail, counters, the table.
  *
- * Rows are factory registrations (FID) of the DIW registry with 95+ DIW-reported workers (18_WORKERS_P90 of the
- * research master; DIW class 2/3 open data, outside IEAT industrial estates). Measure (DATA_METHOD.md §2, state.metric):
- * `workers` (default) = Σ workers of the registrations (“คน”, LDS `count`); `count` = registrations (“ทะเบียน”, LDS
- * `count`). The map, the legend, the labels, the Aha, the ranks and the charts read the same measure.
+ * Rows are the factory registrations (FID) of the research master's core registry 02_FACTORIES, every size (DIW class
+ * 2/3 open data outside IEAT industrial estates, and the FIDs the MOI records as operating). Measure (DATA_METHOD.md §2,
+ * state.metric): `workers` (default) = Σ workers of the registrations (“คน”, LDS `count`; a registration without a
+ * figure adds nothing); `count` = registrations (“ทะเบียน”, LDS `count`). The map, the legend, the labels, the Aha, the
+ * ranks and the charts read the same measure. The size filter includes the 95+ lens (`p90`).
  *
  * District focus has three modes (state.focusAreaIds / state.autoFocus):
  *   auto     — default: up to three เขต/อำเภอ with the most of the measure in the province that holds the most of it
@@ -27,8 +28,8 @@
  * the province frames carry the reading — except with a จังหวัด filter: that province shows its own เขต/อำเภอ at every
  * zoom (province view) and is fitted whole.
  *
- * Context from the same research master: every registration of 02_FACTORIES (all sizes) per district by function, and
- * the industrial-area register (01_ESTATES, names and pages only — no geometry is published).
+ * Context from the estate research master: the industrial-area register (01_ESTATES, names and pages only — no geometry
+ * is published).
  *
  * Buildings: the points of the scope are joined to the focus-tier footprints the map draws — OpenStreetMap, or
  * CityMETER Building V4 inside a CityMETER unit (js/building-units.js) — (js/building-join.js, “จุดตกในอาคาร”; pieces
@@ -44,7 +45,7 @@
  * Panel modes: overview | area | building | factory (with a back stack).
  * URL state: filters, metric, area, areas, view, factory, view3d.
  */
-import {provinces as provinceList, provinceByCode, provinceCodeFrom, setProvinces, decodeDataset, filterRows, summarize, hasPoint, unitWords, rowValue, familyShares, SIZE_BANDS, pinRadius} from './model.js';
+import {provinces as provinceList, provinceByCode, provinceCodeFrom, setProvinces, decodeDataset, filterRows, summarize, hasPoint, unitWords, rowValue, familyShares, SIZE_FILTERS, pinRadius} from './model.js';
 import {buildAreaIndex, areaWord, areaLocator, recordBounds} from './areas.js';
 import {summarizeAreaInsight, filterAreaRows} from './area-insight.js';
 import {renderInsightChart} from './charts.js';
@@ -195,7 +196,7 @@ function update({fit = false} = {}) {
   const s = summarize(state.rows);
   $('filter-count').textContent = activeFilterCount(f) ? String(activeFilterCount(f)) : '';
   $('filter-chips').innerHTML = renderFilterChips(f, {
-    group: Object.fromEntries(state.data.families.map(g => [g.id, g.th])), size: Object.fromEntries(SIZE_BANDS.map(b => [b.id, b.th])),
+    group: Object.fromEntries(state.data.families.map(g => [g.id, g.th])), size: Object.fromEntries(SIZE_FILTERS.map(b => [b.id, b.th])),
     province: Object.fromEntries(provinceList().map(p => [p.code, p.th])), cls: Object.fromEntries(state.data.classes.map(c => [c.id, c.th]))});
   renderPanel(s);
   renderLegend();
@@ -210,7 +211,7 @@ function update({fit = false} = {}) {
   drawChart();
   syncList();
   saveURL();
-  announce(`พบ ${num(s.count)} ทะเบียน ${num(s.workers)} คน`);
+  announce(`พบ ${num(s.count)} ทะเบียน${s.figured ? ` ${num(s.workers)} คน` : ''}`);
 }
 
 /** Rows with full detail on the map, in the counter and in the table: the open building's rows, else the focused rows. */
@@ -338,7 +339,7 @@ function renderPanel(summary = summarize(state.rows)) {
   const {mode, id} = state.panel;
   renderCrumbs();
   const families = state.data.families, ctx = panelCtx(), metric = state.metric;
-  const context = {registry: state.data.registry, classes: state.data.classes, estates: state.data.estates, allRows: state.data.rows};
+  const context = {classes: state.data.classes, estates: state.data.estates};
   let html = '';
   if (mode === 'area') html = renderArea(buildAreaProfile(state.scopeRows, id, state.index, families, {metric, ...context}), countClassOf, ctx);
   else if (mode === 'building') html = renderBuilding(buildBuildingProfile(currentBuilding(), state.index, families), ctx);
@@ -922,9 +923,11 @@ function renderLegend() {
   const m = atProvince ? state.provinceModel : state.areaModel;
   $('legend-title').textContent = atProvince ? `จังหวัด · ${u.label}` : `เขต/อำเภอ · ${u.label}`;
   // All 41 LDS samples with value ticks (owner standing rule), plus the measured-zero swatch when zero occurs.
+  // EVID-05 no_data: workers unknown for every registration of an area (the hatch; provinces: outline only).
+  const noData = m?.noDataCount > 0 ? `<span class="legend-step" title="ทะเบียนในพื้นที่ไม่มีตัวเลขคนงาน"><i class="legend-nodata" aria-hidden="true"></i>ไม่มีตัวเลขคนงาน</span>` : '';
   steps.innerHTML = m?.ramp?.levels.length
-    ? rampLegendHTML(m.ramp, {zero: m.zeroCount > 0, zeroTitle: `0 ${u.one} ในตัวกรองนี้`})
-    : `<span class="hint">ไม่มี${esc(u.subject)}ในตัวกรองนี้</span>`;
+    ? rampLegendHTML(m.ramp, {zero: m.zeroCount > 0, zeroTitle: `0 ${u.one} ในตัวกรองนี้`}) + noData
+    : noData || `<span class="hint">ไม่มี${esc(u.subject)}ในตัวกรองนี้</span>`;
   spaceTicks(steps);
   $('legend-areas').title = atProvince
     ? `${u.label}รวมต่อจังหวัด · สีเข้ม = มาก · ซูมเข้าเพื่อดูรายเขต/อำเภอ`
@@ -991,7 +994,7 @@ function renderTable() {
   const rs = renderTable.sorted.slice(start, start + pageSize);
   $('result-rows').innerHTML = rs.map(r => `<tr>
       <td><button type="button" class="row-name brand-row" data-id="${esc(r.id)}">${cueMarkup(r.series, {className: 'row-cue'})}<span>${esc(r.title)}</span></button><small>${esc(state.data.families[r.group]?.th || '')}</small></td>
-      <td class="num"><span class="data-number">${num(r.workers)}</span></td>
+      <td class="num">${r.workers == null ? '<span class="hint" title="ไม่มีตัวเลขคนงาน">—<span class="sr-only">ไม่มีตัวเลขคนงาน</span></span>' : `<span class="data-number">${num(r.workers)}</span>`}</td>
       <td>${esc(r.industry?.th || '')}${r.type?.code ? `<small class="data-number">${esc(r.type.code)}</small>` : ''}</td>
       <td>${areaCell(r)}</td>
       <td>${r.moi ? esc(r.moi) : '<span class="hint">ไม่พบ</span>'}</td></tr>`).join('') ||
@@ -1635,9 +1638,10 @@ function refreshOptionCounts() {
     if (r.province) provinces.set(r.province, (provinces.get(r.province) || 0) + 1);
     if (r.cls) classes.set(r.cls.id, (classes.get(r.cls.id) || 0) + 1);
     if (r.size) sizes.set(r.size, (sizes.get(r.size) || 0) + 1);
+    if (r.p90) sizes.set('p90', (sizes.get('p90') || 0) + 1);
   }
   setOptions('group', state.data.families.map(g => [g.id, `${g.th} (${num(groups.get(g.id) || 0)})`]));
-  setOptions('size', SIZE_BANDS.map(b => [b.id, `${b.th} (${num(sizes.get(b.id) || 0)})`]));
+  setOptions('size', SIZE_FILTERS.filter(b => sizes.get(b.id)).map(b => [b.id, `${b.th} (${num(sizes.get(b.id) || 0)})`]));
   setOptions('province', [...provinceList()].sort((a, b) => COLLATOR.compare(a.th, b.th)).map(p => [p.code, `${p.th} (${num(provinces.get(p.code) || 0)})`]));
   setOptions('cls', state.data.classes.filter(c => classes.get(c.id)).map(c => [c.id, `${c.th} (${num(classes.get(c.id) || 0)})`]));
   $('category-items').innerHTML = state.data.families.map(g => `<span>${cueMarkup(g.series)}${esc(g.th)}</span>`).join('');
@@ -1730,7 +1734,8 @@ function wireEvents() {
 async function init() {
   try {
     const [rowsJSON, indexJSON, provincesJSON] = await Promise.all([
-      fetchJSON('data/factories.json', {timeout: 30000}),
+      // Every registration of the registry (~1.9 MB over the wire, gzip): a slow phone link still gets there.
+      fetchJSON('data/factories.json', {timeout: 90000}),
       fetchJSON('data/area-index.json', {timeout: 30000}),
       fetchJSON('data/provinces.geojson', {timeout: 30000}).catch(e => { console.warn('Province frames unavailable', e); return null; }),
     ]);

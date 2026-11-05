@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "implementation-plan",
   "productId": "citymeter-factory",
-  "productVersion": "0.1.0",
+  "productVersion": "0.2.0",
   "updatedOn": "2026-11-05",
   "architecture": {
     "runtime": "static site (GitHub Pages), ES modules with an import map, no build step; Node ≥ 20 for tests, Python 3 for data builds",
@@ -45,12 +45,12 @@
       "map-style.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
       "maplibre-guard.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
       "massing.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
-      "model.js": "vocabulary (SCOPE, METRICS, SIZE_BANDS, MOI_TH), decodeDataset, filterRows, summarize, mixOf, familyShares, pin sizes, production links",
+      "model.js": "vocabulary (SCOPE, METRICS, SIZE_BANDS, SIZE_FILTERS, NO_FIGURE, MOI_TH), decodeDataset (ranks, short names), filterRows, summarize, mixOf, sizeMixOf, lensOf, classMixOf, familyShares, pin sizes, production links",
       "mvt.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
       "navigation.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
       "panel.js": "panel views as HTML strings: overview, area, building, factory; provenance; filter chips",
       "pins.js": "one cue symbol per registration with a point, sized by workers; HTML pins at detail zoom",
-      "profile-model.js": "overview, area, building and factory models; registry and estate context; nearby set",
+      "profile-model.js": "overview, area, building and factory models; the 95+ lens, functions and estate context; nearby set",
       "provinces.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
       "scales.js": "LDS count family, 41-sample rank ramp",
       "terrain.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role",
@@ -58,19 +58,18 @@
       "venue-xray.js": "carried over from CityMETER · Hotel 0.3.6 unchanged in role"
     },
     "data": [
-      "data/factories.json",
+      "data/hotels.json",
       "data/area-index.json",
       "data/frames/{CODE}.json",
       "data/provinces.geojson",
-      "data/boundary-receipts.json",
-      "data/building-units/"
+      "data/boundary-receipts.json"
     ]
   },
   "selection": {
     "filterFields": [
       "search",
       "group (industry family)",
-      "size (worker band)",
+      "size (p90 · worker band · none)",
       "province",
       "cls (function)"
     ],
@@ -111,7 +110,7 @@
   "tasks": [
     {
       "id": "T1",
-      "title": "Export the research tabs and build data/factories.json",
+      "title": "Export the research tabs and the DIW worker figures, build data/factories.json",
       "dependsOn": [],
       "files": [
         "scripts/build-data.py",
@@ -266,13 +265,13 @@
     {
       "id": "AC1",
       "scenario": "build from the CSV exports",
-      "expected": "every P90 FID joined to 02_FACTORIES; the build stops on a missing FID, a province mismatch or a figure below the threshold",
+      "expected": "every core FID of 02_FACTORIES; the build stops on a DIW FID missing from the registry, a DIW-listed FID without a figure row, a figure that differs from 18_WORKERS_P90, a P90 that is not 95, or a 95+ set that is not 18_WORKERS_P90",
       "verificationType": "build"
     },
     {
       "id": "AC2",
       "scenario": "decode data/factories.json",
-      "expected": "7,175 rows, unique FIDs, Σ workers 2,435,798, nothing dropped",
+      "expected": "74,047 rows, unique FIDs, Σ workers 3,755,632 over 71,124 figures, 2,923 null (never 0), the 95+ lens 7,175 rows Σ 2,435,798, nothing dropped",
       "verificationType": "unit"
     },
     {
@@ -284,7 +283,7 @@
     {
       "id": "AC4",
       "scenario": "first screen, workers",
-      "expected": "74% · 220,980 จาก 299,796 คน · 3 อำเภอ of Samut Prakan, industry bars with both bases, outside #1 Mueang Samut Sakhon",
+      "expected": "72% · 330,987 จาก 457,353 คน · 3 อำเภอ of Samut Prakan, industry bars with both bases, outside #1 Mueang Samut Sakhon; with ?size=p90 74% · 220,980 จาก 299,796 คน",
       "verificationType": "unit + render"
     },
     {
@@ -320,8 +319,8 @@
     {
       "id": "AC10",
       "scenario": "district model",
-      "expected": "41-sample count ramp; 375 measured-zero districts; never no_data",
-      "verificationType": "unit"
+      "expected": "41-sample count ramp; 13 measured-zero districts unfiltered; no_data only where every registration lacks a worker figure (?size=none)",
+      "verificationType": "unit + render"
     },
     {
       "id": "AC11",
@@ -356,6 +355,7 @@
   ],
   "developerWorkflow": [
     "edit the research sheet, export the tabs of DATA_METHOD.md §1 as CSV (outside the repository)",
+    "read fid · คนงานรวม of the DIW class 2/3 exports (SHA-256 equal to 99_SOURCE_FILES)",
     "npm run build:data (see DATA_METHOD.md §10)",
     "npm test",
     "npm run check:lds -- --lds <base> --li <profile>",
@@ -366,7 +366,8 @@
   ],
   "backlog": [
     "IEAT estate factories with dated worker figures",
-    "site key for the 430 same-site registrations",
+    "site key for the 3,328 same-site registrations",
+    "points for the 55,772 registrations the sources have no point for",
     "company logos (457 FIDs selected in the sheet)",
     "estate boundaries once selected and cleared",
     "building units for the units that hold factories only (scripts/build-building-units.py)",

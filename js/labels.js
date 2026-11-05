@@ -5,7 +5,7 @@
  *
  * From LABEL_MIN_ZOOM, the focus rows whose point lies in the central ellipse of the visible map (CENTRE_SHARE of its
  * half-width and half-height) compete for a short label: the industry cue, the short name (row.short: the registered
- * name without the company form words บริษัท … จำกัด (มหาชน), built by scripts/build-data.py#short_name) and the workers
+ * name without the company form words บริษัท … จำกัด (มหาชน), js/model.js#shortNameOf) and the workers
  * pictogram with the workers of the registration. Ranking: row.importance (js/model.js#importanceScores — the workers
  * percentile), then nearness to the centre. At most LABEL_MAX labels (desktop / phone). Each label is measured and
  * placed above its point, else below it; it never covers the map chrome, another label or the open popup. During a

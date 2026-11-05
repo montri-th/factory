@@ -1,4 +1,4 @@
-# CityMETER Factory 0.1.0 — implementation plan
+# CityMETER Factory 0.2.0 — implementation plan
 
 คู่กับ `implementation-plan.json` (schema 1.5.0)
 
@@ -8,9 +8,9 @@ Static site บน GitHub Pages · ES modules ผ่าน import map (cache tag
 
 | โมดูล | หน้าที่ |
 |---|---|
-| `js/model.js` | คำศัพท์ (SCOPE, METRICS, SIZE_BANDS, MOI_TH), decode, filter, summarize, familyShares, ขนาดสัญลักษณ์, ลิงก์ production |
+| `js/model.js` | คำศัพท์ (SCOPE, METRICS, SIZE_BANDS, SIZE_FILTERS, NO_FIGURE, MOI_TH), decode (อันดับ ชื่อสั้น), filter, summarize, lensOf, classMixOf, familyShares, ขนาดสัญลักษณ์, ลิงก์ production |
 | `js/area-insight.js` | ข้อค้นพบแรก + อุตสาหกรรมหลัก + ข้อค้นพบนอกจังหวัด |
-| `js/profile-model.js` | โมเดลของ overview / area / building / factory, บริบททะเบียนและนิคม, โรงงานใกล้เคียง |
+| `js/profile-model.js` | โมเดลของ overview / area / building / factory, เลนส์ 95+ คน หน้าที่ และนิคม, โรงงานใกล้เคียง |
 | `js/panel.js` | แผงเป็น HTML string, บรรทัดที่มา, filter chips |
 | `js/chart-model.js` · `js/charts.js` | กราฟอำเภอ · อำเภอ × หมวด · กลุ่ม กรอ. |
 | `js/pins.js` · `js/labels.js` | สัญลักษณ์รายทะเบียน (ขนาดตามคนงาน) · ชื่อกลางจอ + การ์ด |
@@ -27,4 +27,4 @@ AC1–AC15 ใน `implementation-plan.json` (build, unit, render, live) — ผ
 
 ## Backlog
 
-โรงงานในนิคม กนอ. ที่มีตัวเลขคนงานพร้อมวันที่ · คีย์ไซต์ของ 430 ทะเบียนที่ชื่อและที่อยู่ซ้ำ · โลโก้บริษัท 457 ทะเบียน · ขอบเขตนิคมเมื่อเลือกและตรวจสิทธิ์แล้ว · หน่วยอาคารของ อปท. ที่มีแต่โรงงาน · ตัวเลขคนงานที่มีวันที่
+โรงงานในนิคม กนอ. ที่มีตัวเลขคนงานพร้อมวันที่ · คีย์ไซต์ของ 3,328 ทะเบียนที่ชื่อและที่อยู่ซ้ำ · พิกัดของ 55,772 ทะเบียนที่แหล่งไม่มีจุด · โลโก้บริษัท 457 ทะเบียน · ขอบเขตนิคมเมื่อเลือกและตรวจสิทธิ์แล้ว · หน่วยอาคารของ อปท. ที่มีแต่โรงงาน · ตัวเลขคนงานที่มีวันที่

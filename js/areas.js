@@ -55,12 +55,12 @@ export function groupBy(rows, key) {
 }
 
 function stats(rows) {
-  let points = 0, workers = 0;
+  let points = 0, workers = 0, figured = 0;
   for (const r of rows) {
     if (Number.isFinite(r.latitude)) points++;
-    workers += r.workers || 0;
+    if (r.workers != null) { figured++; workers += r.workers; }
   }
-  return {points, workers};
+  return {points, workers, figured};
 }
 
 /**

@@ -29,7 +29,7 @@ function areas(element, model, select, selectedId, unit, national) {
   // Every district of the reading, not only the 20 drawn: the same ramp as the map's district layer.
   const ramp = buildMetricRamp(model.values, {metric: model.metric, unit: unit.one});
   const max = Math.max(1, ...model.areas.map(a => a.value));
-  const other = a => (unit.id === 'count' ? `${num(a.workers)} คน` : `${num(a.count)} ทะเบียน`);
+  const other = a => (unit.id === 'count' ? (a.count && a.figured === 0 ? 'ไม่มีตัวเลขคนงาน' : `${num(a.workers)} คน`) : `${num(a.count)} ทะเบียน`);
   const rows = model.areas.map((a, i) => {
     const cls = classify(a.value, ramp);
     const pressed = a.id === selectedId;
@@ -54,6 +54,10 @@ function matrix(element, model, select, selectedId, unit) {
     const pressed = a.id === selectedId;
     const cells = m.groups.map(g => {
       const cell = m.cells.find(c => c.areaId === a.id && c.group === g.index);
+      // Workers of registrations that all lack a figure are unknown (EVID-05 no_data, the hatch), never a measured 0.
+      if (unit.id === 'workers' && cell.count && !cell.figured) {
+        return `<td><button type="button" class="matrix-cell is-no_data" data-area="${esc(a.id)}" aria-label="${esc(place(a))} × ${esc(g.th)}: ไม่มีตัวเลขคนงาน ${num(cell.count)} ทะเบียน กดเพื่อดูพื้นที่นี้" title="${esc(place(a))} × ${esc(g.th)} — ไม่มีตัวเลขคนงาน (${num(cell.count)} ทะเบียน)"><span class="data-number">—</span></button></td>`;
+      }
       const cls = classify(cell.value, ramp);
       // measured_zero: sample 0 + the theme's dataState.zero outline (EVID-05 treatment), never a blank cell.
       const style = cls.state === 'measured_zero' ? `background:${cls.fill};color:${cls.ink};box-shadow:inset 0 0 0 2px var(--data-zero-outline)` : `background:${cls.fill};color:${cls.ink}`;
@@ -74,16 +78,17 @@ function industries(element, rows, select, selectedFamily, unit, families) {
   const r = industryRanking(rows, {metric: unit.id});
   if (!r.industries.length) { empty(element, 'ไม่มีกลุ่มอุตสาหกรรมในตัวกรองนี้'); return; }
   const max = Math.max(1, ...r.industries.map(c => c.value));
-  const other = c => (unit.id === 'count' ? `${num(c.workers)} คน` : `${num(c.count)} ทะเบียน`);
+  const other = c => (unit.id === 'count' ? (c.count && c.figured === 0 ? 'ไม่มีตัวเลขคนงาน' : `${num(c.workers)} คน`) : `${num(c.count)} ทะเบียน`);
+  const shown = c => (unit.id === 'workers' && c.count && !c.figured ? '—' : num(c.value));
   const list = r.industries.map((c, i) => {
     const fam = families[c.industry.family] || null;
     const pressed = Boolean(fam) && fam.id === selectedFamily;
     return `<li><button type="button" class="bar-row${pressed ? ' is-selected' : ''}" data-family="${esc(fam?.id || '')}" aria-pressed="${pressed}"
-      aria-label="อันดับ ${i + 1} ${esc(c.industry.th)}: ${num(c.value)} ${esc(unit.one)} ${esc(other(c))} กดเพื่อดูเฉพาะ${esc(fam?.th || '')}">
+      aria-label="อันดับ ${i + 1} ${esc(c.industry.th)}: ${shown(c) === '—' ? 'ไม่มีตัวเลขคนงาน' : `${num(c.value)} ${esc(unit.one)}`} ${esc(other(c))} กดเพื่อดูเฉพาะ${esc(fam?.th || '')}">
       <span class="bar-rank data-number" aria-hidden="true">${i + 1}</span>
       <span class="bar-label">${fam ? cueMarkup(fam.series, {className: 'bar-cue'}) : ''}${esc(c.industry.th)}<small>${esc(other(c))}</small></span>
       <span class="bar-track" aria-hidden="true"><span class="bar-fill industry-fill" style="width:${Math.max(2, Math.round((c.value / max) * 100))}%"></span></span>
-      <span class="bar-value" aria-hidden="true"><b class="data-number">${num(c.value)}</b><small>${esc(unit.one)}</small></span>
+      <span class="bar-value" aria-hidden="true"><b class="data-number">${shown(c)}</b><small>${esc(unit.one)}</small></span>
     </button></li>`;
   }).join('');
   element.innerHTML = `<p class="chart-caption">${esc(unit.subject)}ต่อกลุ่มอุตสาหกรรมของกรมโรงงานฯ · ${num(r.industries.length)} จาก ${num(r.total)} กลุ่ม</p><ol class="chart-bars industry-bars">${list}</ol>`;
@@ -100,6 +105,7 @@ export function renderInsightChart({elementId, view = 'areas', rows = [], index,
   const labels = {areas: `เขต/อำเภอเรียงตาม${unit.subject}`, mix: 'อุตสาหกรรมในแต่ละเขต/อำเภอ', industries: `กลุ่มอุตสาหกรรมเรียงตาม${unit.subject}`};
   element.setAttribute('aria-label', labels[view] || labels.areas);
   if (!Array.isArray(rows) || !rows.length) { empty(element, 'ไม่พบโรงงานตามตัวกรอง'); return () => element.replaceChildren(); }
+  if (unit.id === 'workers' && rows.every(r => r.workers == null)) { empty(element, 'ทะเบียนในตัวกรองนี้ไม่มีตัวเลขคนงาน · สลับเป็นนับโรงงานเพื่อเทียบ'); return () => element.replaceChildren(); }
   try {
     if (view === 'industries') industries(element, rows, select, selectedFamily, unit, groups);
     else {

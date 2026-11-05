@@ -19,10 +19,10 @@ export function areaMatrix(model, {areaLimit = 12} = {}) {
   const areas = model.areas.slice(0, areaLimit);
   const groups = model.groups;
   const cells = areas.flatMap(a => {
-    const values = new Array(groups.length).fill(0), counts = new Array(groups.length).fill(0);
-    for (const r of a.rows) { values[r.group] += rowValue(r, model.metric); counts[r.group]++; }
+    const values = new Array(groups.length).fill(0), counts = new Array(groups.length).fill(0), figured = new Array(groups.length).fill(0);
+    for (const r of a.rows) { values[r.group] += rowValue(r, model.metric); counts[r.group]++; if (r.workers != null) figured[r.group]++; }
     return groups.map(g => ({areaId: a.id, areaName: a.name, groupId: g.id, group: g.index, groupName: g.th, value: values[g.index], count: counts[g.index],
-      total: a.value}));
+      figured: figured[g.index], total: a.value}));
   });
   return {areas, groups, cells, max: Math.max(0, ...cells.map(c => c.value))};
 }

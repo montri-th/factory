@@ -88,12 +88,14 @@ test('detail pins: nearest the centre first, inside the usable map only, bounded
 // workers of the registration; quiet context stays small at every zoom.
 import {pinRadius,pinSizeExpression,PIN_SCALE,WORKERS_SIZE_CAP,PIN_MIN_RADIUS,importanceScores,SCOPE} from '../js/model.js';
 import {CONTEXT_MAX_RADIUS} from '../js/pins.js';
-test('symbol area grows in proportion to the workers; capped; a missing figure draws at the threshold size',()=>{
+test('symbol area grows in proportion to the workers; capped; a missing figure or 0 draws the smallest symbol',()=>{
  for(const z of [10,12,14,16,18]){
   const r400=pinRadius(400,z),r1600=pinRadius(1600,z);
   assert.ok(Math.abs((r1600/r400)**2-4)<1e-9,`area ∝ workers at zoom ${z}`);
   assert.equal(pinRadius(20000,z),pinRadius(WORKERS_SIZE_CAP,z),'above the cap the cap size');
-  assert.equal(pinRadius(null,z),pinRadius(SCOPE.threshold,z));
+  assert.equal(pinRadius(null,z),PIN_MIN_RADIUS,'no figure: the smallest symbol (never sized as if it had workers)');
+  assert.equal(pinRadius(0,z),PIN_MIN_RADIUS);
+  assert.ok(pinRadius(SCOPE.threshold,z)>=pinRadius(1,z));
   assert.ok(pinRadius(1,z)>=PIN_MIN_RADIUS);
  }
  for(let i=1;i<PIN_SCALE.length;i++)assert.ok(PIN_SCALE[i][1]>PIN_SCALE[i-1][1]&&PIN_SCALE[i][0]>PIN_SCALE[i-1][0]);

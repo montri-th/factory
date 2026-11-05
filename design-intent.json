@@ -1,6 +1,6 @@
 {
-  "artifact": "CityMETER Factory — 3D-first, district-first map of DIW-reported workers at factory registrations with 95+ workers (DIW registry outside IEAT industrial estates) across Thailand, with official industry groups, the full registry and the industrial-area register as context and a nearby set per registration",
-  "productVersion": "0.1.0",
+  "artifact": "CityMETER Factory — 3D-first, district-first map of DIW-reported workers at every core factory registration of the research master (DIW registry outside IEAT industrial estates and MOI-operating registrations) across Thailand, with official industry groups, worker bands and the 95+ lens, functional classes, the industrial-area register as context and a nearby set per registration",
+  "productVersion": "0.2.0",
   "updatedOn": "2026-11-05",
   "ldsVersion": "0.9.7",
   "release": "v0.9.7-owner.1",
@@ -27,7 +27,7 @@
     "notDistributed": "full LDS library, the Location Intelligence Profile, other analytical families",
     "context": "registry context and the industrial-area register as neutral bars, chips and lists; size cue of pins by workers; foundation fill for ordinal bars (worker bands, functional classes, DIW groups)"
   },
-  "firstAha": "share of the leading province’s workers at 95+ registrations placed at district level that sit in up to three districts with the most workers (never cutting a tie, never every district holding workers), the industry families of those rows as bars with each share (numerator and denominator in titles and accessible text), and the district(s) with the most workers outside it with its first family; the same with registrations under the count measure; computed per selection; the map opens in the 3D city preset with those districts focused automatically and the rest quiet",
+  "firstAha": "share of the leading province’s workers at the registrations placed at district level that sit in up to three districts with the most workers (never cutting a tie, never every district holding workers), the industry families of those rows as bars with each share (numerator and denominator in titles and accessible text), and the district(s) with the most workers outside it with its first family; the same with registrations under the count measure; computed per selection; the map opens in the 3D city preset with those districts focused automatically and the rest quiet",
   "countingUnit": "measure switch: workers (คน, default; Σ DIW-reported workers) or registrations (ทะเบียน, FIDs — not unique plants)",
   "focusAndQuiet": {
     "implementation": "app.js focus modes (auto/explicit/none) and row scopes; map-layers.js filled/quiet/province feature-state; pins.js cue symbols vs grey context dots; massing.js quiet city tier vs rounded focus tier, see-through front buildings in the building view (setScene eye); venue-xray.js draws the building being looked at over everything else; camera.js presets and the building view (fitBuilding, twoPointBearing); provinces.js frames below zoom 8 without a จังหวัด filter"
@@ -72,5 +72,5 @@
     "water": "light water --basemap-water #CFDDE7 (basemap-only, 1.22:1 from the ground) with the water-shore line --basemap-shore #B2C7D6 above the district fill; dark keeps surface.blueTint #18333E (0.3.4, owner “ใน light theme ทำให้ทะเล/water body ดูเหมือนน้ำมากกว่านี้ … แต่ยัง clean and quiet”); the coast line, district outlines and legend separate the sea from low li.supply classes, never the water hue alone"
   },
   "outboundActions": "js/ask.js — Google Search answered by Google’s AI Overview (registration: still running, what it makes, staff size, expansion or lay-off news · district: industries, where workers live, shops and services round the plants, new or closed plants · overview: investment and closures), Maps and Street View per view; never a natural person’s name",
-  "copy": "short natural Thai: คน / ทะเบียน / โรงงาน / คนงาน / อุตสาหกรรม / กลุ่ม กรอ. / ขนาด / จำพวก / หน้าที่ / สถานะ อก. / นิคม / โรงงานใกล้เคียง / เขต·อำเภอ / ระยะตรง; the scope in the name (โรงงาน 95+ คน · ทะเบียน กรอ. นอกนิคมอุตสาหกรรม); units on every number; one provenance line per panel view"
+  "copy": "short natural Thai: คน / ทะเบียน / โรงงาน / คนงาน / อุตสาหกรรม / กลุ่ม กรอ. / ขนาด / จำพวก / หน้าที่ / สถานะ อก. / นิคม / โรงงานใกล้เคียง / เขต·อำเภอ / ระยะตรง; the scope in the name (ทะเบียนโรงงานทุกขนาด · กรอ. นอกนิคมอุตสาหกรรม · อก.); units on every number; one provenance line per panel view"
 }

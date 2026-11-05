@@ -41,3 +41,16 @@ test('a registration known only by a natural person’s name never gets a label 
   const project = () => ({x: 500, y: 300});
   assert.equal(centreCandidates(persons, project, {left: 0, right: 1000, top: 0, bottom: 600}).length, 0);
 });
+
+// The short label name is built on the page (js/model.js#shortNameOf) with the build's rule (scripts/build-data.py#short_name);
+// the fixture holds names and the build's short names, the rules of the form words covered (checked against every name of
+// data/factories.json at release 0.2.0).
+import {readFileSync} from 'node:fs';
+import {shortNameOf} from '../js/model.js';
+test('short label names follow the build rule: company form words and “(ประเทศไทย)” dropped, the full name kept otherwise', () => {
+  const fixture = JSON.parse(readFileSync(new URL('./fixtures/short-names.json', import.meta.url), 'utf8'));
+  assert.ok(Object.keys(fixture).length >= 50);
+  for (const [name, short] of Object.entries(fixture)) assert.equal(shortNameOf(name), short, name);
+  assert.equal(shortNameOf('บริษัท ซีเกทเทคโนโลยี (ประเทศไทย) จำกัด'), 'ซีเกทเทคโนโลยี');
+  assert.equal(shortNameOf('บริษัท จำกัด'), 'บริษัท จำกัด', 'nothing left → the full name');
+});

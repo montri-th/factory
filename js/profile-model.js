@@ -2,17 +2,15 @@
  * Reading-panel view models. Pure: no DOM, no map.
  *
  * Every profile reads `scopeRows` (filters before any area selection) so ranks and comparisons keep the whole
- * selection as reference. A row is one FID of 18_WORKERS_P90 (a registration with 95+ DIW-reported workers); the
- * default measure is Σ workers, the other registrations (“ทะเบียน”). District membership is the matched production
- * code of the registration's own district label (row.admin); points are source points, never upgraded.
- *
- * Registry context (all sizes, 02_FACTORIES): registrations per district and province by functional class, from the
- * build (data.registry) — a context figure beside the product's own, never added to it.
+ * selection as reference. A row is one FID of the core registry 02_FACTORIES (every size); the default measure is
+ * Σ workers (registrations without a worker figure add nothing), the other registrations (“ทะเบียน”). District
+ * membership is the matched production code of the registration's own district label (row.admin); points are source
+ * points, never upgraded. The 95+ lens (row.p90) and the functional classes are read from the same rows.
  *
  * Distances (nearby factories) are straight lines between source points, computed here from the published
  * coordinates; they are not travel times, commuting zones or catchments.
  */
-import {mixOf, sizeMixOf, hasPoint, valueOf, rowValue} from './model.js';
+import {mixOf, sizeMixOf, lensOf, classMixOf, hasPoint, valueOf, rowValue} from './model.js';
 import {summarizeAreas, byMetric, levelWords} from './areas.js';
 
 const COLLATOR = new Intl.Collator('th');
@@ -34,8 +32,9 @@ export function industriesIn(rows, limit = 12, metric = 'workers') {
   for (const r of rows) {
     const g = r.industry;
     if (!g) continue;
-    const e = m.get(g.index) || {industry: g, count: 0, workers: 0};
-    e.count++; e.workers += r.workers || 0;
+    const e = m.get(g.index) || {industry: g, count: 0, workers: 0, figured: 0};
+    e.count++;
+    if (r.workers != null) { e.figured++; e.workers += r.workers; }
     m.set(g.index, e);
   }
   const key = metric === 'count' ? ['count', 'workers'] : ['workers', 'count'];
@@ -59,26 +58,6 @@ export function unplacedOf(rows) {
   return {noArea, noProvince, workers, total: noArea + noProvince};
 }
 
-/**
- * Registry context of a place: every core registration of 02_FACTORIES (all sizes) by functional class —
- * {total, byClass: [{id, th, count}]} or null when the build has none for it.
- */
-export function registryOf(registry, classes, {area = '', province = ''} = {}) {
-  const v = area ? registry?.areas?.[area] : province ? registry?.provinces?.[province] : null;
-  if (!Array.isArray(v)) return null;
-  return {total: v[0] || 0, byClass: classes.map((c, i) => ({id: c.id, th: c.th, count: v[i + 1] || 0}))};
-}
-
-/** The country's registry context: the sum over every province (registrations the build placed in a province). */
-export function registryNational(registry, classes) {
-  const out = {total: 0, byClass: classes.map(c => ({id: c.id, th: c.th, count: 0}))};
-  for (const v of Object.values(registry?.provinces || {})) {
-    out.total += v[0] || 0;
-    classes.forEach((c, i) => { out.byClass[i].count += v[i + 1] || 0; });
-  }
-  return out;
-}
-
 /** The industrial-area register (01_ESTATES) of a province, by type then name; the whole register without one. */
 export function estatesOf(estates, province = '') {
   const list = (estates || []).filter(e => !province || e.province === province);
@@ -87,17 +66,12 @@ export function estatesOf(estates, province = '') {
   return {list, total: list.length, types: [...types].map(([type, count]) => ({type, count})).sort((a, b) => b.count - a.count || COLLATOR.compare(a.type, b.type))};
 }
 
-/**
- * `allRows` (every row of the dataset, before the filters) gives `p90`: the registrations of this product in the place,
- * the same universe as the registry count beside it (null without allRows).
- */
-export function buildOverview(scopeRows, index, {province = '', families = [], metric = 'workers', registry = null, classes = [], estates = [], allRows = null} = {}) {
+/** The overview of the scope (the country, or the province of the จังหวัด filter). */
+export function buildOverview(scopeRows, index, {province = '', families = [], metric = 'workers', classes = [], estates = []} = {}) {
   return {ranking: rankAreas(scopeRows, index, {province, metric}), industries: industriesIn(scopeRows, 8, metric), unplaced: unplacedOf(scopeRows),
     mix: mixOf(scopeRows, families), sizes: sizeMixOf(scopeRows), count: scopeRows.length, workers: sum(scopeRows, 'workers'),
-    points: scopeRows.filter(hasPoint).length,
-    registry: province ? registryOf(registry, classes, {province}) : registryNational(registry, classes),
-    p90: Array.isArray(allRows) ? (province ? allRows.filter(r => r.province === province).length : allRows.length) : null,
-    estates: estatesOf(estates, province)};
+    figured: scopeRows.filter(r => r.workers != null).length, points: scopeRows.filter(hasPoint).length,
+    lens: lensOf(scopeRows), classes: classMixOf(scopeRows, classes), estates: estatesOf(estates, province)};
 }
 
 /**
@@ -106,7 +80,7 @@ export function buildOverview(scopeRows, index, {province = '', families = [], m
  */
 const selectionState = count => (count ? 'measured' : 'measured_zero');
 
-export function buildAreaProfile(scopeRows, areaId, index, families, {metric = 'workers', registry = null, classes = [], estates = [], allRows = null} = {}) {
+export function buildAreaProfile(scopeRows, areaId, index, families, {metric = 'workers', classes = [], estates = []} = {}) {
   const area = index.byId.get(areaId);
   if (!area) return null;
   const ranking = rankAreas(scopeRows, index, {metric});
@@ -119,14 +93,14 @@ export function buildAreaProfile(scopeRows, areaId, index, families, {metric = '
   const value = sum(mine, metric), provinceValue = sum(provinceRows, metric);
   return {
     area, words: levelWords(area.province), metric, value, count: mine.length, workers: sum(mine, 'workers'),
+    figured: mine.filter(r => r.workers != null).length,
     km2: area.km2, coverageState: selectionState(mine.length), scopeCount: scopeRows.length,
     rank: pos >= 0 && value > 0 ? pos + 1 : null, rankOf: ranking.filter(a => a.value > 0).length,
     rankProvince: posProvince >= 0 && value > 0 ? posProvince + 1 : null, rankProvinceOf: inProvince.filter(a => a.value > 0).length,
     provinceValue, share: provinceValue ? (value / provinceValue) * 100 : null,
     points: mine.filter(hasPoint).length, ...mixOf(mine, families), sizes: sizeMixOf(mine), industries: industriesIn(mine, 8, metric),
     big: mine.filter(r => r.workers >= 1000).length,
-    registry: registryOf(registry, classes, {area: areaId}), estates: estatesOf(estates, area.province),
-    p90: Array.isArray(allRows) ? allRows.filter(r => r.area === areaId).length : null,
+    lens: lensOf(mine), classes: classMixOf(mine, classes), estates: estatesOf(estates, area.province),
     rows: [...mine].sort(listOrder),
   };
 }
@@ -151,11 +125,13 @@ export const NEARBY_LIMIT = 10;
 /**
  * Nearby comparison set of a registration (a screening aid, not a labour-market study): registrations with a point
  * within NEARBY_RADIUS_M in a straight line, of the same industry family, whose workers are within half to double its
- * own, nearest first. Every registration of the dataset within the radius (any family) is stated beside it. Reads
- * every row of the dataset (`allRows`), so the set does not move with the filters.
+ * own (any size when its own figure is missing or 0 — `rule.min` null), nearest first. Every registration of the dataset
+ * within the radius (any family) is stated beside it. Reads every row of the dataset (`allRows`), so the set does not
+ * move with the filters.
  */
 export function nearbyOf(row, allRows, {radius = NEARBY_RADIUS_M, limit = NEARBY_LIMIT} = {}) {
   if (!hasPoint(row)) return null;
+  const sized = row.workers > 0;
   const dLat = radius / 110574, dLon = radius / (111320 * Math.cos((row.latitude * Math.PI) / 180));
   const near = [];
   let count = 0, workers = 0;
@@ -165,12 +141,12 @@ export function nearbyOf(row, allRows, {radius = NEARBY_RADIUS_M, limit = NEARBY
     const m = distanceM(row.latitude, row.longitude, r.latitude, r.longitude);
     if (m > radius) continue;
     count++; workers += r.workers || 0;
-    const sizeOK = r.workers >= row.workers / 2 && r.workers <= row.workers * 2;
+    const sizeOK = !sized || (r.workers >= row.workers / 2 && r.workers <= row.workers * 2);
     if (r.group === row.group && sizeOK) near.push({row: r, m});
   }
   near.sort((a, b) => a.m - b.m || listOrder(a.row, b.row));
   return {radius, around: {count, workers}, matches: near.length, rows: near.slice(0, limit),
-    rule: {group: row.group, min: Math.ceil(row.workers / 2), max: row.workers * 2}};
+    rule: {group: row.group, min: sized ? Math.ceil(row.workers / 2) : null, max: sized ? row.workers * 2 : null}};
 }
 
 /** Registration detail: the nearby set, the other registrations of its district, and its building on the map. */
@@ -179,6 +155,6 @@ export function buildFactoryDetail(row, {scopeRows, allRows, index, families, bu
   const area = row.area ? index.byId.get(row.area) || null : null;
   const sameArea = row.area ? scopeRows.filter(r => r.area === row.area && r.id !== row.id) : [];
   return {row, area, words: levelWords(row.province), family: families[row.group], building,
-    nearby: nearbyOf(row, allRows), rankOf: allRows.length,
+    nearby: nearbyOf(row, allRows), rankOf: allRows.filter(r => r.workers != null).length,
     sameArea: {count: sameArea.length, workers: sum(sameArea, 'workers')}};
 }

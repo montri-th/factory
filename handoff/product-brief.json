@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-brief",
   "productId": "citymeter-factory",
-  "productVersion": "0.1.0",
+  "productVersion": "0.2.0",
   "updatedOn": "2026-11-05",
   "datasetCheckedOn": "2026-11-04",
   "language": "th",
@@ -21,13 +21,14 @@
   "journey": [
     "first Aha (3D city scene, workers + industries)",
     "switch the measure (คนงาน | โรงงาน)",
-    "district → industries, DIW groups, sizes, registry context, estates, factories",
+    "size filter incl. คนงาน 95 คนขึ้นไป",
+    "district → industries, DIW groups, sizes and the 95+ lens, functions, estates, factories",
     "factory → building view, facts, nearby set",
     "Google next question",
     "charts / table",
     "CityMETER production"
   ],
-  "changesSince": "0.1.0 (2026-11-05): first release, built from CityMETER · Hotel 0.3.6 (montri-th/hotel@177e592) on the owner request to do “แบบเดียวกัน” for CityMETER: Factory; hotel-only parts (stations, chains, logos, prices, sites) removed; factory pictograms added to the subset.",
+  "changesSince": "0.2.0 (2026-11-05): the rows are every core registration of 02_FACTORIES (74,047) instead of the 7,175 FIDs of 18_WORKERS_P90 (owner: “ขยายเลย”); worker figures from คนงานรวม of the DIW class 2/3 exports, checked against 18_WORKERS_P90; the 95+ registrations stay as the size filter p90 and a lens in every area panel; registrations without a worker figure read ไม่มีตัวเลขคนงาน and areas without any figure are EVID-05 no data; the separate registry context is gone. 0.1.0 (2026-11-05): first release, built from CityMETER · Hotel 0.3.6 (montri-th/hotel@177e592).",
   "rowScopes": {
     "scopeRows": "rows after search · industry family · size · province · function, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
     "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
@@ -37,7 +38,7 @@
     "scope": "scopeRows",
     "measure": "workers (default) | count",
     "ranking": "เขต/อำเภอ by the measure (then the other measure, then name) inside the home province = the province holding the most of the measure among rows placed at district level; up to three and never every district holding the measure (N ≤ 3 → top N − 1); never cut through a tie; none left → spread",
-    "headlineTemplate": "{share}% ของ{คนงานโรงงาน 95+ คน|โรงงาน 95+ คน}ใน{home} อยู่ใน {n} {เขต|อำเภอ}นี้ (one district: อยู่ใน{เขต|อำเภอ}{name})",
+    "headlineTemplate": "{share}% ของ{คนงานโรงงาน|โรงงาน}ใน{home} อยู่ใน {n} {เขต|อำเภอ}นี้ (one district: อยู่ใน{เขต|อำเภอ}{name}); no worker figure in the selection: “{n} ทะเบียน · ไม่มีตัวเลขคนงาน” with the switch นับเป็นทะเบียน",
     "numerator": "Σ measure of the focused districts (matched membership)",
     "denominator": "Σ measure of every row of the home province in the selection (homeValue)",
     "personality": "industries: up to three industry families of the focus rows ranked by the measure, each a bar in the family’s series colour with its cue and its share of the focus total; numerator and denominator in each bar’s title and accessible text",
@@ -54,46 +55,46 @@
         "home": "SPK",
         "areas": [
           {
-            "id": "1101",
-            "name": "เมืองสมุทรปราการ",
-            "value": 85921
-          },
-          {
             "id": "1103",
             "name": "บางพลี",
-            "value": 79620
+            "value": 130258
+          },
+          {
+            "id": "1101",
+            "name": "เมืองสมุทรปราการ",
+            "value": 124142
           },
           {
             "id": "1104",
             "name": "พระประแดง",
-            "value": 55439
+            "value": 76587
           }
         ],
-        "value": 220980,
-        "homeValue": 299796,
-        "sharePct": 74,
+        "value": 330987,
+        "homeValue": 457353,
+        "sharePct": 72,
         "industry": [
           {
             "id": "vehicle",
-            "value": 43591
+            "value": 57959
           },
           {
             "id": "textile",
-            "value": 42493
+            "value": 57590
           },
           {
-            "id": "polymer",
-            "value": 31330
+            "id": "metal",
+            "value": 53221
           }
         ],
-        "industryBase": 220980,
+        "industryBase": 330987,
         "outside": {
           "id": "7401",
           "name": "เมืองสมุทรสาคร",
           "province": "SKN",
-          "value": 169944,
+          "value": 264666,
           "family": "food",
-          "familyValue": 92869
+          "familyValue": 109886
         }
       },
       "registrations": {
@@ -102,44 +103,44 @@
           {
             "id": "1103",
             "name": "บางพลี",
-            "value": 287
+            "value": 2114
           },
           {
             "id": "1101",
             "name": "เมืองสมุทรปราการ",
-            "value": 249
+            "value": 1987
           },
           {
-            "id": "1104",
-            "name": "พระประแดง",
-            "value": 178
+            "id": "1106",
+            "name": "บางเสาธง",
+            "value": 1009
           }
         ],
-        "value": 714,
-        "homeValue": 997,
-        "sharePct": 72,
+        "value": 5110,
+        "homeValue": 7171,
+        "sharePct": 71,
         "industry": [
           {
-            "id": "textile",
-            "value": 141
+            "id": "metal",
+            "value": 1025
+          },
+          {
+            "id": "other",
+            "value": 964
           },
           {
             "id": "polymer",
-            "value": 121
-          },
-          {
-            "id": "vehicle",
-            "value": 120
+            "value": 916
           }
         ],
-        "industryBase": 714,
+        "industryBase": 5110,
         "outside": {
           "id": "7401",
           "name": "เมืองสมุทรสาคร",
           "province": "SKN",
-          "value": 474,
-          "family": "food",
-          "familyValue": 182
+          "value": 4346,
+          "family": "polymer",
+          "familyValue": 1088
         }
       },
       "note": "regression fixtures (tests/insight.test.js), never UI constants"
@@ -159,7 +160,7 @@
       "workers": "คน",
       "count": "ทะเบียน"
     },
-    "rule": "one row = one FID of 18_WORKERS_P90 (workers ≥ 95, the sheet’s P90); a registration is not a plant or a company; every row has a worker figure, so no total is partial"
+    "rule": "one row = one FID of 02_FACTORIES (every size); a registration is not a plant or a company; a registration without a worker figure (null) adds nothing to a worker total and is never 0 or estimated"
   },
   "metricContract": {
     "areas": "Σ measure per เขต/อำเภอ (LDS count for both measures)",
@@ -172,9 +173,10 @@
     "covered": "every เขต/อำเภอ of the 77 provinces is in the registry’s national scope",
     "states": {
       "measured": "ramp sample by rank",
-      "measured_zero": "sample 0 + zero outline — no registration of the dataset is placed there under the filters (375 of 928 districts unfiltered)"
+      "measured_zero": "sample 0 + zero outline — no registration of the dataset is placed there under the filters, or its registrations record 0 workers (13 of 928 districts unfiltered)",
+      "no_data": "workers measure only: every registration of the district (or province) in the selection lacks a figure → the 135° hatch (district and province layers, legend, matrix cells); never a measured 0"
     },
-    "noData": "not used: every row has a worker figure"
+    "noData": "js/map-layers.js#buildAreaModel, js/provinces.js#buildProvinceModel"
   },
   "categoricalCueContract": {
     "registry": "landometer-series-10-v8",
@@ -280,11 +282,13 @@
     "choropleth": "count (workers or registrations), 41-sample ramp by rank, under the basemap’s first line layer; zoom 8–14.5; the selected จังหวัด from zoom 4; measured_zero = sample 0 + 2 px zero outline"
   },
   "contextContract": {
-    "registry": {
-      "source": "02_FACTORIES of the research master (74,047 core FIDs, all sizes)",
-      "by": "functional class (ผลิต · บริการ · อื่น ๆ · รอตรวจหน้าที่)",
-      "shown": "district and province panels, the overview; the share of 95+ registrations in it from the same universe before any filter",
-      "neverAdded": "never added to the product’s workers or registrations"
+    "lens": {
+      "source": "row.p90 (the FIDs of 18_WORKERS_P90: workers ≥ 95, the P90 of the figures)",
+      "shown": "size filter p90; area tile “ทะเบียน 95+ คน”; “คนงาน 95 คนขึ้นไป N ทะเบียน · x% ของคนงาน” in the size section (js/model.js#lensOf)"
+    },
+    "classes": {
+      "source": "functional_class of the rows",
+      "shown": "หน้าที่ของโรงงาน section of the overview and area panels (js/model.js#classMixOf)"
     },
     "estates": {
       "source": "01_ESTATES of the estate research master (106 rows, checked 2026-10-25/26)",
@@ -296,11 +300,12 @@
   "nearbyContract": {
     "module": "js/profile-model.js#nearbyOf",
     "rule": "same industry family, workers ½–2× the registration’s, within 3,000 m straight line, nearest first, up to 10, every row of the dataset",
-    "around": "every 95+ registration within 3,000 m (any family) with its workers",
+    "around": "every registration within 3,000 m (any family) with its workers",
+    "noFigure": "a registration without a figure (or 0) drops the size rule: same family within 3,000 m",
     "words": "โรงงานใกล้เคียง · rule as chips (family · workers · ≤ 3 กม.); never คู่แข่ง or a supply chain"
   },
   "statusContract": {
-    "field": "moi_location_status_raw with its update date (02_FACTORIES / 18_WORKERS_P90)",
+    "field": "moi_location_status_raw of 02_FACTORIES with its update date (moi_status_update)",
     "words": "chip “อก. ระบุ…”, source details “สถานะ อก. … · date”; “ไม่พบใน อก.” when the FID is not in the MOI export",
     "never": "a field check, a closure claim or a colour"
   },
@@ -327,7 +332,8 @@
       "workers_CDF_at_or_below",
       "raw coordinates of rows whose coordinate_quality is not within_TH_bbox_unverified",
       "names and points of natural-person operators",
-      "internal Drive / Sheet URLs"
+      "internal Drive / Sheet URLs",
+      "every DIW export field except fid and คนงานรวม (addresses, capital, horsepower, permit year, activity)"
     ]
   },
   "contextActionsContract": {
@@ -429,7 +435,8 @@
     "frames": "data/provinces.geojson",
     "fill": "the measure below zoom 8 without a province filter",
     "labels": "ink chips to zoom 9",
-    "zero": "Mae Hong Son holds no registration of 95+ workers (measured zero)"
+    "zero": "every province holds registrations (no measured zero unfiltered)",
+    "noData": "the hatch when every registration of the province in the selection lacks a worker figure (workers measure)"
   },
   "pictogramContract": {
     "file": "assets/icons/material-pictogram-300.woff2",
@@ -489,57 +496,85 @@
       "building": "buildBuildingProfile",
       "factory": "buildFactoryDetail (+ nearbyOf)"
     },
-    "provenance": "exactly one line per view: dataset (CityMETER Factory · โรงงาน 95+ คน) · source (ทะเบียน กรอ. นอกนิคมอุตสาหกรรม · อก. + the estate register / terrain when shown) · date · boundary, then วิธีนับ",
+    "provenance": "exactly one line per view: dataset (CityMETER Factory · ทะเบียนโรงงาน) · source (ทะเบียน กรอ. นอกนิคมอุตสาหกรรม · อก. + the estate register / terrain when shown) · date · boundary, then วิธีนับ",
     "phoneSheet": "56dvh bottom sheet, sticky close; in the factory, building and area modes the dataset heading is visually hidden (kept for screen readers) and the search form is off — the filter chips stay"
   },
   "data": {
     "file": "data/factories.json",
-    "sha256": "60ed6f5b4e57a84741f4da189d38b8522eb6ed446b8d40c6ad96e3e74ed05f6b",
-    "rows": 7175,
+    "sha256": "f82e2ee5ab262baf0083d513becbd54bd53812c8434ef3fc1dfcc2fdd1004b1b",
+    "rows": 74047,
     "counts": {
-      "rows": 7175,
-      "workers": 2435798,
-      "points": 2306,
-      "persons": 58,
+      "rows": 74047,
+      "withWorkers": 71124,
+      "workers": 3755632,
+      "zeroWorkers": 391,
+      "p90": 7175,
+      "p90Workers": 2435798,
+      "points": 15654,
+      "persons": 6036,
       "admin": {
-        "name": 7175
+        "name": 74045,
+        "province": 2
       },
       "moi": {
-        "ดำเนินการ": 2894,
-        "none": 3944,
-        "หยุดดำเนินการ": 137,
-        "ได้รับใบอนุญาต": 200
+        "ดำเนินการ": 27007,
+        "none": 42508,
+        "หยุดดำเนินการ": 902,
+        "ได้รับใบอนุญาต": 3621,
+        "จำหน่าย": 9
       },
       "basis": {
-        "DIW2026_listed_and_MOI_operating": 2894,
-        "DIW2026_listed": 4281
+        "DIW2026_listed_and_MOI_operating": 24086,
+        "DIW2026_listed": 47040,
+        "MOI_operating_only": 2921
       },
-      "possibleSameSite": 430,
+      "classes": {
+        "manufacturing": 54229,
+        "review": 7729,
+        "service": 5122,
+        "other": 6967
+      },
+      "possibleSameSite": 3328,
       "ties": 122,
-      "registry": 74047,
-      "registryPlaced": 74045,
-      "registryUnplaced": 2,
       "estates": 106,
       "sizes": {
-        "w1": 3998,
-        "w2": 2216,
-        "w3": 585,
-        "w4": 244,
+        "w6": 24,
         "w5": 108,
-        "w6": 24
+        "w4": 244,
+        "w3": 585,
+        "w2": 2216,
+        "w1": 3998,
+        "s3": 7309,
+        "s2": 33178,
+        "s1": 23462,
+        "none": 2923
       },
       "estateContext": {
-        "outside_estate_source_scope_DIW_catalog": 7175
+        "outside_estate_source_scope_DIW_catalog": 71126,
+        "unknown_estate_context": 2921
+      },
+      "p90Parity": {
+        "workers": 7175,
+        "nameDiffers": 0,
+        "moiDiffers": 0
       }
     },
     "inputs": {
-      "18_WORKERS_P90": {
-        "file": "18_WORKERS_P90.csv",
-        "sha256": "8b01cf75fdd2138bb3f35a5f12fa869159d6adffe878043749bcdb61b535c5a1"
-      },
       "02_FACTORIES_cols": {
         "file": "02_FACTORIES_cols.csv",
         "sha256": "c9489bde2157db6ff18b47e89fe06443c1dae6474446b844d2ec7821f809bd74"
+      },
+      "02_FACTORIES_names": {
+        "file": "02_FACTORIES_names.csv",
+        "sha256": "022fe92cfde03c48a416c4b9d4bc896c2f4f577e0e1449ec3e74ab26f33983c8"
+      },
+      "02_FACTORIES_ops": {
+        "file": "02_FACTORIES_ops.csv",
+        "sha256": "2425284b6752ced7cf13f933cbca96707266886e4360913c1298b0f9ca72670d"
+      },
+      "18_WORKERS_P90": {
+        "file": "18_WORKERS_P90.csv",
+        "sha256": "8b01cf75fdd2138bb3f35a5f12fa869159d6adffe878043749bcdb61b535c5a1"
       },
       "02_TYPES": {
         "file": "02_TYPES.csv",
@@ -548,6 +583,22 @@
       "99_SOURCE_FILES": {
         "file": "99_SOURCE_FILES.csv",
         "sha256": "d71d7aa13f22ff18c582f553e2f0a881caa02a1d394af785462d5d503a416c9e"
+      },
+      "DIW_workers": {
+        "file": "diw_workers.csv",
+        "sha256": "2dc634f9fb2454c9937c076a49ee5ea18cc7f21f3bf8e0193cb09116c1013f35",
+        "derivedFrom": [
+          {
+            "source": "DIW_factype2",
+            "sha256": "7ad219ed5a3808db7acb9508de52e7f95dd281195da7283c5259c0e3dd167701",
+            "field": "คนงานรวม"
+          },
+          {
+            "source": "DIW_factype3",
+            "sha256": "4c3243bcd8dc6a9f3ac0d473f23491fdc475e11ae48960291b6f0db607c8f4af",
+            "field": "คนงานรวม"
+          }
+        ]
       },
       "01_ESTATES": {
         "file": "01_ESTATES.csv",
@@ -559,14 +610,15 @@
       "percentile": "PERCENTILE.INC 0.9",
       "withWorkers": 71124,
       "core": 74047,
-      "workersPeriod": "DIW class 2/3 exports, resource metadata updated 2026-10-01; observation date of the figure not exported",
-      "estates": "estate_context of 02_FACTORIES (counts.estateContext): outside_estate_source_scope_DIW_catalog — the DIW class 2/3 open-data exports cover registrations outside IEAT industrial estates; plants registered with IEAT are not in these exports",
-      "note": "Registrations (FID) at or above the P90 of DIW-reported workers; not a census of operating plants."
+      "workersPeriod": "DIW class 2/3 exports (คนงานรวม), resource metadata updated 2026-10-01; observation date of the figure not exported",
+      "estates": "estate_context of 02_FACTORIES (counts.estateContext): outside_estate_source_scope_DIW_catalog for the DIW-listed FIDs — the DIW class 2/3 open-data exports cover registrations outside IEAT industrial estates; unknown_estate_context for the MOI-only FIDs",
+      "note": "Core registrations (FID) of the research master, every size; not a census of operating plants."
     },
     "checks": {
       "pointWithheld": {
-        "otherDistrict": 61,
-        "otherProvince": 18
+        "otherDistrict": 585,
+        "otherProvince": 128,
+        "outsideFrames": 5
       }
     }
   },
@@ -580,7 +632,7 @@
   "invariants": [
     {
       "id": "F1",
-      "rule": "the scope is part of the name: โรงงาน 95+ คน · ทะเบียน กรอ. นอกนิคมอุตสาหกรรม, in the heading and every provenance line"
+      "rule": "the scope is part of the name: ทะเบียนโรงงานทุกขนาด · กรอ. นอกนิคมอุตสาหกรรม · อก., in the heading and every provenance line"
     },
     {
       "id": "F2",
@@ -608,7 +660,11 @@
     },
     {
       "id": "F8",
-      "rule": "registry and estate context are never added to the product’s figures; no estate geometry; no claim of which registration lies in an estate"
+      "rule": "the estate register is never added to the product’s figures; no estate geometry; no claim of which registration lies in an estate"
+    },
+    {
+      "id": "F12",
+      "rule": "a missing worker figure is never shown or summed as 0: “ไม่มีตัวเลขคนงาน”, “—” or the EVID-05 no-data hatch"
     },
     {
       "id": "F9",
@@ -653,6 +709,6 @@
     "site": "GitHub Pages from main /root",
     "handoff": "dist/CityMETER-Factory-Developer-Handoff.zip (START_HERE.md, RELEASE_RECEIPT.json, evidence/, source/)",
     "liveCheck": "npm run verify:live",
-    "cacheTag": "?v=20261105-r1 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
+    "cacheTag": "?v=20261105-r2 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
   }
 }
