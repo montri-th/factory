@@ -1,0 +1,12 @@
+{
+  "name": "citymeter-shell",
+  "version": "0.1.0",
+  "released": "2026-11-08",
+  "about": "Shared navigation of the CityMETER demos: address grammar d/at/e/n with browser history, breadcrumb, tab title. Same bytes in every repository that carries it; change it everywhere at once (demo-platform-review, phase 1).",
+  "files": {
+    "js/shell/area-path.js": "c829f2b7b63a210af2a642a09444f2dba7656cd492a37f03e5feb7aff925c580",
+    "js/shell/breadcrumb.js": "8c03797eee9fd51dbbfa416ec9b8e773656dfcc094bfa293cbb0993595a1e8b8",
+    "js/shell/title.js": "33a7ae2753d1b9eaea9fdf2535fc19d39fdfddfea472c5f0826f8b4514aa16ed",
+    "js/shell/url.js": "a466b8bad325564b46d559a4e5d73871f22bdcd2d1ce30126998b25241b607c8"
+  }
+}

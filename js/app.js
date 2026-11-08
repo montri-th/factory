@@ -43,7 +43,9 @@
  * PROVINCE_FILL_MAX_ZOOM a เขต/อำเภอ of the selected จังหวัด, else a province → เขต/อำเภอ (`area-hit`, every zoom from
  * AREA_MIN_ZOOM). Quiet context dots are never targets.
  * Panel modes: overview | area | building | factory (with a back stack).
- * URL state: filters, metric, area, areas, view, factory, view3d.
+ * URL state (own names, inside): filters, metric, area, areas, view, factory, view3d — written in the shared
+ * grammar d · at · e · m · f.* · focus · view · v3d by citymeter-shell (js/shell/url.js), with a browser history
+ * entry per level (the back button goes up a level).
  */
 import {provinces as provinceList, provinceByCode, provinceCodeFrom, setProvinces, decodeDataset, filterRows, summarize, hasPoint, unitWords, rowValue, familyShares, SIZE_FILTERS, pinRadius} from './model.js';
 import {buildAreaIndex, areaWord, areaLocator, recordBounds} from './areas.js';
@@ -68,6 +70,8 @@ import {rampLegendHTML} from './scales.js';
 import {cueMarkup} from './cues.js';
 import {installFactoryLabels} from './labels.js';
 import {installTerrain, terrainFacts, terrainChips, TERRAIN} from './terrain.js';
+import {createCodec, createNavigator} from './shell/url.js';
+import {pageTitle} from './shell/title.js';
 
 const $ = id => document.getElementById(id);
 const FIELDS = ['search', 'group', 'size', 'province', 'cls'];
@@ -96,6 +100,17 @@ const state = {
   // Building camera: the x-ray solid, what was framed last ({id, key, refits}) and whether the user moved the map since.
   xray: null, framed: null, userCamera: false,
 };
+
+/* ---------- address (citymeter-shell, js/shell/url.js) ---------- */
+// The page keeps its own parameter names inside (saveURL / restoreFromURL); the shell writes them in the shared
+// grammar d · at · e · m · f.* · focus · view · v3d, and opening an area or an item adds one browser history entry,
+// so the back button goes up a level. Old links (?area=, ?factory= …) still open and are rewritten.
+// The `e` kinds are provisional until the dataset registry declares them.
+const nav = createNavigator(createCodec({
+  dataset: 'factory', levels: ['P', 'D'], place: {province: 'province', D: 'area'},
+  items: {factory: 'factory'}, filters: FIELDS,
+  provinceOf: code => state.index?.byId.get(code)?.province || '',
+}), {onPop: restoreFromHistory});
 
 /* ---------- helpers ---------- */
 const values = () => Object.fromEntries(FIELDS.map(k => [k, $(k).value]));
@@ -135,7 +150,8 @@ function saveURL() {
   if (state.view !== 'areas') p.set('view', state.view);
   if (state.panel.mode === 'factory' && state.panel.id) p.set('factory', state.panel.id);
   if (!state.view3d) p.set('view3d', '0');
-  history.replaceState(null, '', location.pathname + (p.size ? '?' + p : ''));
+  // A building view has no address of its own: the address stays on what it was opened from.
+  if (state.panel.mode !== 'building') nav.commit(p);
 }
 
 /* ---------- theme ---------- */
@@ -296,8 +312,10 @@ function renderCrumbs() {
     crumbs = buildBreadcrumb({province: $('province').value, area: state.selectedArea ? areaById(state.selectedArea) : null});
   }
   $('crumbs').innerHTML = renderBreadcrumb(crumbs);
-  const title = mode === 'factory' ? `${rowById(id)?.title || ''} · ` : mode === 'building' ? 'อาคาร · ' : '';
-  document.title = `${title}${breadcrumbText(crumbs)} · Factory · CityMETER`;
+  // Tab title: what the view shows, then the product, ≤ 60 characters (LDS FAVICON-01, js/shell/title.js).
+  const place = crumbs[crumbs.length - 1].label;
+  document.title = pageTitle(mode === 'factory' ? rowById(id)?.title || place
+    : mode === 'building' ? `อาคาร ${place}` : `${unit().subject} ${place}`);
   return crumbs;
 }
 
@@ -401,6 +419,8 @@ function pushHistory() {
 }
 
 function goBack() {
+  // Every level change is a browser history entry (citymeter-shell): go up the way the browser's button does.
+  if (state.panel.mode !== 'building' && nav.canGoBack()) { nav.back(); return; }
   const previous = state.history.pop();
   if (!previous) { state.selectedArea = ''; state.panel = overviewPanel(); update({fit: true}); return; }
   // Leaving or reaching a building view always moves the camera.
@@ -1650,7 +1670,7 @@ function refreshOptionCounts() {
 }
 
 function restoreFromURL() {
-  const p = new URLSearchParams(location.search);
+  const p = nav.read();
   for (const f of FIELDS) if (p.has(f)) { const v = f === 'province' ? provinceCodeFrom(p.get(f)) : p.get(f); if (f === 'search' || [...($(f).options || [])].some(o => o.value === v)) $(f).value = v; }
   if (['areas', 'mix', 'industries'].includes(p.get('view'))) state.view = p.get('view');
   if (p.get('metric') === 'count') state.metric = 'count';
@@ -1662,6 +1682,15 @@ function restoreFromURL() {
   if (state.selectedArea) state.panel = {mode: 'area', id: state.selectedArea};
   const factory = p.get('factory') && rowById(p.get('factory'));
   if (factory) state.panel = {mode: 'factory', id: factory.id};
+}
+
+/** Browser back / forward (citymeter-shell): show the level the restored address names. */
+function restoreFromHistory() {
+  for (const f of FIELDS) $(f).value = '';
+  Object.assign(state, {view: 'areas', metric: 'workers', selectedArea: '', focusAreaIds: [], autoFocus: true, panel: overviewPanel(), history: [], buildingSel: null});
+  restoreFromURL();
+  $('toggle-3d').setAttribute('aria-pressed', String(state.view3d));
+  update({fit: true});
 }
 
 function wireEvents() {
