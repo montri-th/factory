@@ -63,11 +63,14 @@ export function serialize(params) {
  * The translator between a dataset's own parameters and the shared grammar.
  *   dataset     production `?d=` code, e.g. 'hotel'
  *   levels      area levels the dataset opens, e.g. ['P', 'D'] (js/shell/area-path.js#clampAt)
- *   place       own parameters that carry the area: {province: 'province', D: 'area'} (+ S for a subdistrict)
+ *   place       own parameters that carry the area: {province: 'province', D: 'area'} (+ S for a subdistrict,
+ *               M for a local administrative unit)
  *   items       own parameter → `e` kind, first match wins: {hotel: 'hotel', station: 'station'}
+ *   networks    own parameter → `n` kind, first match wins: {company: 'company'} (brand | company | operator | line)
  *   filters     own filter parameters → `f.<name>` (the province parameter is part of `at`, not a filter)
  *   rename      own → shared key for the rest (default: metric → m, areas → focus, view → view, view3d → v3d)
- *   provinceOf  (code, kind) → the production province code of one of the dataset's districts / subdistricts
+ *   provinceOf  (code, kind) → the production province code of one of the dataset's districts / subdistricts /
+ *               local administrative units (kind 'D', 'S' or 'M')
  * A district opened inside a province filter keeps that filter as `f.province`, so the view comes back the same.
  */
 export function createCodec(config) {
@@ -75,9 +78,11 @@ export function createCodec(config) {
   const levels = config.levels || ['P', 'D'];
   const items = config.items || {};
   const kinds = Object.fromEntries(Object.entries(items).map(([param, kind]) => [kind, param]));
+  const networks = config.networks || {};
+  const netKinds = Object.fromEntries(Object.entries(networks).map(([param, kind]) => [kind, param]));
   const filters = (config.filters || []).filter(f => f !== place.province);
   const rename = config.rename || RENAME;
-  const owned = new Set([place.province, place.D, place.S, ...Object.keys(items), ...filters, ...Object.keys(rename)].filter(Boolean));
+  const owned = new Set([place.province, place.D, place.S, place.M, ...Object.keys(items), ...Object.keys(networks), ...filters, ...Object.keys(rename)].filter(Boolean));
   const provinceOf = config.provinceOf || (() => '');
 
   /** Own parameters (as the dataset writes them) → shared grammar (URLSearchParams). */
@@ -87,8 +92,10 @@ export function createCodec(config) {
     const province = own.get(place.province) || '';
     const sub = place.S ? own.get(place.S) || '' : '';
     const district = place.D ? own.get(place.D) || '' : '';
+    const unit = place.M ? own.get(place.M) || '' : '';
     let at = null;
-    if (sub) { const p = provinceOf(sub, 'S'); if (p) at = {province: p, kind: 'S', code: sub}; }
+    if (unit) { const p = provinceOf(unit, 'M'); if (p) at = {province: p, kind: 'M', code: unit}; }
+    if (!at && sub) { const p = provinceOf(sub, 'S'); if (p) at = {province: p, kind: 'S', code: sub}; }
     if (!at && district) { const p = provinceOf(district, 'D'); if (p) at = {province: p, kind: 'D', code: district}; }
     if (!at && province) at = {province, kind: 'P', code: ''};
     const path = formatAt(at);
@@ -97,10 +104,15 @@ export function createCodec(config) {
       if (province) out.set(place.province, province);
       if (district) out.set(place.D, district);
       if (sub) out.set(place.S, sub);
+      if (unit) out.set(place.M, unit);
     }
     for (const [param, kind] of Object.entries(items)) {
       const v = own.get(param);
       if (v && !out.has('e')) out.set('e', joinRef(kind, v));
+    }
+    for (const [param, kind] of Object.entries(networks)) {
+      const v = own.get(param);
+      if (v && !out.has('n')) out.set('n', joinRef(kind, v));
     }
     if (path && at.kind !== 'P' && province) out.set('f.province', province);
     for (const f of filters) { const v = own.get(f); if (v) out.set(`f.${f}`, v); }
@@ -123,11 +135,14 @@ export function createCodec(config) {
       else {
         if (at.kind === 'D' && place.D) own.set(place.D, at.code);
         if (at.kind === 'S' && place.S) own.set(place.S, at.code);
+        if (at.kind === 'M' && place.M) own.set(place.M, at.code);
         if (src.get('f.province')) own.set(place.province, src.get('f.province'));
       }
     }
     const ref = splitRef(src.get('e'));
     if (ref && kinds[ref.kind]) own.set(kinds[ref.kind], ref.id);
+    const net = splitRef(src.get('n'));
+    if (net && netKinds[net.kind]) own.set(netKinds[net.kind], net.id);
     for (const [mine, shared] of Object.entries(rename)) if (src.has(shared)) own.set(mine, src.get(shared));
     for (const f of filters) if (src.has(`f.${f}`)) own.set(f, src.get(`f.${f}`));
     for (const [k, v] of src) {

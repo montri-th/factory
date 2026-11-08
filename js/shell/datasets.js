@@ -3,8 +3,8 @@
  *
  * Group and address per the dataset registry, R01_DATASETS (`dataset_group`, `demo_web_url`), read 2026-11-08;
  * Factory's demo address was added to the registry that day. `at: true` marks a demo on citymeter-shell: it opens
- * the area of `?at=` (a production path such as BKK/D/1039). The others open their own start page until they move
- * onto the shell. Names are the English names the demos show in their header (live 2026-11-08), except Shopping
+ * the area of `?at=` (a production path such as BKK/D/1039 or BKK/S/103902; a demo opens the deepest level it
+ * carries). The others open their own start page until they move onto the shell. Names are the English names the demos show in their header (live 2026-11-08), except Shopping
  * Center, whose header reads ศูนย์การค้า. Change this list only when the registry or a demo changes, in every
  * repository at once.
  *
@@ -24,8 +24,8 @@ export const DEMOS = Object.freeze([
   {path: 'grocery', name: 'Grocery', group: 'Location', at: false},
   {path: 'hospital', name: 'Hospital', group: 'Location', at: true},
   {path: 'luxurybrands', name: 'Luxury Brands', group: 'Location', at: false},
-  {path: 'pharmacy', name: 'Pharmacy', group: 'Location', at: false},
-  {path: 'restaurant', name: 'Restaurants', group: 'Location', at: false},
+  {path: 'pharmacy', name: 'Pharmacy', group: 'Location', at: true},
+  {path: 'restaurant', name: 'Restaurants', group: 'Location', at: true},
   {path: 'school', name: 'School', group: 'Location', at: true},
   {path: 'governmentoffice', name: 'Government Office', group: 'Living', at: true},
   {path: 'transit', name: 'Transit', group: 'Living', at: false},

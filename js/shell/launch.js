@@ -2,6 +2,7 @@
  * on the shell loads the same bytes and gives its own words on the script element:
  *   <script src="js/shell/launch.js?v=…" data-public="https://montri-th.github.io/hotel/" data-name="Hotel"
  *     data-reading="ที่พัก"></script>
+ * data-boundary names the areas the page reads (default เขต/อำเภอ; e.g. แขวง/ตำบล, shell 0.4.0).
  * The file bridge always targets that one public origin and preserves only query/hash state.
  * It does not read local data or change browser security settings.
  * App contract: window events citymeter:ready, citymeter:load-error and citymeter:progress (a longer load, e.g. a
@@ -20,6 +21,7 @@
  const PUBLIC_URL=cfg.public||window.location.origin+window.location.pathname;
  const NAME=cfg.name||'CityMETER';
  const READING=cfg.reading||'';
+ const BOUNDARY=cfg.boundary||'เขต/อำเภอ';
  const RETRY_KEY='citymeter-launch-retry:'+window.location.pathname;
  const RETRY_WINDOW_MS=120000;
  const publicTarget=new URL(PUBLIC_URL);
@@ -57,7 +59,7 @@
    e.message.textContent='การโหลดใช้เวลานานกว่าปกติ คุณสามารถรอต่อ ลองโหลดใหม่ หรือเปิดเว็บสาธารณะจากลิงก์ด้านล่าง';
   }else if(phase==='loading'){
    e.title.textContent='กำลังโหลดข้อมูล';
-   e.message.textContent=warning?'กำลังอ่านข้อมูล'+READING+' บางส่วนของแผนที่หรือกราฟยังโหลดไม่ครบ':progress?progress+' หากรอนาน สามารถเปิดเว็บสาธารณะได้จากลิงก์นี้':'กำลังอ่านข้อมูล'+READING+'และขอบเขตเขต/อำเภอ หากรอนาน สามารถเปิดเว็บสาธารณะได้จากลิงก์นี้';
+   e.message.textContent=warning?'กำลังอ่านข้อมูล'+READING+' บางส่วนของแผนที่หรือกราฟยังโหลดไม่ครบ':progress?progress+' หากรอนาน สามารถเปิดเว็บสาธารณะได้จากลิงก์นี้':'กำลังอ่านข้อมูล'+READING+'และขอบเขต'+BOUNDARY+' หากรอนาน สามารถเปิดเว็บสาธารณะได้จากลิงก์นี้';
   }
   const detail=diagnostics();e.debug.hidden=!detail;e.diagnostics.textContent=detail;
  }
