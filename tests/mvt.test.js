@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseVectorTile, lonLatToTile, tileToLonLat, lonLatToTileUnits, tilesForBBox, metresPerTileUnit} from '../js/mvt.js';
+import {parseVectorTile, lonLatToTile, tileToLonLat, lonLatToTileUnits, tilesForBBox, metresPerTileUnit} from '../js/shell/mvt.js';
 
 const fixture = new URL('./fixtures/mvt-sample.pbf', import.meta.url);
 const expected = JSON.parse(readFileSync(new URL('./fixtures/mvt-sample.json', import.meta.url), 'utf8'));

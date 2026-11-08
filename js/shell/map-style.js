@@ -14,6 +14,8 @@
  * foundation pairs plus basemap-only tokens declared there). Data colours are
  * never set here. Tiles: © OpenMapTiles © OpenStreetMap contributors, served by
  * OpenFreeMap (https://openfreemap.org) — attribution flows from the TileJSON.
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
 export const TILEJSON_URL = 'https://tiles.openfreemap.org/planet';
 export const GLYPHS_URL = 'https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf';
@@ -21,7 +23,7 @@ export const SOURCE_ID = 'openmaptiles';
 export const FIRST_LINE_LAYER = 'waterway';
 export const FIRST_LABEL_LAYER = 'water-name';
 /**
- * The x-ray of the building being looked at (js/venue-xray.js) draws above road names and below place
+ * The x-ray of the building being looked at (js/shell/venue-xray.js) draws above road names and below place
  * labels and pins, so road text never lies across the selected walls and roof (CityMETER · Shopping
  * centers 0.1.4). Ordinary massing stays beneath every label (MASSING_BEFORE).
  */

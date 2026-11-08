@@ -14,6 +14,8 @@
  * The guard pads the child list of exactly those ideal tiles to four copies of the one overscaled child, so the
  * check reads as MapLibre's own overzoom branch does (covered when that child is retained, otherwise ascend to
  * the parents). Nothing else changes. It applies to the pinned 5.6.2 only: re-check before upgrading MapLibre.
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
 export const GUARDED_VERSION = '5.6.2';
 

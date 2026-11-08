@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {terrarium, factsFrom, terrainChips, TERRAIN, hillshadePaint, POSITION_STEP_M, SEA_RINGS, stillScheduler} from '../js/terrain.js';
+import {terrarium, factsFrom, terrainChips, TERRAIN, hillshadePaint, POSITION_STEP_M, SEA_RINGS, stillScheduler} from '../js/shell/terrain.js';
 import {gateExpression, FILL_MAX_ZOOM} from '../js/map-layers.js';
 
 // Owner 2026-11-01 (point 2): show whether a stay sits by the sea, on a hill, in a valley or among trees — facts of

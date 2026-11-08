@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {landAfterEase, guardElevationFreeze, guardRetainedTiles, padOverscaledChildren, GUARDED_VERSION} from '../js/maplibre-guard.js';
-import {MAP_VERSION} from '../js/vendors.js';
+import {landAfterEase, guardElevationFreeze, guardRetainedTiles, padOverscaledChildren, GUARDED_VERSION} from '../js/shell/maplibre-guard.js';
+import {MAP_VERSION} from '../js/shell/vendors.js';
 
 // The parts of MapLibre 5.6.2 the bug lives in: OverscaledTileID.children and the child-cover check of
 // SourceCache._updateRetainedTiles (src/tile/tile_id.ts, src/source/source_cache.ts at v5.6.2).

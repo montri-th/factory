@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
-import {parseVectorTile, tileToLonLat} from '../js/mvt.js';
-import {pointInRing, signedArea} from '../js/geometry.js';
+import {parseVectorTile, tileToLonLat} from '../js/shell/mvt.js';
+import {pointInRing, signedArea} from '../js/shell/geometry.js';
 import {shapeTile, tilesForRegions, roundingRadiusM, encloseOffsetM, outerRings, installMassing, focusFeatureId, footprintFitPoints, HEIGHT_LIFT_M, MAX_TILES, CITY_MIN_ZOOM, FOCUS_MIN_ZOOM, CITY_LAYER, FOCUS_LAYER, FOCUS_SOURCE, OCCLUDER_LAYER, VENUE_LAYER, SCENE, FADE_NEAR_M, FADE_FAR_M} from '../js/massing.js';
 import {readJSON} from './helpers.js';
 

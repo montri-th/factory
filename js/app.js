@@ -32,10 +32,10 @@
  * is published).
  *
  * Buildings: the points of the scope are joined to the focus-tier footprints the map draws — OpenStreetMap, or
- * CityMETER Building V4 inside a CityMETER unit (js/building-units.js) — (js/building-join.js, “จุดตกในอาคาร”; pieces
+ * CityMETER Building V4 inside a CityMETER unit (js/shell/building-units.js) — (js/shell/building-join.js, “จุดตกในอาคาร”; pieces
  * of one building cut by a tile edge are one building). A building is a click target: its one registration, else the
  * building panel. The building being looked at — the open building, the open registration's building (focusTarget) —
- * is drawn over every other building (x-ray, js/venue-xray.js), the focus buildings in front of it turn see-through,
+ * is drawn over every other building (x-ray, js/shell/venue-xray.js), the focus buildings in front of it turn see-through,
  * and the camera looks at it in two-point perspective, zoomed to fit the free part of the map, from every way in
  * (frameFocus; the Fitness / Shopping centers / Hotel building camera).
  *
@@ -51,25 +51,25 @@ import {provinces as provinceList, provinceByCode, provinceCodeFrom, setProvince
 import {buildAreaIndex, areaWord, areaLocator, recordBounds} from './areas.js';
 import {summarizeAreaInsight, filterAreaRows} from './area-insight.js';
 import {renderInsightChart} from './charts.js';
-import {loadMapLibrary} from './vendors.js';
+import {loadMapLibrary} from './shell/vendors.js';
 import {installBranchPins, DETAIL_MIN_ZOOM} from './pins.js';
 import {installAreaLayers, installAreaLabels, buildAreaModel, setFillSwitchZoom, AREA_MIN_ZOOM, PROVINCE_VIEW_MIN_ZOOM, FILL_MAX_ZOOM} from './map-layers.js';
 import {installProvinceLayers, buildProvinceModel, PROVINCE_FILL_MAX_ZOOM, PROVINCE_LABEL_MAX_ZOOM} from './provinces.js';
 import {createFrameStore, provinceLocator} from './frames.js';
 import {buildOverview, buildAreaProfile, buildFactoryDetail, buildBuildingProfile, listOrder} from './profile-model.js';
 import {renderOverview, renderArea, renderBuilding, renderFactory, renderFilterChips, terrainChipsHTML, esc, num, pct, words} from './panel.js';
-import {joinBuildings, nearestBuilding} from './building-join.js';
-import {buildMapStyle, basemapPalette, TILEJSON_URL, MASSING_BEFORE, VENUE_XRAY_BEFORE} from './map-style.js';
+import {joinBuildings, nearestBuilding} from './shell/building-join.js';
+import {buildMapStyle, basemapPalette, TILEJSON_URL, MASSING_BEFORE, VENUE_XRAY_BEFORE} from './shell/map-style.js';
 import {installMassing, outerRings} from './massing.js';
-import {createBuildingUnitStore, cmTileUrl, CM_ATTRIBUTION} from './building-units.js';
-import {presetFor, applyPreset, fitPitched, fitBuilding, twoPointBearing, screenBounds, groundAt, BUILDING_MAX_ZOOM} from './camera.js';
-import {installVenueXray} from './venue-xray.js';
-import {guardRetainedTiles, guardElevationFreeze} from './maplibre-guard.js';
+import {createBuildingUnitStore, cmTileUrl, CM_ATTRIBUTION} from './shell/building-units.js';
+import {presetFor, applyPreset, fitPitched, fitBuilding, twoPointBearing, screenBounds, groundAt, BUILDING_MAX_ZOOM} from './shell/camera.js';
+import {installVenueXray} from './shell/venue-xray.js';
+import {guardRetainedTiles, guardElevationFreeze} from './shell/maplibre-guard.js';
 import {buildBreadcrumb, renderBreadcrumb, breadcrumbText} from './breadcrumb.js';
 import {rampLegendHTML} from './scales.js';
 import {cueMarkup} from './cues.js';
 import {installFactoryLabels} from './labels.js';
-import {installTerrain, terrainFacts, terrainChips, TERRAIN} from './terrain.js';
+import {installTerrain, terrainFacts, terrainChips, TERRAIN} from './shell/terrain.js';
 import {createCodec, createNavigator} from './shell/url.js';
 import {pageTitle} from './shell/title.js';
 
@@ -387,7 +387,7 @@ async function fillTerrain(r, attempt = 0) {
   const box = document.querySelector(`[data-terrain-for="${CSS.escape(r?.id || '')}"]`);
   if (!box) return;
   const facts = state.map && state.loaded ? await terrainFacts(state.map, r).catch(() => null) : null;
-  const chips = terrainChips(facts, {num});
+  const chips = terrainChips(facts, {num, subject: 'โรงงาน'});
   const now = document.querySelector(`[data-terrain-for="${CSS.escape(r.id)}"]`);
   if (!now) return;
   // The map may not reach 'idle' while terrain tiles stream in (building view on terrain), and the sea and tree cover
@@ -577,7 +577,7 @@ const REACH_M = 300, REACH_FAR_M = 800;
 const MAX_REFITS = 3;
 const reachOf = id => (state.reach?.id === id ? state.reach.m : REACH_M);
 
-/** The drawn building nearest a pin that falls in none (js/building-join.js#nearestBuilding), per join and pieces. */
+/** The drawn building nearest a pin that falls in none (js/shell/building-join.js#nearestBuilding), per join and pieces. */
 function nearestOf(r) {
   const pieces = state.massing?.buildings() || [], join = state.join, key = `${r.id}|${reachOf(r.id)}`;
   if (nearestOf.key !== key || nearestOf.join !== join || nearestOf.pieces !== pieces) {
@@ -626,7 +626,7 @@ function focusShape(target = focusTarget()) {
   const rings = features.flatMap(f => outerRings(f).map(ring => ({ring, height: Number(f.properties.height) || 3})));
   // On terrain each piece stands on the ground as drawn (pieceGrounds: its roof on the ground at its centroid, its
   // walls down to the lowest ground under it, as the x-ray draws it): its fit points carry that ground (4th value,
-  // js/camera.js#fitBuilding) — the base at the low ground, the roof at the centroid's.
+  // js/shell/camera.js#fitBuilding) — the base at the low ground, the roof at the centroid's.
   const map = state.map, terrain = Boolean(map?.terrain) && state.view3d;
   const pinGround = terrain && target ? groundAt(map, target.anchor) : 0;
   let points = features.flatMap(f => {
@@ -652,7 +652,7 @@ const xrayColors = () => ({fill: cssVar('--map-active-layer', '#347DA8'), stroke
 /**
  * Highlight, eye-view scene and x-ray of the building being looked at (after every join or selection change).
  * Owner 2026-10-29: “อย่าให้ 3d building mass ตึกอื่นบังอาคารที่กำลังดูอยู่” — the building is drawn over every
- * other building (js/venue-xray.js) and the focus buildings standing in front of it turn see-through
+ * other building (js/shell/venue-xray.js) and the focus buildings standing in front of it turn see-through
  * (js/massing.js#setScene, SCENE.eye).
  */
 function syncFocusBuilding() {
@@ -1255,7 +1255,7 @@ function massingRegions() {
 function updateSpatialLayers() {
   if (!state.loaded) return;
   // Terrain mode reads the land at hilly sites — also round a building or registration being looked at (Hotel 0.3.0):
-  // the building camera and the x-ray stand on the drawn ground (js/camera.js).
+  // the building camera and the x-ray stand on the drawn ground (js/shell/camera.js).
   state.terrain?.setEnabled(state.view3d);
   const code = $('province').value, u = unit();
   const pm = state.provinceLayers?.update({rows: provinceScopeRows(), selectedCode: code, visible: true, metric: state.metric}) || null;
@@ -1372,9 +1372,9 @@ function onMapMove(e) {
 function installSpatialLayers() {
   const map = state.map;
   state.loaded = true;
-  // MapLibre 5.6.2 throws in its tile cover when the pitched building camera zooms out through 13–14 (js/maplibre-guard.js).
+  // MapLibre 5.6.2 throws in its tile cover when the pitched building camera zooms out through 13–14 (js/shell/maplibre-guard.js).
   guardRetainedTiles(map, maplibregl.getVersion?.());
-  // After a programmatic ease on terrain MapLibre 5.6.2 stops clamping the centre to the ground (js/maplibre-guard.js).
+  // After a programmatic ease on terrain MapLibre 5.6.2 stops clamping the centre to the ground (js/shell/maplibre-guard.js).
   guardElevationFreeze(map, maplibregl.getVersion?.());
   const palette = basemapPalette(theme());
   state.provinceLayers = state.provincesGeo?.features?.length ? installProvinceLayers(map, state.provincesGeo) : null;
@@ -1384,7 +1384,7 @@ function installSpatialLayers() {
     // The open building is drawn in the data colour (LDS map.activeLayer), read from the theme.
     colors: {quiet: palette.massingQuiet, focus: palette.massingFocus, ground: palette.ground, venue: cssVar('--map-active-layer') || undefined},
     tileUrl: t => (state.tileTemplate ? state.tileTemplate.replace('{z}', t.z).replace('{x}', t.x).replace('{y}', t.y) : ''),
-    // CityMETER Building V4 inside CityMETER units (js/building-units.js); credited in the attribution while drawn.
+    // CityMETER Building V4 inside CityMETER units (js/shell/building-units.js); credited in the attribution while drawn.
     cmTileUrl, cmAttribution: CM_ATTRIBUTION,
     onResult: result => {
       state.massingReadFor = state.massingFor; // a result is always the latest request's (stale ones are dropped)
@@ -1406,7 +1406,7 @@ function installSpatialLayers() {
     // Icon + number (owner 2026-11-01: icons instead of long text); the sentence stays in the title.
     onLayout: stats => renderMapStatus(stats),
   });
-  // Terrain mode at hilly sites (js/terrain.js): 3D ground + hillshade; the district fill switches off at site scale.
+  // Terrain mode at hilly sites (js/shell/terrain.js): 3D ground + hillshade; the district fill switches off at site scale.
   try {
     state.terrain = installTerrain(map, {beforeId: 'water', colors: terrainColors(), onChange: active => {
       setFillSwitchZoom(map, active ? TERRAIN.minZoom : FILL_MAX_ZOOM);
@@ -1779,7 +1779,7 @@ async function init() {
     state.rowById = new Map(state.data.rows.map(r => [r.id, r]));
     state.frames = createFrameStore({index: state.index, fetchJSON, version: RELEASE, onLoad: onFramesLoaded,
       onError: (code, e) => { console.warn('Province outlines unavailable', code, e); $('map-status').dataset.framesError = code; }});
-    // Buildings per area (owner 2026-11-01, point 3): which อปท./เขต draw CityMETER Building V4 (js/building-units.js).
+    // Buildings per area (owner 2026-11-01, point 3): which อปท./เขต draw CityMETER Building V4 (js/shell/building-units.js).
     state.buildingUnits = createBuildingUnitStore({fetchJSON, version: RELEASE, onLoad: () => { if (state.loaded) updateSpatialLayers(); },
       onError: (code, e) => { console.warn('Building units unavailable', code, e); if (state.loaded) updateSpatialLayers(); }});
     state.buildingUnits.loadIndex();

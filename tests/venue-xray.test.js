@@ -1,8 +1,8 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildSolid, screenBoxOf, solidHit, mat4Multiply, mat4Translation, transformPoint, installVenueXray, XRAY_LAYER, XRAY_MIN_ZOOM} from '../js/venue-xray.js';
+import {buildSolid, screenBoxOf, solidHit, mat4Multiply, mat4Translation, transformPoint, installVenueXray, XRAY_LAYER, XRAY_MIN_ZOOM} from '../js/shell/venue-xray.js';
 import {installMassing, CITY_LAYER, CONTEXT_LAYER, CM_CREDIT_LAYER, FOCUS_LAYER, OCCLUDER_LAYER, VENUE_LAYER} from '../js/massing.js';
-import {buildMapStyle, MASSING_BEFORE, VENUE_XRAY_BEFORE} from '../js/map-style.js';
+import {buildMapStyle, MASSING_BEFORE, VENUE_XRAY_BEFORE} from '../js/shell/map-style.js';
 
 // Mercator stand-in: x = lon/360 + 0.5, y = 0.5 - lat/360 (flat), z = altitude × 1e-7 (like MercatorCoordinate near the equator).
 const merc = ([lon, lat], alt = 0) => ({x: lon / 360 + 0.5, y: 0.5 - lat / 360, z: alt * 1e-7});

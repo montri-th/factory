@@ -1,7 +1,7 @@
 /**
  * A minimal Mapbox Vector Tile writer for the tests: polygon features with string, unsigned-integer and boolean
  * properties, optional ids. Rings are closed [[x, y]…] arrays in tile units (any sign); outer rings clockwise on screen
- * (y down), holes counter-clockwise — as js/mvt.js and js/geometry.js read them.
+ * (y down), holes counter-clockwise — as js/shell/mvt.js and js/shell/geometry.js read them.
  */
 const varint = n => { const out = []; let v = BigInt(n); do { let b = Number(v & 0x7fn); v >>= 7n; if (v) b |= 0x80; out.push(b); } while (v); return out; };
 const zigzag = n => (n << 1) ^ (n >> 31);

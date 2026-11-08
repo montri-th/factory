@@ -94,7 +94,7 @@
   --scale-count-ink-on-5: #FFFFFF;
 
   /* Basemap-only tokens (release 0.3) — foundation values for the generated "paper"
-     basemap (js/map-style.js). Where an LDS foundation token fits it is reused
+     basemap (js/shell/map-style.js). Where an LDS foundation token fits it is reused
      (ground = surface.alt, casings = borders, labels = text roles, halo/sky =
      surface.canvas). Land cover, buildings, massing and (0.3.4) light water have
      no LDS token and are declared here once so no value is approximated in code.

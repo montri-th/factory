@@ -9,6 +9,8 @@
  *
  * Exports: signedArea, isClockwise, clipRingToBox, offsetRing, roundRing,
  * pointInRing, ringsIntersect, ringBBox.
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
 
 export function signedArea(ring) {

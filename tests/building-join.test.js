@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {joinRows, containsPoint, footprint, groupPieces, joinBuildings, nearestBuilding, buildingsAtPoints} from '../js/building-join.js';
+import {joinRows, containsPoint, footprint, groupPieces, joinBuildings, nearestBuilding, buildingsAtPoints} from '../js/shell/building-join.js';
 
 // Synthetic footprints near Din Daeng (lon/lat squares; d = half-size in degrees).
 const square = (cx, cy, d) => [[cx - d, cy - d], [cx + d, cy - d], [cx + d, cy + d], [cx - d, cy + d], [cx - d, cy - d]];

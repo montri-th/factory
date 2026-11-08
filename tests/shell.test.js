@@ -1,7 +1,9 @@
 /**
- * citymeter-shell — the shared navigation of the CityMETER demos (js/shell/). This file is the same in every
- * repository that carries the shell: the files must match js/shell/manifest.json byte for byte, and the modules
- * must keep the contract of demo-platform-review §5.2–5.3 (address grammar, history, breadcrumb, tab title).
+ * citymeter-shell — the shared code of the CityMETER demos (js/shell/): navigation (0.1.0) and the map modules
+ * (0.2.0). This file is the same in every repository that carries the shell: the files must match
+ * js/shell/manifest.json byte for byte, and the navigation modules must keep the contract of demo-platform-review
+ * §5.2–5.3 (address grammar, history, breadcrumb, tab title). The map modules keep their own tests in each repository
+ * (tests/camera.test.js, tests/terrain.test.js, tests/venue-xray.test.js …); this file checks what 0.2.0 added.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -11,6 +13,7 @@ import {parseAt, formatAt, clampAt, districtOf, productionHref} from '../js/shel
 import {splitRef, joinRef, serialize, createCodec, createNavigator, LEVEL_KEYS} from '../js/shell/url.js';
 import {buildBreadcrumb, renderBreadcrumb, breadcrumbText, deepestHref} from '../js/shell/breadcrumb.js';
 import {pageTitle, TITLE_MAX} from '../js/shell/title.js';
+import {terrainChips} from '../js/shell/terrain.js';
 
 const SHELL = new URL('../js/shell/', import.meta.url);
 const sha256 = buf => createHash('sha256').update(buf).digest('hex');
@@ -157,4 +160,12 @@ test('the breadcrumb is the administrative path with production deep links; item
   assert.ok(html.includes('aria-current="location"'));
   assert.ok(html.includes('data-action="crumb-province"'));
   assert.ok(!html.includes('crumb-more'), 'three levels never fold');
+});
+
+test('terrain: the sea tooltip names what the demo passes as subject, and says only “จุด…” without one (0.2.0)', () => {
+  const facts = {elevation: 2, relief: 0, above: 0, position: 'level', seaBand: 0, treeShare: null};
+  const sea = opts => terrainChips(facts, opts).find(c => c.kind === 'sea').title;
+  assert.equal(sea({}), 'จุดอยู่บนพื้นน้ำทะเลในแผนที่');
+  assert.equal(sea({subject: 'ที่พัก'}), 'จุดของที่พักอยู่บนพื้นน้ำทะเลในแผนที่');
+  assert.deepEqual(terrainChips(null), [], 'no facts: no chips, nothing shown as 0');
 });

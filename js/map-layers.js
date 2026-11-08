@@ -28,7 +28,7 @@ export const FILL_MAX_ZOOM = 14.5;
 let fillSwitch = FILL_MAX_ZOOM;
 /**
  * The zoom where the choropleth switches off — a hard switch, never a fade (data colours keep their opacity):
- * FILL_MAX_ZOOM, or TERRAIN.minZoom while terrain mode shows the relief of a hilly site (js/terrain.js).
+ * FILL_MAX_ZOOM, or TERRAIN.minZoom while terrain mode shows the relief of a hilly site (js/shell/terrain.js).
  */
 export const fillSwitchZoom = () => fillSwitch;
 /**
@@ -37,7 +37,7 @@ export const fillSwitchZoom = () => fillSwitch;
  * tile of the level-of-detail cover reaches maxzoom before it has data (CityMETER · Shopping centers, seen
  * 2026-10-25 with the two-point camera at zoom 17.7 and the default maxzoom 18). Under the eye preset the near
  * tiles of the cover sit up to about half a level above the camera (calculateTileZoom), so every building camera
- * zoom (≤ js/camera.js#BUILDING_MAX_ZOOM, 21) stays two levels below 24 — the most geojson-vt allows.
+ * zoom (≤ js/shell/camera.js#BUILDING_MAX_ZOOM, 21) stays two levels below 24 — the most geojson-vt allows.
  */
 export const GEOJSON_MAXZOOM = 24;
 export const AREA_MIN_ZOOM = 8;

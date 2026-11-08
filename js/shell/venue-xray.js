@@ -2,8 +2,8 @@
  * Venue x-ray — the building being looked at is drawn on top of everything else
  * in the 3D pass, so it stays visible whatever stands between it and the camera,
  * at any pan, pitch or zoom (shared with CityMETER · Luxury Brands, Shopping
- * centers, Restaurants and Fitness). In Hotel the solid is the focus-tier OSM building of
- * the open building or hotel (js/app.js#focusTarget, js/massing.js#featuresOf),
+ * centers, Restaurants, Fitness and the Hotel-family demos). There the solid is the focus-tier building of
+ * the open building or item (js/app.js#focusTarget, js/massing.js#featuresOf),
  * owner instruction 2026-10-29: “อย่าให้ 3d building mass ตึกอื่นบังอาคารที่กำลังดูอยู่”.
  *
  * Why a custom layer: MapLibre fill-extrusion layers always depth-test against
@@ -26,8 +26,10 @@
  *
  * Colours: map.activeLayer (faces) and map.selectedStroke (edges) from
  * assets/theme.css — the host building is map context, never an analytical scale.
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
-import earcut from './vendor/earcut.js';
+import earcut from '../vendor/earcut.js';
 
 export const XRAY_LAYER = 'venue-xray';
 export const XRAY_MIN_ZOOM = 13;

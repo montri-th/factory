@@ -3,7 +3,8 @@
  * เป็นหน่วย … ได้”).
  *
  * data/building-units/index.json (meta, rule, per-province summary) and data/building-units/{PROV}.json
- * (scripts/build-building-units.py): one record per อปท. that holds a stay with a point — in Bangkok one per เขต —
+ * (written by the demo's scripts/build-building-units.py or scripts/adapt-building-units.py): one record per อปท.
+ * the build lists — in Bangkok one per เขต —
  * with its source: CityMETER Building V4 where its building count is at least 1.15 × the OpenStreetMap count of the
  * same unit, otherwise OpenStreetMap. Only a CityMETER unit carries an outline and the production tile units it is
  * read by (the อปท. itself; in Bangkok its แขวง). Everywhere else the map draws OpenStreetMap, as before.
@@ -14,6 +15,8 @@
  * dataset's model estimates (`height_m`): context, never a claim.
  *
  * A file that fails to load counts as settled: the area stays on OpenStreetMap (never an empty map).
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
 export const UNITS_BASE = 'data/building-units/';
 /** Production building tiles (CORS allows the demo's origin; the browser caches them per the API's headers). */

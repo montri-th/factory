@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {buildMapStyle, basemapPalette, SOURCE_ID, DATA_FILL_BEFORE, MASSING_BEFORE, FIRST_LINE_LAYER, FIRST_LABEL_LAYER} from '../js/map-style.js';
-import {presetFor, CAMERA, DEFAULT_FOV} from '../js/camera.js';
+import {buildMapStyle, basemapPalette, SOURCE_ID, DATA_FILL_BEFORE, MASSING_BEFORE, FIRST_LINE_LAYER, FIRST_LABEL_LAYER} from '../js/shell/map-style.js';
+import {presetFor, CAMERA, DEFAULT_FOV} from '../js/shell/camera.js';
 
 test('generated basemap is a well-formed MapLibre style with the anchor layers the app inserts before', () => {
   for (const theme of ['light', 'dark']) {
