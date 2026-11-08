@@ -1,9 +1,10 @@
 /**
- * citymeter-shell — the shared code of the CityMETER demos (js/shell/): navigation (0.1.0) and the map modules
- * (0.2.0). This file is the same in every repository that carries the shell: the files must match
- * js/shell/manifest.json byte for byte, and the navigation modules must keep the contract of demo-platform-review
- * §5.2–5.3 (address grammar, history, breadcrumb, tab title). The map modules keep their own tests in each repository
- * (tests/camera.test.js, tests/terrain.test.js, tests/venue-xray.test.js …); this file checks what 0.2.0 added.
+ * citymeter-shell — the shared code of the CityMETER demos (js/shell/): navigation (0.1.0), the map modules (0.2.0)
+ * and the header (0.3.0). This file is the same in every repository that carries the shell: the files must match
+ * js/shell/manifest.json byte for byte (and so must the files it lists under `shared`), and the navigation modules
+ * must keep the contract of demo-platform-review §5.2–5.3 (address grammar, history, breadcrumb, tab title). The map
+ * modules keep their own tests in each repository (tests/camera.test.js, tests/terrain.test.js …); the launch card
+ * and the picker are walked in a browser before each release.
  */
 import test from 'node:test';
 import assert from 'node:assert/strict';
@@ -14,6 +15,8 @@ import {splitRef, joinRef, serialize, createCodec, createNavigator, LEVEL_KEYS} 
 import {buildBreadcrumb, renderBreadcrumb, breadcrumbText, deepestHref} from '../js/shell/breadcrumb.js';
 import {pageTitle, TITLE_MAX} from '../js/shell/title.js';
 import {terrainChips} from '../js/shell/terrain.js';
+import {DEMOS, GROUPS, demoUrl} from '../js/shell/datasets.js';
+import {demoHref, currentDemo, pickerList} from '../js/shell/header.js';
 
 const SHELL = new URL('../js/shell/', import.meta.url);
 const sha256 = buf => createHash('sha256').update(buf).digest('hex');
@@ -24,7 +27,7 @@ test('the shell files match their manifest byte for byte, and the manifest lists
   assert.match(manifest.version, /^\d+\.\d+\.\d+$/);
   const modules = readdirSync(SHELL).filter(f => f.endsWith('.js')).map(f => `js/shell/${f}`).sort();
   assert.deepEqual(Object.keys(manifest.files).sort(), modules);
-  for (const [path, hash] of Object.entries(manifest.files)) {
+  for (const [path, hash] of Object.entries({...manifest.files, ...(manifest.shared || {})})) {
     assert.equal(sha256(readFileSync(new URL(`../${path}`, import.meta.url))), hash, `${path} differs from citymeter-shell ${manifest.version}`);
   }
 });
@@ -168,4 +171,31 @@ test('terrain: the sea tooltip names what the demo passes as subject, and says o
   assert.equal(sea({}), 'จุดอยู่บนพื้นน้ำทะเลในแผนที่');
   assert.equal(sea({subject: 'ที่พัก'}), 'จุดของที่พักอยู่บนพื้นน้ำทะเลในแผนที่');
   assert.deepEqual(terrainChips(null), [], 'no facts: no chips, nothing shown as 0');
+});
+
+test('header: the demo list is one entry per demo, grouped Land · Location · Living (0.3.0)', () => {
+  assert.deepEqual(GROUPS, ['Land', 'Location', 'Living']);
+  assert.equal(new Set(DEMOS.map(d => d.path)).size, DEMOS.length);
+  for (const d of DEMOS) {
+    assert.ok(GROUPS.includes(d.group), d.path);
+    assert.match(demoUrl(d), /^https:\/\/montri-th\.github\.io\/[a-z]+\/$/);
+  }
+  assert.ok(DEMOS.filter(d => d.at).length >= 6, 'the six Hotel-family demos open ?at=');
+});
+
+test('header: a demo on the shell opens the same area, the others their start page (0.3.0)', () => {
+  const hotel = DEMOS.find(d => d.path === 'hotel'), transit = DEMOS.find(d => d.path === 'transit');
+  assert.equal(demoHref(hotel, '?d=office&at=BKK/D/1039&e=office:OFF-1'), 'https://montri-th.github.io/hotel/?at=BKK/D/1039');
+  assert.equal(demoHref(hotel, '?d=office'), 'https://montri-th.github.io/hotel/');
+  assert.equal(demoHref(transit, '?at=BKK/D/1039'), 'https://montri-th.github.io/transit/');
+  assert.equal(currentDemo('/governmentoffice/')?.path, 'governmentoffice');
+  assert.equal(currentDemo('/hotelx/'), null);
+  const html = pickerList({pathname: '/hotel/', search: '?d=hotel&at=BKK/D/1039', place: 'เขตวัฒนา'});
+  assert.match(html, /เปิดเขตวัฒนาในชุดข้อมูลอื่น/);
+  assert.match(html, /href="https:\/\/montri-th\.github\.io\/hotel\/\?at=BKK\/D\/1039" aria-current="page"/);
+  assert.match(html, /href="https:\/\/montri-th\.github\.io\/school\/\?at=BKK\/D\/1039"><span>School<\/span><\/a>/);
+  assert.match(html, /href="https:\/\/montri-th\.github\.io\/transit\/"><span>Transit<\/span><span class="dataset-note">หน้าแรก<\/span>/);
+  assert.equal((html.match(/aria-current/g) || []).length, 1);
+  assert.doesNotMatch(html, /role="menu/, 'a disclosure of links, never menu roles (LDS NAV-02)');
+  assert.match(pickerList({pathname: '/hotel/'}), /ชุดข้อมูลอื่นของ CityMETER/);
 });
