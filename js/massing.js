@@ -6,7 +6,7 @@
  *     outline, vertical gradient only. Covers the whole city from zoom 13.
  *  2. FOCUS (detail): for the focused neighborhoods only, the same tile data is
  *     fetched again (same URLs, so the browser cache serves them), decoded with
- *     js/mvt.js and re-shaped with js/geometry.js — corners rounded and the
+ *     js/shell/mvt.js and re-shaped with js/shell/geometry.js — corners rounded and the
  *     footprint offset outward by a few metres so the rounded "model" fully
  *     encloses the original drawn by tier 1 (no z-fighting, no seams). This is
  *     the display answer to MapLibre's missing polygon corner radius
@@ -19,7 +19,7 @@
  *
  * The focus tier also keeps each building's ORIGINAL footprint (clipped to its
  * tile, before rounding/offset) so the app can join restaurant display points to
- * the buildings it draws (js/building-join.js, owner decision 2026-10-23), and a
+ * the buildings it draws (js/shell/building-join.js, owner decision 2026-10-23), and a
  * third tier draws the buildings of the venue being looked at in the data colour
  * (map.activeLayer) — same rounded shape, only the colour changes. Feature ids are
  * stable per tile building (tile, feature index, polygon index), so a highlight
@@ -28,7 +28,7 @@
  * Heights are OpenMapTiles render_height / render_min_height (OSM tags where
  * present, otherwise the schema's default). They are context, never a claim.
  *
- * Buildings per area (owner 2026-11-01, point 3; js/building-units.js): inside a CityMETER unit — an อปท. (in
+ * Buildings per area (owner 2026-11-01, point 3; js/shell/building-units.js): inside a CityMETER unit — an อปท. (in
  * Bangkok a เขต) where CityMETER Building V4 holds at least 1.15 × the OpenStreetMap buildings — the focus tier draws
  * that unit's CityMETER buildings (shapeCmTile, same z14 grid, same rounded shape; `height_m` is the dataset's model
  * estimate) in place of the OSM buildings whose interior point falls inside it, keeping the OSM buildings mapped in
@@ -37,10 +37,10 @@
  * tier. Where a CityMETER tile is missing the area stays on OSM. A credit source names CityMETER Building V4 in the
  * map attribution while any of its buildings is drawn.
  */
-import {parseVectorTile, tileToLonLat, lonLatToTileUnits, tilesForBBox, metresPerTileUnit} from './mvt.js';
-import {clipRingToBox, offsetRing, roundRing, isClockwise, ringsIntersect, cleanRing, signedArea, pointInRing} from './geometry.js';
+import {parseVectorTile, tileToLonLat, lonLatToTileUnits, tilesForBBox, metresPerTileUnit} from './shell/mvt.js';
+import {clipRingToBox, offsetRing, roundRing, isClockwise, ringsIntersect, cleanRing, signedArea, pointInRing} from './shell/geometry.js';
 import {GEOJSON_MAXZOOM} from './map-layers.js';
-import {interiorOf} from './building-join.js';
+import {interiorOf} from './shell/building-join.js';
 
 export const CITY_LAYER = 'city-massing';
 export const FOCUS_SOURCE = 'focus-massing';
@@ -135,7 +135,7 @@ export function tileBox(tile) {
 }
 const boxesMeet = (a, b) => a[0] <= b[2] && b[0] <= a[2] && a[1] <= b[3] && b[1] <= a[3];
 
-/** Zones (js/building-units.js) meeting a tile, as tile-unit polygons with their box. */
+/** Zones (js/shell/building-units.js) meeting a tile, as tile-unit polygons with their box. */
 function zonesInTile(zones, tile, extent) {
   if (!zones?.length) return [];
   const tb = tileBox(tile);
@@ -242,10 +242,10 @@ export function outerRings(feature) {
  * dropped, replaced}.
  * Outlines that OpenMapTiles hides in 3D because the building is mapped in building:parts (`hide_3d`) are never
  * drawn, but their footprints are kept with `outline: true` (ids from OUTLINE_ORDINAL up): they tell the building
- * join which parts make one building (js/building-join.js#groupPieces).
+ * join which parts make one building (js/shell/building-join.js#groupPieces).
  *
  * `zones` (owner 2026-11-01, point 3): the CityMETER units drawn from CityMETER Building V4 in this tile
- * (js/building-units.js, only those whose CityMETER tiles for this tile loaded). A focus building whose interior
+ * (js/shell/building-units.js, only those whose CityMETER tiles for this tile loaded). A focus building whose interior
  * point falls in a zone is replaced (not drawn) — except a part of a building OSM maps in parts whose outline falls
  * in the zone: parts stay (LOD2), and the outline comes back in `partOutlines` (lon/lat) so the CityMETER buildings
  * standing in it are left out (shapeCmTile `skipRings`). The city tier hides a replaced (or host-covered) tile
@@ -579,7 +579,7 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
    * regions: lon/lat outer rings of the focused neighborhoods; hosts: rings of
    * host buildings currently drawn by buildings.js; zoom: current map zoom;
    * city: the city tier is shown (3D) — kept for zoom- and move-triggered rebuilds;
-   * zones: CityMETER units (js/building-units.js) meeting the regions, drawn from CityMETER Building V4.
+   * zones: CityMETER units (js/shell/building-units.js) meeting the regions, drawn from CityMETER Building V4.
    */
   async function update({regions = lastInput.regions, hosts = lastInput.hosts, zoom = map.getZoom(), enabled: on = enabled, city = lastInput.city ?? enabled, latitude = lastInput.latitude, anchors: nextAnchors = null, center = null, zones = lastInput.zones} = {}) {
     enabled = on;
@@ -701,7 +701,7 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
   }
   /**
    * Drawn focus-tier features standing within `radiusM` of [lon, lat] (a ground vertex inside the radius), as
-   * {id, ring, height}: the obstacles the two-point bearing tries to look past (js/camera.js#twoPointBearing).
+   * {id, ring, height}: the obstacles the two-point bearing tries to look past (js/shell/camera.js#twoPointBearing).
    */
   function obstaclesNear([lon, lat], radiusM = 400, exclude = []) {
     const skip = new Set(exclude), kx = 111320 * Math.cos((lat * Math.PI) / 180), ky = 110574, r2 = radiusM * radiusM;

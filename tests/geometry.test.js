@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {signedArea, isClockwise, cleanRing, clipRingToBox, offsetRing, roundRing, pointInRing, ringsIntersect} from '../js/geometry.js';
+import {signedArea, isClockwise, cleanRing, clipRingToBox, offsetRing, roundRing, pointInRing, ringsIntersect} from '../js/shell/geometry.js';
 
 // y-down frame (MVT): this square is clockwise on screen → positive signed area.
 const square = (x, y, s) => [[x - s, y - s], [x + s, y - s], [x + s, y + s], [x - s, y + s], [x - s, y - s]];

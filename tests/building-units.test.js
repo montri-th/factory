@@ -1,10 +1,10 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {tileToLonLat, parseVectorTile} from '../js/mvt.js';
+import {tileToLonLat, parseVectorTile} from '../js/shell/mvt.js';
 import {shapeTile, shapeCmTile, planCmRequests, installMassing, cmFeatureId, focusFeatureId, cmHeight, tileBox, CM_ID_BASE, CM_SLOTS, DEFAULT_CM_HEIGHT_M, HEIGHT_LIFT_M,
   MAX_CM_REQUESTS, CITY_LAYER, CONTEXT_LAYER, CONTEXT_SOURCE, CM_CREDIT_LAYER, FOCUS_SOURCE, roundingRadiusM, encloseOffsetM} from '../js/massing.js';
-import {cmTileUrl, zoneAt, zonesFor, zonesOf, validUnitFile, createBuildingUnitStore, CM_TILE_API, CM_ATTRIBUTION} from '../js/building-units.js';
-import {joinBuildings} from '../js/building-join.js';
+import {cmTileUrl, zoneAt, zonesFor, zonesOf, validUnitFile, createBuildingUnitStore, CM_TILE_API, CM_ATTRIBUTION} from '../js/shell/building-units.js';
+import {joinBuildings} from '../js/shell/building-join.js';
 import {renderBuilding, BUILDING_SOURCE_TH} from '../js/panel.js';
 import {encodeTile, square} from './mvt-encode.js';
 

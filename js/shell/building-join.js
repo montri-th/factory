@@ -14,6 +14,8 @@
  * building together (owner 2026-10-29: “ร้านเครือ กับ ร้านในอาคาร ให้แสดงรวมกันไม่ต้องแยก”): rows the sheet
  * links to a CityMETER venue whose registry point falls in the building, and rows whose own points fall in it,
  * in one list (joinBuildings + js/app.js#buildingRows). It never changes an area count.
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
 import {pointInRing} from './geometry.js';
 
@@ -169,12 +171,12 @@ export function joinRows(footprints, rows) {
 }
 
 /**
- * The drawn building the camera turns to when a stay's pin lies in no outline (owner 2026-11-02: “เวลาคลิกที่ poi hotel
+ * The drawn building the camera turns to when an item's pin lies in no outline (Hotel 0.3.2, owner 2026-11-02: “เวลาคลิกที่ poi hotel
  * แล้วต้องแสดง 2-point perspective ของ 3d building mass ทุกกรณี”). Pins are often published on the road, a drive or a
  * garden: the building nearest the pin, measured to its outline (and courtyard edges) on a local plane, within
- * `maxM`; among the pieces within `slackM` of the nearest, the largest footprint — a hotel block before a kiosk or a
+ * `maxM`; among the pieces within `slackM` of the nearest, the largest footprint — a main block before a kiosk or a
  * gatehouse beside the pin. It names the camera's building only (“อาคารใกล้หมุด”): never a join, never a row of
- * “ที่พักในอาคารนี้”.
+ * the panel's “…ในอาคารนี้” list (Hotel: “ที่พักในอาคารนี้”).
  * pieces: massing footprints [{id, outer, holes?, bbox?}]; keyOfPiece: Map(piece id → building key) of joinBuildings.
  * → {key, pieceId, distanceM} | null (nothing drawn within maxM).
  */
@@ -210,7 +212,8 @@ export function nearestBuilding(pieces, [lon, lat], {keyOfPiece = null, maxM = 3
 }
 
 /**
- * A stay's site (owner 2026-11-03 “… สร้างขอบเขตอาคาร ร่วมกับ site layout ของโรงแรม/รีสอท”): the drawn buildings whose
+ * A site of several buildings (Hotel 0.3.6, owner 2026-11-03 “… สร้างขอบเขตอาคาร ร่วมกับ site layout ของโรงแรม/รีสอท”):
+ * the drawn buildings whose
  * outline holds one of the site's points (49_SITE_BOUNDARY_CHECK.buildings_in_boundary — one interior point per building
  * inside the research site boundary), every piece of each. The points come from the same building data the map draws,
  * so a point stands in its building; a point no drawn outline holds (tiles still loading, a building gone from the data)

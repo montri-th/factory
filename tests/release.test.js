@@ -105,7 +105,7 @@ test('the handoff JSON satisfies its schema (statement, brief, plan)', () => {
 
 test('every GeoJSON source the page adds sets GEOJSON_MAXZOOM, two levels above the building camera (MapLibre 5.6.2 throws below it under a pitched camera)', async () => {
   const {GEOJSON_MAXZOOM} = await import('../js/map-layers.js');
-  const {BUILDING_MAX_ZOOM} = await import('../js/camera.js');
+  const {BUILDING_MAX_ZOOM} = await import('../js/shell/camera.js');
   assert.ok(GEOJSON_MAXZOOM <= 24, 'geojson-vt allows at most 24');
   assert.ok(GEOJSON_MAXZOOM - BUILDING_MAX_ZOOM >= 2, `${GEOJSON_MAXZOOM} vs building camera ${BUILDING_MAX_ZOOM}`);
   let n = 0;

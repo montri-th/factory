@@ -1,6 +1,6 @@
 {
   "artifact": "CityMETER Factory — 3D-first, district-first map of DIW-reported workers at every core factory registration of the research master (DIW registry outside IEAT industrial estates and MOI-operating registrations) across Thailand, with official industry groups, worker bands and the 95+ lens, functional classes, the industrial-area register as context and a nearby set per registration",
-  "productVersion": "0.3.0",
+  "productVersion": "0.3.1",
   "updatedOn": "2026-11-05",
   "ldsVersion": "0.9.7",
   "release": "v0.9.7-owner.1",
@@ -58,16 +58,16 @@
     "mobilePortrait": "full map, five toolbar buttons in one row (วิธีใช้ and Product statement at the top of the sheet); one compact dock at the foot of the map — the Aha finding in two lines with its action, over one legend row (measure switch | level + zero swatch over the 41-sample ramp) — above the attribution while it is open, dropped to the tray once it folds; zoom buttons off on touch phones (pinch; the compass stays); bottom sheet 56% of the screen with a sticky close, opening on the registration, building or area (Hotel 0.3.5 layout)"
   },
   "mapContract": {
-    "basemap": "generated at runtime by js/map-style.js on https://tiles.openfreemap.org/planet with --basemap-* tokens",
+    "basemap": "generated at runtime by js/shell/map-style.js on https://tiles.openfreemap.org/planet with --basemap-* tokens",
     "choropleth": "count for both measures, all 41 samples by rank over the measured nonzero values; beneath the basemap’s first line layer; zoom 8–14.5 (8–12.5 in terrain mode, hard switch), the selected จังหวัด from zoom 4; EVID-05 measured / measured_zero (sample 0 + 2 px zero outline)",
     "provinces": "the same measure per province frame below zoom 8 without a จังหวัด filter, outlines to zoom 12, ink-chip labels to zoom 9, panel list",
     "symbols": "focus rows with a published point as cue icons whose area grows with the workers; context rows as grey circles by workers, ≤ 6 px radius; HTML pins from zoom 15.5; the pin label is the registration’s name · workers",
     "buildings": "per อปท. (Bangkok: เขต) as decided for the CityMETER: Hotel units: CityMETER Building V4 where it holds ≥ 1.15 × the OSM buildings of the unit, else OSM (data/building-units/); every other unit OSM; OSM buildings mapped in parts kept; the attribution names CityMETER Building V4 while drawn",
-    "buildingView": "eye preset corner-on to the building on the least-occluded diagonal, zoom to fit the free part of the map on every way in (js/camera.js#fitBuilding); every registration with a point opens it — the building its point falls in, else the drawn building nearest the point within 300 m (800 m after one widen) with the point in the frame (legend “อาคารใกล้หมุด”); choosing a registration or a building switches the map to 3D (Hotel 0.3.2 rule)",
+    "buildingView": "eye preset corner-on to the building on the least-occluded diagonal, zoom to fit the free part of the map on every way in (js/shell/camera.js#fitBuilding); every registration with a point opens it — the building its point falls in, else the drawn building nearest the point within 300 m (800 m after one widen) with the point in the frame (legend “อาคารใกล้หมุด”); choosing a registration or a building switches the map to 3D (Hotel 0.3.2 rule)",
     "breadcrumb": "ประเทศไทย › จังหวัด › เขต/อำเภอ with production codes and /D/ deep links, ?d=factory",
     "symbolSize": "area ∝ workers (js/model.js#pinRadius, unit 400 workers, cap 6,400), quiet context ≤ 6 px; legend key 200 · 1,000 · 5,000 คน",
     "labels": "from zoom 12.5: ≤ 9 (phone 5) labels in the central ellipse ranked by the workers percentile; text only — the family cue, the short name (no company form words) and the workers pictogram with the workers; measured placement that never covers the chrome, the district chips, the popup, another label or the building being looked at; hover or focus opens a card of icon chips (family, workers, DIW group, MOI status, terrain)",
-    "terrain": "terrain mode at hilly sites (zoom ≥ 12.5, 3D, relief ≥ 30 m in view) and round a building or registration being looked at (relief ≥ 30 m within ±1 km of the site, 0.3.0): 3D ground × 1.5 + hillshade in basemap tones; the district fill switches off at 12.5 (hard switch, never a fade); buildings, the x-ray and the building camera stand on the drawn ground; switched only while the camera is still (js/terrain.js, js/camera.js)",
+    "terrain": "terrain mode at hilly sites (zoom ≥ 12.5, 3D, relief ≥ 30 m in view) and round a building or registration being looked at (relief ≥ 30 m within ±1 km of the site, 0.3.0): 3D ground × 1.5 + hillshade in basemap tones; the district fill switches off at 12.5 (hard switch, never a fade); buildings, the x-ray and the building camera stand on the drawn ground; switched only while the camera is still (js/shell/terrain.js, js/shell/camera.js)",
     "iconFirstText": "district chips carry the measure pictogram, the status is a pin + number, legend items are a symbol + 1–2 words; sentences live in titles and accessible names (owner 2026-11-01)",
     "water": "light water --basemap-water #CFDDE7 (basemap-only, 1.22:1 from the ground) with the water-shore line --basemap-shore #B2C7D6 above the district fill; dark keeps surface.blueTint #18333E (0.3.4, owner “ใน light theme ทำให้ทะเล/water body ดูเหมือนน้ำมากกว่านี้ … แต่ยัง clean and quiet”); the coast line, district outlines and legend separate the sea from low li.supply classes, never the water hue alone"
   },

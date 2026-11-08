@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "implementation-plan",
   "productId": "citymeter-factory",
-  "productVersion": "0.3.0",
+  "productVersion": "0.3.1",
   "updatedOn": "2026-11-05",
   "architecture": {
     "runtime": "static site (GitHub Pages), ES modules with an import map, no build step; Node ≥ 20 for tests, Python 3 for data builds",
@@ -21,7 +21,7 @@
       "build:units": "python3 -I scripts/build-building-units.py --help"
     },
     "libraries": {
-      "maplibre": "MapLibre GL JS 5.6.2 (unpkg, pinned; js/maplibre-guard.js)",
+      "maplibre": "MapLibre GL JS 5.6.2 (unpkg, pinned; js/shell/maplibre-guard.js)",
       "earcut": "js/vendor/earcut.js (ISC)",
       "tiles": "OpenFreeMap planet (OpenMapTiles schema)"
     },

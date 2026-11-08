@@ -11,6 +11,8 @@
  * Spec: https://github.com/mapbox/vector-tile-spec/tree/master/2.1
  * Own implementation (no third-party code); varints up to 64 bits are read
  * into JavaScript numbers, which is exact for OSM ids (< 2^53).
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
 
 const TWO_32 = 2 ** 32;

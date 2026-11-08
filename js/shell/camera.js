@@ -34,6 +34,8 @@
  * centre, so the horizon stays outside the frame (75° + 24°/2 < 90°); since Hotel 0.3.2 it is moved up
  * to the free box's centre (a shift lens, `lensPadding`), so the camera looks straight at the building
  * at the eye pitch on a phone too.
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
 export const DEFAULT_FOV = 36.87;
 
@@ -92,6 +94,42 @@ export function groundAt(map, [lng, lat]) {
   if (!map?.terrain || typeof map.queryTerrainElevation !== 'function') return 0;
   const e = map.queryTerrainElevation([lng, lat]);
   return Number.isFinite(e) ? e : 0;
+}
+
+/** Deepest drop under one building's outline, and deepest drop of a building below the item's pin, read as ground. */
+export const PIECE_DROP_M = 60, SITE_DROP_M = 400;
+
+/**
+ * The ground one building stands on as the x-ray and the building camera draw it: its roof on the ground at its
+ * centroid (`g`, as MapLibre lifts fill-extrusions) and its walls down to the lowest ground under its outline (`low`),
+ * from DEM samples (0 = not loaded yet, skipped). A sample far below the centroid's ground is a DEM artefact, not a slope
+ * (0.3.9: one outline vertex of a Rayavadee building read −2,110 m on the Krabi coast and the camera zoomed out to
+ * hold it): the walls go down at most PIECE_DROP_M, and a centroid more than SITE_DROP_M below the pin's ground stands
+ * on the pin's ground.
+ */
+export function pieceGround(centroid, samples, pin = 0) {
+  let g = centroid || pin;
+  if (Number.isFinite(pin) && g < pin - SITE_DROP_M) g = pin;
+  let low = g;
+  for (const e of samples) if (e && Number.isFinite(e) && e < low && e >= g - PIECE_DROP_M) low = e;
+  return {g, low};
+}
+
+/**
+ * Where the ground under a framed target is watched (the anchor first, then the outermost fit points west, east, south
+ * and north): a frame is computed again when the ground moves at any of them (0.3.9: Patong Bay Hill Resort, a site
+ * 450 m up a hillside, was framed before the DEM under its upper half arrived, while its pin's ground was already in).
+ */
+export function groundProbes(anchor, points = []) {
+  const probes = [anchor];
+  if (points.length) {
+    const pick = f => points.reduce((a, q) => (f(q) < f(a) ? q : a));
+    for (const f of [q => q[0], q => -q[0], q => q[1], q => -q[1]]) {
+      const q = pick(f);
+      probes.push([q[0], q[1]]);
+    }
+  }
+  return probes;
 }
 
 /**

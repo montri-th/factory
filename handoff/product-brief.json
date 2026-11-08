@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-brief",
   "productId": "citymeter-factory",
-  "productVersion": "0.3.0",
+  "productVersion": "0.3.1",
   "updatedOn": "2026-11-05",
   "datasetCheckedOn": "2026-11-04",
   "language": "th",
@@ -352,7 +352,7 @@
   "buildingJoinContract": {
     "buildings": "focus-tier footprints: OpenStreetMap (pieces of one outline cut by tile edges, building:parts, podium + tower grouped) or, inside a CityMETER unit, CityMETER Building V4 (whole buildings, keys cm:)",
     "points": "published registration points of the scope",
-    "rule": "display-time point-in-footprint (js/building-join.js#joinBuildings)",
+    "rule": "display-time point-in-footprint (js/shell/building-join.js#joinBuildings)",
     "click": "one registration → the registration; several → the building panel “โรงงานในอาคารนี้” (“สูงราว”, the outline source in the title and the provenance line)",
     "neverChanges": "any count or district membership",
     "nearest": "a registration whose point falls in no outline is framed on the nearest drawn building (cameraContract.buildingView.target) — never joined, counted or listed in “โรงงานในอาคารนี้”"
@@ -364,7 +364,7 @@
     "keyboard": "roving tabindex over HTML pins from zoom 15.5; roving tablist for chart views; arrow keys on the measure switch; visible focus everywhere"
   },
   "basemapContract": {
-    "generator": "js/map-style.js (no hosted style URL)",
+    "generator": "js/shell/map-style.js (no hosted style URL)",
     "tiles": "https://tiles.openfreemap.org/planet (OpenMapTiles schema)",
     "palette": "--basemap-* tokens of assets/theme.css; data colours never set there",
     "water": "light: --basemap-water #CFDDE7 (basemap-only, 1.22:1 from the ground) and the shore line water-shore --basemap-shore #B2C7D6 (1.26:1 from the water), drawn above the district fill and beneath footprints and roads; rivers --basemap-water-line; dark: LDS surface.blueTint #18333E with shore #1F3F4C (owner 2026-11-02 “… ดูเหมือนน้ำมากกว่านี้ … แต่ยัง clean and quiet”)"
@@ -388,29 +388,29 @@
     "fitting": "fitPitched (overview, district): flat fit, then zoom out until every outline vertex is inside the padded viewport, then in while it still fits; pitch ≤ 90 − fov/2 − 3",
     "buildingView": {
       "owner": "2026-10-29 19:47 “อาคารที่เลือก หรือ on focus ให้แสดงด้วยมุมมอง 2-point perspective เสมอ zoom to fit viewport เสมอด้วย”",
-      "module": "js/camera.js#fitBuilding, twoPointBearing, wallAzimuth, occlusionScore, screenBounds (from CityMETER · Shopping centers); js/app.js#frameFocus",
-      "target": "js/app.js#focusTarget — the open building; the building the open registration’s point falls in, else the drawn building nearest the point: js/building-join.js#nearestBuilding — within 300 m (REACH_M), the largest piece within 10 m of the nearest; when nothing is drawn within 300 m the focus tier is loaded once more for 800 m round the point (REACH_FAR_M); legend “อาคารใกล้หมุด”, framed with the point; a camera choice only, never a join, a count or a located-in claim",
+      "module": "js/shell/camera.js#fitBuilding, twoPointBearing, wallAzimuth, occlusionScore, screenBounds (from CityMETER · Shopping centers); js/app.js#frameFocus",
+      "target": "js/app.js#focusTarget — the open building; the building the open registration’s point falls in, else the drawn building nearest the point: js/shell/building-join.js#nearestBuilding — within 300 m (REACH_M), the largest piece within 10 m of the nearest; when nothing is drawn within 300 m the focus tier is loaded once more for 800 m round the point (REACH_FAR_M); legend “อาคารใกล้หมุด”, framed with the point; a camera choice only, never a join, a count or a located-in claim",
       "bearing": "dominant wall azimuth + 45°, on the diagonal where the drawn focus buildings (massing.obstaclesNear, 400 m) hide least of it, then the one nearest the current bearing",
-      "fit": "eye preset; shift lens (0.3.2, js/camera.js#lensPadding): padding moves the principal point up to the free box’s centre, never below the canvas centre (pitch + fov/2 < 90 keeps the horizon out), so the camera looks straight at the building at pitch 75 on a phone’s strip above the sheet as on a desktop; fit points = the pieces as the focus tier draws them at building zoom (massing.fitPointsOf → js/massing.js#footprintFitPoints: the offset and fillets of zoom 18, ground and roof), never the shape drawn at the starting zoom (up to 3.6 m wider on every side); every one inside the free box (js/app.js#visibleBox: below the toolbar, above the Aha card, legend, chart tray, table or open phone sheet, left of the zoom control), one side filling 94% of it; maxZoom 21 when the building is known (js/camera.js#BUILDING_MAX_ZOOM — Hotel: hotels stand in shophouses and small buildings; the Shopping centers limit 19.5 left a 40 m building at half the box) / 18 while unknown, minZoom 14",
+      "fit": "eye preset; shift lens (0.3.2, js/shell/camera.js#lensPadding): padding moves the principal point up to the free box’s centre, never below the canvas centre (pitch + fov/2 < 90 keeps the horizon out), so the camera looks straight at the building at pitch 75 on a phone’s strip above the sheet as on a desktop; fit points = the pieces as the focus tier draws them at building zoom (massing.fitPointsOf → js/massing.js#footprintFitPoints: the offset and fillets of zoom 18, ground and roof), never the shape drawn at the starting zoom (up to 3.6 m wider on every side); every one inside the free box (js/app.js#visibleBox: below the toolbar, above the Aha card, legend, chart tray, table or open phone sheet, left of the zoom control), one side filling 94% of it; maxZoom 21 when the building is known (js/shell/camera.js#BUILDING_MAX_ZOOM — Hotel: hotels stand in shophouses and small buildings; the Shopping centers limit 19.5 left a 40 m building at half the box) / 18 while unknown, minZoom 14",
       "unknown": "a 90 m box round the point (12 m tall) framed the same way while the buildings load, and where nothing is drawn within 800 m; the camera turns to the building when it arrives, at most three times, never after a user camera move",
       "plan": "3D off: the same footprint fitted flat (fitPitched plan, maxZoom 21 known / 18 unknown)",
       "click": "selectFactory (pin, label, list row, search) and selectBuilding switch the map to 3D (js/app.js#ensure3d) before framing; a link keeps view3d=0 when it asks for it",
-      "terrain": "on terrain each fit point carries the ground it is drawn on (4th value: roof at the piece centroid’s ground, base at the lowest ground under its outline, the pin at its own ground); fitBuilding damps its landed rounds (half steps) and js/maplibre-guard.js#guardElevationFreeze lands the centre on the ground after every programmatic ease (MapLibre 5.6.2 leaves map._elevationFreeze on); refitted when the ground changes by ≥ 3 m, a new building arrives or the free box changes once the camera is still (js/app.js#watchFreeBox: legend, trays, phone sheet), at most 3 times, never after a user camera move",
+      "terrain": "on terrain each fit point carries the ground it is drawn on (4th value: roof at the piece centroid’s ground, base at the lowest ground under its outline, the pin at its own ground); fitBuilding damps its landed rounds (half steps) and js/shell/maplibre-guard.js#guardElevationFreeze lands the centre on the ground after every programmatic ease (MapLibre 5.6.2 leaves map._elevationFreeze on); refitted when the ground changes by ≥ 3 m, a new building arrives or the free box changes once the camera is still (js/app.js#watchFreeBox: legend, trays, phone sheet), at most 3 times, never after a user camera move",
       "lift": "0.3.2: MapLibre 5.6.2 lifts a camera that would stand inside the terrain (Map#_elevateCameraIfInsideTerrain: lower pitch, other zoom) on every jump; fitBuilding computes with it off (withoutLift) and asks MapLibre’s own check about the camera it found — the alternates (the other corners, opposite first: js/app.js#frameFocus) when that camera would be lifted, else the pitch MapLibre allows; the target carries its pitch and the centre’s elevation (an instant jump checks from the right height)"
     }
   },
   "tileCoverGuard": {
-    "module": "js/maplibre-guard.js#guardRetainedTiles(map, version) → boolean; padOverscaledChildren(idealTileIDs, zoom, maxzoom)",
+    "module": "js/shell/maplibre-guard.js#guardRetainedTiles(map, version) → boolean; padOverscaledChildren(idealTileIDs, zoom, maxzoom)",
     "bug": "MapLibre GL JS 5.6.2 SourceCache._updateRetainedTiles checks the four children of a missing ideal tile whenever the cover zoom + 1 ≤ the source maxzoom; a pitched cover can already hold an ideal tile at the maxzoom, whose children() is ONE overscaled child; when that child is retained, children[1] is undefined and the frame throws “Cannot read properties of undefined (reading 'key')”",
     "seen": "live 2026-10-29 (Claude desktop browser, real OpenFreeMap tiles): openmaptiles (vector, maxzoom 14), cover zoom 13, camera 13.79–13.95, pitch 75, while the building camera flew between branches; reproduced in the build container by stepping the pitched camera out from 19.5 to 13.6 over a building (7–8 errors on 0.2.0, 0 with the guard)",
     "fix": "pad the child list of exactly those ideal tiles to four copies of the overscaled child, so the check reads as MapLibre's own overzoom branch; installed on the shared SourceCache prototype at every style load; only for version 5.6.2",
     "test": "tests/maplibre-guard.test.js",
-    "elevationFreeze": "js/maplibre-guard.js#guardElevationFreeze(map, version), 0.3.2: MapLibre 5.6.2 easeTo/flyTo on terrain without freezeElevation leave map._elevationFreeze on (only a gesture or _finalizeElevation clears it), so the render loop stops clamping the centre to the ground and the framed building drifts (seen 2026-11-02: camera 80.97 m vs ground 62.41 m at Sri Panwa); the guard wraps map._afterEase: when the ease ended (not superseded) and no terrain gesture is running, it clears the freeze and sets the centre elevation to the ground; only for version 5.6.2 (tests/maplibre-guard.test.js)"
+    "elevationFreeze": "js/shell/maplibre-guard.js#guardElevationFreeze(map, version), 0.3.2: MapLibre 5.6.2 easeTo/flyTo on terrain without freezeElevation leave map._elevationFreeze on (only a gesture or _finalizeElevation clears it), so the render loop stops clamping the centre to the ground and the framed building drifts (seen 2026-11-02: camera 80.97 m vs ground 62.41 m at Sri Panwa); the guard wraps map._afterEase: when the ease ended (not superseded) and no terrain gesture is running, it clears the freeze and sets the centre elevation to the ground; only for version 5.6.2 (tests/maplibre-guard.test.js)"
   },
   "venueXrayContract": {
     "owner": "2026-10-29 19:47 “เช็คอย่าให้ 3d building mass ตึกอื่นบังอาคารที่กำลังดูอยู่”",
-    "module": "js/venue-xray.js#installVenueXray(map, {beforeId, toMercator, colors}) → {update(features, {colors}), setEnabled, hitTest(point), dispose, count, enabled, failed} (from CityMETER · Shopping centers / Luxury Brands)",
-    "layer": "venue-xray (custom, renderingMode 3d) before place-quarter (js/map-style.js#VENUE_XRAY_BEFORE): drawn over every building and over road names",
+    "module": "js/shell/venue-xray.js#installVenueXray(map, {beforeId, toMercator, colors}) → {update(features, {colors}), setEnabled, hitTest(point), dispose, count, enabled, failed} (from CityMETER · Shopping centers / Luxury Brands)",
+    "layer": "venue-xray (custom, renderingMode 3d) before place-quarter (js/shell/map-style.js#VENUE_XRAY_BEFORE): drawn over every building and over road names",
     "input": "the features of the building being looked at (massing.featuresOf(target.refs)) with display_height_m / display_base_m; on terrain the roof is lifted by the ground at the piece centroid (as MapLibre lifts fill-extrusions) and the walls go down to the lowest ground under the outline (0.3.2; a fixed 10 m showed through the slope)",
     "depth": "scissored depth clear inside the building’s screen box, then its own depth test",
     "seeThrough": "massing.setScene('eye', rings): the focus buildings standing in front of it turn see-through (SCENE.eye)",
@@ -709,6 +709,6 @@
     "site": "GitHub Pages from main /root",
     "handoff": "dist/CityMETER-Factory-Developer-Handoff.zip (START_HERE.md, RELEASE_RECEIPT.json, evidence/, source/)",
     "liveCheck": "npm run verify:live",
-    "cacheTag": "?v=20261108-r1 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
+    "cacheTag": "?v=20261108-r2 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
   }
 }

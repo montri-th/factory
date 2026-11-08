@@ -464,7 +464,7 @@ export function renderFactory(d, ctx = {}) {
     ${provenance(ctx, d.area ? `${w.area}${d.area.name} ${prov}` : prov || 'ไม่ระบุจังหวัด', {terrain: hasPoint(r)})}`;
 }
 
-/** Terrain chips (js/terrain.js#terrainChips) as fact chips; '' when nothing is known. */
+/** Terrain chips (js/shell/terrain.js#terrainChips) as fact chips; '' when nothing is known. */
 export function terrainChipsHTML(chips) {
   return chips.map(c => `<span class="fact-chip" title="${esc(c.title)}">${pic(c.kind)}${esc(c.text)}</span>`).join('');
 }

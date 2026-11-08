@@ -6,6 +6,8 @@
  * alternate CDN and no silent version substitution. A failed or timed-out
  * load rejects with a retryable error and removes the injected element so a
  * retry never duplicates scripts or stylesheets.
+ *
+ * Part of the shared CityMETER demo shell: edit it in every repository at once (js/shell/manifest.json).
  */
 const TIMEOUT_MS = 20_000;
 export const MAP_VERSION = '5.6.2';
