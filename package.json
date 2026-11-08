@@ -1,6 +1,6 @@
 {
   "name": "citymeter-factory",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "private": true,
   "type": "module",
   "description": "CityMETER · Factory — district-first 3D map of DIW-reported workers at every core factory registration (DIW registry outside IEAT estates and MOI-operating registrations) across Thailand, with worker bands, the 95+ lens, the industrial-area register as context and a nearby set per registration",
