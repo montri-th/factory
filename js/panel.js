@@ -31,6 +31,7 @@ export const pct = (part, whole) => (!whole ? '—' : part && Math.round((part /
 /** A number and its unit never split across lines in running text. */
 const nw = html => `<span class="nowrap">${html}</span>`;
 const safeURL = value => { try { const u = new URL(value); return u.protocol === 'https:' ? u.href : ''; } catch { return ''; } };
+const hostOf = value => { try { return new URL(value).hostname; } catch { return ''; } };
 /** Straight-line distance for display: "320 ม." / "1.4 กม.". */
 export const meters = m => (!Number.isFinite(m) ? '' : m < 1000 ? `${num(Math.round(m / 10) * 10)} ม.` : `${(m / 1000).toLocaleString('th-TH', {maximumFractionDigits: 1})} กม.`);
 /** A decorative pictogram of the approved subset (js/navigation.js PICTOGRAM_CONTRACT); the text carries the meaning. */
@@ -88,10 +89,11 @@ const CLASS_SOURCE = Object.freeze({2: 'DIW_factype2', 3: 'DIW_factype3'});
  * `data-prov`, its word for screen readers), then the method link. The estate register and the terrain sources join
  * the source part when the view shows them.
  */
-export function provenance(ctx = {}, boundary = '', {terrain = false, estates = false} = {}) {
+export function provenance(ctx = {}, boundary = '', {terrain = false, estates = false, outlines = ''} = {}) {
   const meta = ctx.meta || {};
   const sources = ['ทะเบียน กรอ. นอกนิคมอุตสาหกรรม', 'อก.',
     estates ? `ทะเบียนนิคมและสวนอุตสาหกรรม (งานวิจัย ${thaiDate(meta.context?.estates?.checkedOn || '')})`.replace(' ()', '') : '',
+    outlines ? `ขอบเขต OpenStreetMap (${thaiDate(outlines)})` : '',
     terrain ? `SRTM 30 ม. (2543)${ctx.osmDate ? ` · OSM ${thaiDate(ctx.osmDate)}` : ''}` : ''].filter(Boolean);
   return `<p class="hint panel-foot provenance"><span class="prov-part" data-prov="dataset">${pic('dataset')}<span class="sr-only">ชุดข้อมูล </span>CityMETER Factory · ${esc(SCOPE.short)}</span> <span class="prov-part" data-prov="source"><span class="sr-only">แหล่ง</span>จาก ${esc(sources.join(' · '))}</span><span class="prov-part" data-prov="date">${pic('date')}<span class="sr-only">ตรวจ </span>${esc(thaiDate(meta.checkedOn || ''))}</span><span class="prov-part" data-prov="boundary">${pic('area')}<span class="sr-only">ขอบเขต </span>${esc(boundary)}</span><span class="prov-part prov-method"><a href="${METHOD_URL}" target="_blank" rel="noopener">วิธีนับ</a></span></p>`;
 }
@@ -158,14 +160,19 @@ function industryBars(list, unit) {
 }
 
 /** The industrial-area register (01_ESTATES) of a province — names, types and their pages; national: types only. */
-function estatesSection(est, {province = ''} = {}) {
+function estatesSection(est, {province = '', ctx = {}} = {}) {
   if (!est?.total) return '';
+  const outlined = id => Boolean(ctx.estateOutlined?.(id));
+  const estateDemoLink = id => (ctx.estateHref ? `<a class="source-link estate-link" href="${esc(ctx.estateHref(id))}">ดูใน Industrial Estate</a>` : '');
   const types = `<p class="rule-chips">${est.types.map(t => `<span class="rule-chip">${pic('estate')}${esc(t.type)} ${nw(num(t.count))}</span>`).join('')}</p>`;
   if (!province) {
     const provinces = new Set(est.list.map(e => e.province)).size;
     return `<section class="panel-section"><div class="section-heading">${heading('estate', 'นิคม สวน เขตอุตสาหกรรม')}<span class="hint">${nw(`${num(est.total)} แห่ง`)} · ${nw(`${num(provinces)} จังหวัด`)}</span></div>${types}</section>`;
   }
-  const item = e => `<li><span class="estate-name">${esc(e.name)}${LANG === 'en' ? (thaiEstateName(e) ? `<small lang="th" translate="no">${esc(e.name)}</small>` : '') : e.nameEn ? `<small lang="en">${esc(e.nameEn)}</small>` : ''}</span><span class="estate-type">${esc(e.type)}</span>${link(e.url, e.ieat ? 'หน้า กนอ.' : 'หน้าโครงการ', 'source-link estate-link')}</li>`;
+  // An estate with an outline on the map opens there (js/estates.js); every estate links to its page in the estate demo
+  // (ctx.estateHref, release 0.6.0) and to its official page.
+  const name = e => `${esc(e.name)}${LANG === 'en' ? (thaiEstateName(e) ? `<small lang="th" translate="no">${esc(e.name)}</small>` : '') : e.nameEn ? `<small lang="en">${esc(e.nameEn)}</small>` : ''}`;
+  const item = e => `<li><span class="estate-name">${outlined(e.id) ? `<button type="button" class="link-button" data-action="select-estate" data-id="${esc(e.id)}" title="ดูนิคมนี้บนแผนที่">${name(e)}</button>` : name(e)}</span><span class="estate-type">${esc(e.type)}</span><span class="estate-links">${estateDemoLink(e.id)}${link(e.url, e.ieat ? 'หน้า กนอ.' : 'หน้าโครงการ', 'source-link estate-link')}</span></li>`;
   const shown = est.list.slice(0, 8), rest = est.list.slice(8);
   return `<section class="panel-section"><div class="section-heading">${heading('estate', 'นิคม สวน เขตอุตสาหกรรม')}<span class="hint">${nw(`${num(est.total)} แห่ง`)}</span></div>${types}
     <ul class="estate-list">${shown.map(item).join('')}</ul>
@@ -307,7 +314,7 @@ export function renderOverview({insight, summary, overview, focusMode = 'auto', 
   const groups = overview.industries.length ? `<section class="panel-section"><div class="section-heading">${heading('factory', 'กลุ่มอุตสาหกรรม กรอ.')}<span class="hint"><button type="button" class="link-button" data-action="open-charts" data-value="industries">ดูทุกกลุ่ม</button></span></div>${industryBars(overview.industries, unit)}</section>` : '';
   const sizes = overview.count ? `<section class="panel-section"><div class="section-heading">${heading('workers', 'ขนาดตามคนงาน')}<span class="hint">ทะเบียน</span></div>${sizeBars(overview.sizes)}${lensLine(overview.lens, scopeText)}</section>` : '';
   const classes = classSection(overview.classes, overview.count);
-  const estates = estatesSection(overview.estates, {province});
+  const estates = estatesSection(overview.estates, {province, ctx});
   return `${aha}${metrics}${provinceList}${ranking}${mix}${groups}${sizes}${classes}${estates}${actionBar({kind: 'overview', province: province ? provinceName(province) : ''})}${provenance(ctx, scopeText, {estates: Boolean(estates)})}`;
 }
 
@@ -350,7 +357,7 @@ export function renderArea(p, classOf, ctx = {}) {
     </section>
 `;
   const boundary = `${place} ${prov}`;
-  const estates = estatesSection(p.estates, {province: a.province});
+  const estates = estatesSection(p.estates, {province: a.province, ctx});
   if (!p.count) return `${head}${estates}${provenance(ctx, boundary, {estates: Boolean(estates)})}`;
   const big = p.big ? `<p class="fact-line" title="ทะเบียนที่มีคนงานตั้งแต่ 1,000 คน">${pic('workers', 'fact-icon')}1,000 คนขึ้นไป ${nw(`${num(p.big)} ทะเบียน`)}</p>` : '';
   return `${head}    <section class="panel-section"><div class="section-heading">${heading('segment', 'อุตสาหกรรม')}<span class="hint">${esc(unit.one)}</span></div>${familyBars(p.byGroup, unit)}</section>
@@ -425,6 +432,8 @@ export function renderFactory(d, ctx = {}) {
   const bd = d.building;
   const buildingChip = bd?.others ? `<button type="button" class="fact-chip" data-action="select-building" data-id="${esc(bd.key)}" title="จุดของโรงงานอีก ${num(bd.others)} ทะเบียนอยู่ในอาคารนี้บนแผนที่">${pic('building')}อีก ${num(bd.others)} ทะเบียนในอาคารนี้</button>` : '';
   const sameArea = d.area && d.sameArea.count ? `<p class="fact-line">${pic('factory', 'fact-icon')}ใน${esc(w.area)}${esc(d.area.name)}อีก ${nw(`<button type="button" class="link-button" data-action="select-area" data-id="${esc(d.area.id)}">${num(d.sameArea.count)} ทะเบียน</button>`)} · ${nw(`${num(d.sameArea.workers)} คน`)}</p>` : '';
+  const matches = r.person ? [] : (ctx.estateMatches?.(r.id) || []);
+  const directoryLine = matches.length ? `<p class="fact-line" title="ชื่อตรงกับรายชื่อในทำเนียบโรงงานในนิคม กนอ. (จับคู่ด้วยชื่อ)">${pic('estate', 'fact-icon')}ชื่อตรงกับทำเนียบ กนอ. ${matches.slice(0, 2).map(e => `<a class="link-button" href="${esc(ctx.estateHref(e.id))}">${esc(e.name)}</a>`).join(' · ')}${matches.length > 2 ? ` +${num(matches.length - 2)}` : ''}</p>` : '';
   const own = d.area ? `${w.area}${d.area.name}` : prov;
   const point = coords
     ? `<span class="data-number">${esc(coords)}</span><br><span class="hint">จุดจากแหล่ง</span>`
@@ -441,7 +450,7 @@ export function renderFactory(d, ctx = {}) {
         <h2>${esc(r.title)}</h2>
         ${nameLine}</div></div>
       <div class="fact-chips">${workersChip}${rankChip}${areaChip}${familyChip}${functionChip}${classChip}${statusChip}${buildingChip}${coords ? '' : `<span class="fact-chip is-quiet"${r.off ? ` title="จุดในแหล่งอยู่นอก${esc(own)}ของทะเบียน"` : ''}>${noPointChip}</span>`}</div>
-      ${sameArea}
+      ${sameArea}${directoryLine}
       ${actionBar(r.person ? {kind: 'area', area: d.area ? {place: `${w.area}${d.area.name}`, province: prov} : null}
         : {kind: 'factory', row: r, area: d.area ? {place: `${w.area}${d.area.name}`, province: prov} : r.province ? {place: '', province: prov} : null,
           point: hasPoint(r) ? {lat: r.latitude, lon: r.longitude, role: 'point'} : null})}
@@ -464,6 +473,46 @@ export function renderFactory(d, ctx = {}) {
       <div class="fact-chips terrain-chips" data-terrain-for="${esc(r.id)}"><span class="hint">กำลังอ่านภูมิประเทศ</span></div></section>` : ''}
     ${nearbySection(d.nearby, fam)}
     ${provenance(ctx, d.area ? `${w.area}${d.area.name} ${prov}` : prov || 'ไม่ระบุจังหวัด', {terrain: hasPoint(r)})}`;
+}
+
+/* ---------- Industrial estate (context from the estate research master; release 0.6.0) ---------- */
+
+/** What the estate's mark is (owner 2026-11-10: an estate, parent or developer mark is fine, kept short). */
+const LOGO_ROLE_TH = Object.freeze({exact_estate_mark: 'โลโก้นิคม', verified_parent_company: 'บริษัทแม่'});
+
+/**
+ * An estate seen from Factory (js/estates.js#buildEstateProfile): the record, its page in the estate demo, and the
+ * registrations of the scope with a published point ≤ 3 km from its OpenStreetMap outline — counted, by industry, by
+ * size and listed. Headed “โรงงานรอบนิคม ≤ 3 กม.”: a distance set, never “ในนิคม”.
+ */
+export function renderEstate(p, ctx = {}) {
+  if (!p) return '';
+  const e = p.estate, unit = ctx.unit, prov = provinceName(e.province);
+  // “≤ 3 กม.” stays on one line under a tile's number (U+00A0).
+  const km = `${num(p.km)}\u00A0กม.`, within = `≤\u00A0${km}`;
+  const sub = LANG === 'en' ? (thaiEstateName(e) ? `<p class="subtle" lang="th" translate="no">${esc(e.name)}</p>` : '') : e.nameEn ? `<p class="subtle" lang="en">${esc(e.nameEn)}</p>` : '';
+  const logo = e.logo && ctx.estateLogo ? `<span class="estate-mark surface-${esc(e.logo.surface || 'any')}"><img src="${esc(ctx.estateLogo(e.logo.file))}" alt="" loading="lazy" decoding="async"${e.logo.w && e.logo.h ? ` width="${num(e.logo.w)}" height="${num(e.logo.h)}"` : ''}></span><span class="estate-mark-caption">${esc(LOGO_ROLE_TH[e.logoRole] || 'ผู้พัฒนา')}</span>` : '';
+  const workersTile = p.count && !p.figured ? metricTile('—', `คน ${within}`, 'workers', NO_FIGURE.th) : metricTile(p.workers, `คน ${within}`, 'workers');
+  const head = `<section class="detail-head estate">
+      <button type="button" class="btn quiet back" data-action="back">กลับ</button>
+      <p class="eyebrow">${pic('estate')}${esc(e.typeTh)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(e.province)}">${esc(prov)}</button></p>
+      <h2>${esc(e.name)}</h2>${sub}
+      ${logo ? `<p class="estate-identity">${logo}</p>` : ''}
+      ${p.outline ? `<div class="metrics compact">${workersTile}${metricTile(p.count, `ทะเบียน ${within}`, 'factory')}</div>` : ''}
+      <div class="detail-actions">${ctx.estateHref ? `<a class="btn primary" href="${esc(ctx.estateHref(e.id))}">ดูใน Industrial Estate</a>` : ''}${p.count ? '<button type="button" class="btn quiet" data-action="open-table">ดูรายชื่อ</button>' : ''}${link(e.url, /(^|\.)ieat\.go\.th$/.test(hostOf(e.url)) ? 'หน้า กนอ.' : 'หน้าโครงการ', 'btn quiet source-link')}</div>
+    </section>
+`;
+  const boundary = `${within} จากขอบเขตนิคม`;
+  if (!p.outline) return `${head}<p class="hint">ยังไม่แสดงขอบเขตบนแผนที่</p>${provenance(ctx, prov, {estates: true})}`;
+  if (!p.count) {
+    return `${head}<div class="empty-note" role="note"><strong>ไม่พบโรงงานรอบนิคมนี้${ctx.filtered ? 'ตามตัวกรองนี้' : ''}</strong></div>
+    ${provenance(ctx, boundary, {estates: true, outlines: p.osmOn})}`;
+  }
+  return `${head}    <section class="panel-section"><div class="section-heading">${heading('segment', 'อุตสาหกรรม')}<span class="hint">${esc(unit.one)}</span></div>${familyBars(p.byGroup, unit)}</section>
+    <section class="panel-section"><div class="section-heading">${heading('workers', 'ขนาดตามคนงาน')}<span class="hint">ทะเบียน</span></div>${sizeBars(p.sizes)}${lensLine(p.lens, '')}</section>
+    <section class="panel-section"><div class="section-heading">${heading('factory', `โรงงานรอบนิคม ${within}`)}<span class="hint">เรียงตามคนงาน</span></div>${factoryList(p.rows.slice(0, 30), {showArea: true, index: ctx.index})}
+      ${p.count > 30 ? moreButton(p.count) : ''}</section>
+    ${provenance(ctx, boundary, {estates: true, outlines: p.osmOn})}`;
 }
 
 /** Terrain chips (js/shell/terrain.js#terrainChips) as fact chips; '' when nothing is known. */

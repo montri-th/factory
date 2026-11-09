@@ -1,0 +1,30 @@
+{
+  "artifact": "CityMETER Industrial Estate — map of Thailand's industrial estates, parks and zones (106 catalogue records of the industrial-estate research master, registry research.TH.industrial_estates, data contract industrial-estate-demo/1.0.0) with the 46 OpenStreetMap outlines the master selected, IEAT directory listings per estate, logos, and the CityMETER Factory registrations within 3 km of each outline",
+  "productVersion": "1.0.0",
+  "updatedOn": "2026-11-10",
+  "ldsVersion": "0.9.7",
+  "release": "v0.9.7-owner.1",
+  "revision": "standalone-0.9.7-r1",
+  "colorSetId": "color-srgb-10",
+  "baseDocumentSha256": "d3085cbc0a50195f1cbf0c77b1d77c0d19b84364daf2948eb367348d65432d96",
+  "locationIntelligenceProfile": "hash-verified only (location-intelligence-profile-lds-0.9.7-r1, sha256 5d4856041709735d3a04d4a510a88b551df86c211fdcab8a0707e8fe7c9efc3b): the estate fill is a total of the base count family (directory listings); no LI metric scale applies (no capacity, demand, catchment or density is drawn)",
+  "layoutReference": "https://landometer.com/v3/citymeter",
+  "sharedWith": "CityMETER Factory (same repository): theme, fonts, pictograms, cues, scales, massing, citymeter-shell 0.5.4",
+  "colors": {
+    "applied": "assets/theme.css (the Factory file) — foundation pairs, map roles, dataState, categorical series 1–10, count classes",
+    "analytical": "js/scales.js — LDS count, all 41 samples by rank among the measured listings of the drawn estates (buildRamp); identical HEX on both themes; an estate without a listing in this snapshot is EVID-05 no data (the hatch), never 0",
+    "categorical": "js/cues.js — the Factory industry families (series + shape) for the around-estate points and bars",
+    "context": "province lines and estate outlines in foundation colours; the open estate in --map-selected-stroke; logo plates on LDS surfaces (#20292D dark card, #FFFFFF light raised)"
+  },
+  "firstAha": "share of the catalogue records in the three EEC provinces (Chachoengsao, Chon Buri, Rayong) by the source province label, each province as a link — a composition, never a ranking of estates (no ranking feature approved); with the IEAT directory listings of the EEC estates",
+  "countingUnit": "records (รายการ) and IEAT directory listings (รายชื่อ) — never factories, tenants, companies or workers",
+  "geometryAndMetricContract": "only the 46 outlines the master selected (DEMO_BOUNDARIES, OpenStreetMap snapshot 2026-10-25, ODbL 1.0); the other 60 records state why they have none; province = source label; around-estate set = Factory registrations with a published point ≤ 3 km from the outline (0 inside), a distance set for context",
+  "logos": "LOGO_LIBRARY files whose SHA-256 equals logo_sha256 (27 display copies for 67 records); a caption says what the mark is (โลโก้นิคม · บริษัทแม่ · ผู้พัฒนา), short labels (owner 2026-11-10)",
+  "accessibility": [
+    "visible focus on every control including the estate chips on the map",
+    "estate chips are buttons (keyboard and screen reader)",
+    "no-data hatch has a text label in the legend",
+    "Thai and English (?lang=en)"
+  ],
+  "privacy": "directory names written as a natural person's are withheld (ผู้ประกอบการบุคคลธรรมดา) and never matched or sent to Google"
+}

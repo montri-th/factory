@@ -18,7 +18,8 @@ everything from the data at run time, so these are fixtures, not constants.
 - **หน้าที่ (ผลิต · บริการ · อื่น ๆ · รอตรวจหน้าที่)** = การจัดประเภทของชีตวิจัยจากประเภทโรงงานด้วยกฎ (functional-factory-classification v2, 4 พ.ย. 2569) ไม่ได้ตรวจทีละทะเบียนโดยคน
 - **สถานะ อก.** = สถานะในข้อมูลที่ตั้งประกอบกิจการโรงงานของกระทรวงอุตสาหกรรม (GD Catalog) ณ วันที่ในแผง (“ไม่พบใน อก.” = ไม่พบเลขทะเบียนนี้ในข้อมูลชุดนั้น) ไม่ใช่การตรวจภาคสนามว่าโรงงานยังเปิดหรือปิด
 - **จุด** = พิกัดจากแหล่งที่ชีตตรวจว่าอยู่ในกรอบประเทศไทย (`within_TH_bbox_unverified`) ไม่ใช่ตำแหน่งโรงงานที่ยืนยันแล้ว มี 15,654 ทะเบียน แหล่งไม่มีพิกัดสำหรับทะเบียนส่วนใหญ่ (55,772 ทะเบียน) จุดที่อยู่นอกอำเภอของทะเบียนเอง (718 ทะเบียน) ไม่แสดง (“ไม่แสดงพิกัด”) และทะเบียนอยู่ในอำเภอตามทะเบียนเสมอ ทุกทะเบียนนับในยอดของพื้นที่ แม้ไม่มีจุด
-- **นิคม สวน เขตอุตสาหกรรม** = รายชื่อจากชีตวิจัยนิคมอุตสาหกรรม (106 รายการ ตรวจ 25–26 ต.ค. 2569) พร้อมลิงก์หน้าทางการ แสดงเป็นรายชื่อเท่านั้น ไม่มีขอบเขตบนแผนที่ (ชีตยังไม่เลือกขอบเขตและยังไม่ได้ตรวจสิทธิ์) และไม่ได้บอกว่าโรงงานใดอยู่ในนิคม
+- **นิคม สวน เขตอุตสาหกรรม** = รายชื่อจากชีตวิจัยนิคมอุตสาหกรรม (106 รายการ ตรวจ 25–26 ต.ค. 2569) พร้อมลิงก์หน้าทางการและเดโม CityMETER Industrial Estate ไม่ได้บอกว่าโรงงานใดอยู่ในนิคม
+- **ขอบเขตนิคมและโรงงานรอบนิคม (0.6.0)** = ขอบเขต OpenStreetMap 46 แห่งที่ทะเบียนวิจัยนิคมเลือกให้แสดงในเดโม (`DEMO_BOUNDARIES`, snapshot 25 ต.ค. 2569, © OpenStreetMap contributors, ODbL 1.0, ลดจุดที่ 6 ม.) เป็นเส้นบริบท ไม่ใช่ขอบเขตตามกฎหมาย · “โรงงานรอบนิคม ≤ 3 กม.” = ทะเบียนที่มีพิกัดเผยแพร่ห่างจากขอบเขตเป็นเส้นตรงไม่เกิน 3 กม. (จุดในขอบเขต = 0) วัดตอนสร้างข้อมูลกับขอบเขตเต็ม อ่านผ่านตัวกรองของหน้า (ยกเว้นจังหวัด) เป็นชุดตามระยะ ไม่ใช่สมาชิกนิคม · “ชื่อตรงกับทำเนียบ กนอ.” = ชื่อผู้ประกอบการของทะเบียนตรงกับรายชื่อในทำเนียบโรงงานในนิคมของ กนอ. (snapshot 4 พ.ย. 2569, `DEMO_FID_CANDIDATES`) จับคู่ด้วยชื่อเท่านั้น (`industrialestate/DATA_METHOD.md`)
 - **ผู้ประกอบการบุคคลธรรมดา** = ทะเบียนที่ชื่อเป็นชื่อบุคคล (6,036 ทะเบียน) แสดงโดยไม่มีชื่อและไม่มีจุด ยังนับในยอดของพื้นที่
 - **โรงงานใกล้เคียง** = ทะเบียนหมวดอุตสาหกรรมเดียวกัน คนงานครึ่งเท่าถึงสองเท่า (ทุกขนาดเมื่อทะเบียนนั้นไม่มีตัวเลขคนงานหรือระบุ 0 คน) ในระยะตรง 3 กม. จากจุด เรียงใกล้ก่อน เป็นรายชื่อเริ่มต้นสำหรับเทียบ ไม่ใช่ห่วงโซ่อุปทานหรือคู่แข่งที่ยืนยันแล้ว
 - **อาคาร** = อาคารบนแผนที่ (CityMETER Building V4 หรือ OpenStreetMap ตามพื้นที่) ความสูง “สูงราว” เป็นค่าประมาณ “โรงงานในอาคารนี้” = จุดของทะเบียนอยู่ในขอบอาคาร เมื่อจุดไม่อยู่ในอาคารใด มุมมองอาคารเปิดที่อาคารใกล้จุดที่สุด (≤ 300 ม. ไม่มีก็ ≤ 800 ม.) เป็นการเลือกมุมกล้องเท่านั้น
@@ -33,7 +34,8 @@ everything from the data at run time, so these are fixtures, not constants.
 | `18_WORKERS_P90` (gid 2026110418, same sheet) | the 7,175 FIDs at or above the P90 of the worker figures | a parity check: every figure equals the DIW export, and the tab is exactly the FIDs with 95+ workers |
 | `02_TYPES` (same sheet, `02_FACTORIES` grouped by type code) | DIW type definition and official industry group per type code | code, definition and group |
 | `99_SOURCE_FILES` (same sheet) | the source register: DIW class 2/3 exports (resource updated 2026-10-01), MOI location and permit exports (row updates through 2026-11-03), all checked 2026-11-04 | public https pages only |
-| `01_ESTATES` of “CityMETER Industrial Estates — นิคม สวน และเขตอุตสาหกรรม 106 รายการ — Research Master 2026-10-25” | names, type, province and the official page of 106 industrial areas | the list only; no geometry is read |
+| `01_ESTATES` of “CityMETER Industrial Estates — นิคม สวน และเขตอุตสาหกรรม 106 รายการ — Research Master 2026-10-25” | names, type, province and the official page of 106 industrial areas | the list only |
+| CityMETER Industrial Estate (`data/estate-context.json`, from the same master's `DEMO_*` tabs and its R7 OpenStreetMap outlines; `industrialestate/DATA_METHOD.md`) | the 46 outlines the master selected for the demo, the around-estate set per outline, directory name matches | built with the estate demo's data in one run; ODbL attribution in the map and the provenance |
 | `data/area-index.json`, `data/frames/`, `data/provinces.geojson`, `data/boundary-receipts.json` | CityMETER production district and province outlines and base info (read 2026-11-01), copied from `montri-th/hotel@177e592` | yes (display geometry, production codes) |
 | English district names | OpenGISData-Thailand `districts.geojson` @ `fafcea1` (CC BY 4.0, DOPA-credited; SHA-256 in `data/area-index.json → metadata.englishNames`), joined by production district code; read on the English page and in search, never as a boundary | Yes (the names, in `data/area-index.json`) |
 | `data/building-units/` | buildings per อปท./เขต by the 15 % rule, from `montri-th/hotel@177e592` (units that hold a hotel with a point); every other unit draws OpenStreetMap | yes |
@@ -133,7 +135,7 @@ beyond spacing and legal-form words (3,405 rows).
    show one plant once.
 4. **Company logos:** the sheet selects logos for 457 FIDs (`20_LOGO_USE`, supported company context); the files are in the
    research workspace and are not in this release.
-5. **Estate boundaries:** `19_MAP_EXPORT` of the estate master selects no boundary yet; rights are not cleared.
+5. **Estate boundaries:** only the 46 OpenStreetMap outlines the estate master selected for the demo are drawn (release 0.6.0); they are not legal or current boundaries, and the other 60 records have none yet.
 6. **Building units:** the 15 % rule was decided for the units that hold a hotel; units holding factories only draw OpenStreetMap
    until `scripts/build-building-units.py` is run for them.
 7. **Points:** the sources have no point for 75 % of the registrations; a geocoded point per FID (with its method) would put
