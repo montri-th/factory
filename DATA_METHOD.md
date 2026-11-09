@@ -35,6 +35,7 @@ everything from the data at run time, so these are fixtures, not constants.
 | `99_SOURCE_FILES` (same sheet) | the source register: DIW class 2/3 exports (resource updated 2026-10-01), MOI location and permit exports (row updates through 2026-11-03), all checked 2026-11-04 | public https pages only |
 | `01_ESTATES` of “CityMETER Industrial Estates — นิคม สวน และเขตอุตสาหกรรม 106 รายการ — Research Master 2026-10-25” | names, type, province and the official page of 106 industrial areas | the list only; no geometry is read |
 | `data/area-index.json`, `data/frames/`, `data/provinces.geojson`, `data/boundary-receipts.json` | CityMETER production district and province outlines and base info (read 2026-11-01), copied from `montri-th/hotel@177e592` | yes (display geometry, production codes) |
+| English district names | OpenGISData-Thailand `districts.geojson` @ `fafcea1` (CC BY 4.0, DOPA-credited; SHA-256 in `data/area-index.json → metadata.englishNames`), joined by production district code; read on the English page and in search, never as a boundary | Yes (the names, in `data/area-index.json`) |
 | `data/building-units/` | buildings per อปท./เขต by the 15 % rule, from `montri-th/hotel@177e592` (units that hold a hotel with a point); every other unit draws OpenStreetMap | yes |
 
 SHA-256 of every input file read is in `meta.inputs` (the files themselves stay in the owner's research workspace).

@@ -16,6 +16,7 @@
  * known only by a natural person's name has no point, so it never gets a label.
  */
 import {cueMarkup} from './cues.js';
+import {LANG} from './shell/i18n.js';
 import {MOI_TH} from './model.js';
 import {terrainFacts, terrainChips} from './shell/terrain.js';
 
@@ -108,7 +109,7 @@ export function installFactoryLabels(map, container, {onSelect, bounds, avoid = 
     el.dataset.id = row.id;
     el.setAttribute('aria-label', [row.title, Number.isFinite(row.workers) ? `${num(row.workers)} คน` : '', groupName(row)].filter(Boolean).join(' · '));
     const parts = labelParts(row);
-    el.innerHTML = `<span class="hl-cue" aria-hidden="true">${cueMarkup(row.series)}</span><span class="hl-text"><span class="hl-name">${esc(parts.name)}</span></span>${parts.workers ? `<span class="hl-count data-number"><i class="pictogram pic-workers" aria-hidden="true"></i>${esc(num(parts.workers))}</span>` : ''}`;
+    el.innerHTML = `<span class="hl-cue" aria-hidden="true">${cueMarkup(row.series)}</span><span class="hl-text"><span class="hl-name"${LANG === 'en' && (row.name || (row.op && !row.person)) ? ` translate="no"${/[\u0E01-\u0E3A\u0E40-\u0E4E]/.test(parts.name) ? ' lang="th"' : ''}` : ''}>${esc(parts.name)}</span></span>${parts.workers ? `<span class="hl-count data-number"><i class="pictogram pic-workers" aria-hidden="true"></i>${esc(num(parts.workers))}</span>` : ''}`;
     el.onclick = () => onSelect?.(row);
     el.onmouseenter = () => { if (finePointer()) showCard(row, el); };
     el.onmouseleave = () => hideCard(row);
