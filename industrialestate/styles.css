@@ -818,7 +818,7 @@ td.num, th.num { text-align: right; }
 .chart-track { height: 12px; background: var(--surface-soft); border-radius: 3px; overflow: hidden; border: 1px solid var(--border-hairline); }
 .chart-fill { display: block; height: 100%; background: var(--series-9-fill); }
 .chart-value { text-align: right; font-size: 13px; }
-.legend-around-item, .legend-outline-item, .legend-nodata { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; }
+.legend-around-item, .legend-outline-item, .legend-nodata-item { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; white-space: nowrap; }
 .legend-around { width: 10px; height: 10px; border-radius: 50%; background: var(--series-2-fill); box-shadow: 9px 0 0 -1px var(--series-6-fill); margin-right: 8px; border: 1px solid var(--map-marker-stroke); }
 .legend-outline { width: 14px; height: 10px; border: 2px solid var(--text-primary); border-radius: 3px; }
 .legend-hatch { width: 14px; height: 10px; border: 1px solid var(--data-zero-outline); border-radius: 2px; background: repeating-linear-gradient(135deg, var(--data-zero-outline) 0 1.5px, var(--data-no-data) 1.5px 6px); }

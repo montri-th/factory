@@ -283,7 +283,7 @@ function onPanelAction(event) {
 function renderLegend() {
   const r = state.ramp;
   const steps = r?.ramp?.levels?.length ? rampLegendHTML(r.ramp) : '';
-  const hatch = r?.noData ? `<span class="legend-nodata" title="${esc(T('ไม่มีรายชื่อในทำเนียบรอบนี้ ไม่ได้แปลว่าไม่มีโรงงาน', 'No listing in this directory snapshot, which does not mean no factory'))}"><i class="legend-hatch" aria-hidden="true"></i>${T('ไม่มีในทำเนียบ', 'not listed')}</span>` : '';
+  const hatch = r?.noData ? `<span class="legend-nodata-item" title="${esc(T('ไม่มีรายชื่อในทำเนียบรอบนี้ ไม่ได้แปลว่าไม่มีโรงงาน', 'No listing in this directory snapshot, which does not mean no factory'))}"><i class="legend-hatch" aria-hidden="true"></i>${T('ไม่มีในทำเนียบ', 'not listed')}</span>` : '';
   $('legend-steps').innerHTML = steps + hatch;
   $('legend-around').hidden = !(state.panel.mode === 'estate' && estateById(state.panel.id)?.outline && state.showAround);
 }
@@ -443,10 +443,18 @@ function boundsOf(list) {
   return [[Math.min(...boxes.map(b => b[0])), Math.min(...boxes.map(b => b[1]))], [Math.max(...boxes.map(b => b[2])), Math.max(...boxes.map(b => b[3]))]];
 }
 
+/** The phone sheet is open over the map (portrait): the camera frames the strip above it (as CityMETER Factory does). */
+const sheetOpen = () => mobilePortrait() && $('panel').classList.contains('is-open');
+
 function cameraPadding() {
-  const map = state.map, w = map.getContainer().clientWidth, h = map.getContainer().clientHeight;
+  const map = state.map, el = map.getContainer(), w = el.clientWidth, h = el.clientHeight;
   const bottom = ($('insights')?.getBoundingClientRect().height || 0) + ($('map-legend')?.getBoundingClientRect().height || 0) * (mobilePortrait() ? 1 : 0) + 24;
-  return {top: Math.min(80, h * 0.12), bottom: Math.min(h * 0.45, bottom), left: Math.min(48, w * 0.06), right: Math.min(64, w * 0.08)};
+  const top = Math.min(80, h * 0.12);
+  if (sheetOpen()) {
+    const covered = el.getBoundingClientRect().bottom - $('panel').getBoundingClientRect().top;
+    return {top, bottom: Math.max(24, Math.min(h - top - 80, covered + 16)), left: 24, right: 24};
+  }
+  return {top, bottom: Math.min(h * 0.45, bottom), left: Math.min(48, w * 0.06), right: Math.min(64, w * 0.08)};
 }
 
 function fitMap({instant = false, around = false} = {}) {
@@ -473,7 +481,7 @@ function fitMap({instant = false, around = false} = {}) {
   const LngLatBounds = maplibregl.LngLatBounds;
   const bounds = new LngLatBounds(box[0], box[1]);
   try {
-    fitPitched(map, bounds, {preset, padding: cameraPadding(), maxZoom, minZoom: 4, animate: !instant && animate(), duration: 900});
+    fitPitched(map, bounds, {preset: sheetOpen() ? 'plan' : preset, padding: cameraPadding(), maxZoom, minZoom: 4, animate: !instant && animate(), duration: 900});
   } catch (err) { console.warn('fit', err); map.fitBounds(bounds, {padding: 40, animate: false}); }
 }
 
@@ -564,14 +572,22 @@ function toggle3d() {
 /* ---------- mobile sheet ---------- */
 function openMobilePanel() {
   if (!mobilePortrait()) return;
+  const wasOpen = $('panel').classList.contains('is-open');
   $('panel').classList.add('is-open');
   $('mobile-panel').setAttribute('aria-expanded', 'true');
   $('map-aha').hidden = true;
+  // An open estate is framed again in the strip above the sheet.
+  if (!wasOpen && state.loaded && state.panel.mode === 'estate') fitMap();
 }
 function closeMobilePanel() {
+  const wasOpen = $('panel').classList.contains('is-open');
   $('panel').classList.remove('is-open');
   $('mobile-panel').setAttribute('aria-expanded', 'false');
-  if (mobilePortrait()) { $('mobile-panel').focus({preventScroll: true}); renderMapAha(); }
+  if (mobilePortrait()) {
+    $('mobile-panel').focus({preventScroll: true}); renderMapAha();
+    // The estate fills the larger map again.
+    if (wasOpen && state.loaded && state.panel.mode === 'estate') fitMap();
+  }
 }
 
 /* ---------- data ---------- */
