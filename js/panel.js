@@ -16,6 +16,8 @@
  * titles). A registration's point inside a drawn building is “โรงงานในอาคารนี้”, never “ตั้งอยู่ใน”. Sources, methods and
  * ids sit in one closed <details>. A natural person's name is never shown (js/model.js#PERSON_LABEL).
  */
+import {LANG} from './shell/i18n.js';
+import {thaiEstateName} from './lang.js';
 import {productionLink, provinceByCode, hasPoint, SIZE_BANDS, SCOPE, MOI_TH, NO_FIGURE} from './model.js';
 import {areaWord} from './areas.js';
 import {cueMarkup} from './cues.js';
@@ -163,7 +165,7 @@ function estatesSection(est, {province = ''} = {}) {
     const provinces = new Set(est.list.map(e => e.province)).size;
     return `<section class="panel-section"><div class="section-heading">${heading('estate', 'นิคม สวน เขตอุตสาหกรรม')}<span class="hint">${nw(`${num(est.total)} แห่ง`)} · ${nw(`${num(provinces)} จังหวัด`)}</span></div>${types}</section>`;
   }
-  const item = e => `<li><span class="estate-name">${esc(e.name)}${e.nameEn ? `<small lang="en">${esc(e.nameEn)}</small>` : ''}</span><span class="estate-type">${esc(e.type)}</span>${link(e.url, e.ieat ? 'หน้า กนอ.' : 'หน้าโครงการ', 'source-link estate-link')}</li>`;
+  const item = e => `<li><span class="estate-name">${esc(e.name)}${LANG === 'en' ? (thaiEstateName(e) ? `<small lang="th" translate="no">${esc(e.name)}</small>` : '') : e.nameEn ? `<small lang="en">${esc(e.nameEn)}</small>` : ''}</span><span class="estate-type">${esc(e.type)}</span>${link(e.url, e.ieat ? 'หน้า กนอ.' : 'หน้าโครงการ', 'source-link estate-link')}</li>`;
   const shown = est.list.slice(0, 8), rest = est.list.slice(8);
   return `<section class="panel-section"><div class="section-heading">${heading('estate', 'นิคม สวน เขตอุตสาหกรรม')}<span class="hint">${nw(`${num(est.total)} แห่ง`)}</span></div>${types}
     <ul class="estate-list">${shown.map(item).join('')}</ul>
@@ -339,7 +341,7 @@ export function renderArea(p, classOf, ctx = {}) {
   const head = `<section class="detail-head">
       <button type="button" class="btn quiet back" data-action="back">กลับ</button>
       <p class="eyebrow">${esc(w.area)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(a.province)}">${esc(prov)}</button></p>
-      <h2>${esc(place)}</h2>${a.nameEn ? `<p class="subtle">${esc(a.nameEn)}</p>` : ''}
+      <h2>${esc(place)}</h2>${a.nameEn ? (LANG === 'en' ? `<p class="subtle" lang="th" translate="no">${esc(place)}</p>` : `<p class="subtle">${esc(a.nameEn)}</p>`) : ''}
       ${rank}
       <div class="metrics compact">${workersTile}${metricTile(p.count, 'ทะเบียน', 'factory')}${metricTile(share, `ของ${prov}`, 'province', shareText)}${lensTile}</div>
       ${selectionNote(p, place, ctx)}
