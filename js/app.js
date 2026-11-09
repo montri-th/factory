@@ -28,8 +28,10 @@
  * the province frames carry the reading — except with a จังหวัด filter: that province shows its own เขต/อำเภอ at every
  * zoom (province view) and is fitted whole.
  *
- * Context from the estate research master: the industrial-area register (01_ESTATES, names and pages only — no geometry
- * is published).
+ * Context from the estate research master: the industrial-area register (01_ESTATES, names and pages), and since release
+ * 0.6.0 CityMETER Industrial Estate (data/estate-context.json, js/estates.js): the 46 OpenStreetMap outlines the master
+ * selected for the demo as a quiet dashed line, an estate view (`e=estate:<id>`) with the registrations ≤ 3 km from the
+ * outline (a distance set, never membership), and links into the estate demo — the same estate, both ways.
  *
  * Buildings: the points of the scope are joined to the focus-tier footprints the map draws — OpenStreetMap, or
  * CityMETER Building V4 inside a CityMETER unit (js/shell/building-units.js) — (js/shell/building-join.js, “จุดตกในอาคาร”; pieces
@@ -42,7 +44,7 @@
  * Map clicks, in order: focus pin → the building being looked at (x-ray: frame again) → focus building → below
  * PROVINCE_FILL_MAX_ZOOM a เขต/อำเภอ of the selected จังหวัด, else a province → เขต/อำเภอ (`area-hit`, every zoom from
  * AREA_MIN_ZOOM). Quiet context dots are never targets.
- * Panel modes: overview | area | building | factory (with a back stack).
+ * Panel modes: overview | area | building | factory | estate (with a back stack).
  * URL state (own names, inside): filters, metric, area, areas, view, factory, view3d — written in the shared
  * grammar d · at · e · m · f.* · focus · view · v3d by citymeter-shell (js/shell/url.js), with a browser history
  * entry per level (the back button goes up a level).
@@ -58,7 +60,7 @@ import {installAreaLayers, installAreaLabels, buildAreaModel, setFillSwitchZoom,
 import {installProvinceLayers, buildProvinceModel, PROVINCE_FILL_MAX_ZOOM, PROVINCE_LABEL_MAX_ZOOM} from './provinces.js';
 import {createFrameStore, provinceLocator} from './frames.js';
 import {buildOverview, buildAreaProfile, buildFactoryDetail, buildBuildingProfile, listOrder} from './profile-model.js';
-import {renderOverview, renderArea, renderBuilding, renderFactory, renderFilterChips, terrainChipsHTML, esc, num, pct, words} from './panel.js';
+import {renderOverview, renderArea, renderBuilding, renderFactory, renderEstate, renderFilterChips, terrainChipsHTML, esc, num, pct, words} from './panel.js';
 import {joinBuildings, nearestBuilding} from './shell/building-join.js';
 import {buildMapStyle, basemapPalette, TILEJSON_URL, MASSING_BEFORE, VENUE_XRAY_BEFORE} from './shell/map-style.js';
 import {installMassing, outerRings} from './massing.js';
@@ -73,6 +75,9 @@ import {installFactoryLabels} from './labels.js';
 import {installTerrain, terrainFacts, terrainChips, TERRAIN} from './shell/terrain.js';
 import {createCodec, createNavigator} from './shell/url.js';
 import {pageTitle} from './shell/title.js';
+import {DEMOS, demoUrl} from './shell/datasets.js';
+import {LANG} from './shell/i18n.js';
+import {decodeEstateContext, buildEstateProfile, estateBounds, installEstateLayers, nameMatches} from './estates.js';
 
 const $ = id => document.getElementById(id);
 const FIELDS = ['search', 'group', 'size', 'province', 'cls'];
@@ -100,6 +105,8 @@ const state = {
   blueBuildings: false, lastPreset: '',
   // Building camera: the x-ray solid, what was framed last ({id, key, refits}) and whether the user moved the map since.
   xray: null, framed: null, userCamera: false,
+  // CityMETER Industrial Estate context (js/estates.js): decoded data/estate-context.json and its map layer.
+  estates: null, estateLayers: null,
 };
 
 /* ---------- address (citymeter-shell, js/shell/url.js) ---------- */
@@ -109,12 +116,23 @@ const state = {
 // The `e` kinds are provisional until the dataset registry declares them.
 const nav = createNavigator(createCodec({
   dataset: 'factory', levels: ['P', 'D'], place: {province: 'province', D: 'area'},
-  items: {factory: 'factory'}, filters: FIELDS,
+  items: {factory: 'factory', estate: 'estate'}, filters: FIELDS,
   provinceOf: code => state.index?.byId.get(code)?.province || '',
 }), {onPop: restoreFromHistory});
 
 /* ---------- helpers ---------- */
 const values = () => Object.fromEntries(FIELDS.map(k => [k, $(k).value]));
+/** The estate demo (CityMETER Industrial Estate, in this repository: js/shell/datasets.js `pages`). */
+const ESTATE_DEMO = DEMOS.find(d => d.path === 'industrialestate') || null;
+const langQuery = () => (LANG === 'en' ? '&lang=en' : '');
+/** An estate's page in the estate demo: its outline and panel when it has one, else its province. */
+function estateHref(id) {
+  const e = state.estates?.byId.get(id);
+  if (!ESTATE_DEMO || !e) return '';
+  return `${demoUrl(ESTATE_DEMO)}?d=industrialEstate&at=${encodeURIComponent(e.province)}&e=estate:${encodeURIComponent(id)}${langQuery()}`;
+}
+const estateLogo = file => (ESTATE_DEMO ? `${demoUrl(ESTATE_DEMO)}assets/logos/${encodeURIComponent(file)}` : '');
+const estateById = id => state.estates?.byId.get(id) || null;
 const unit = () => unitWords(state.metric);
 const rowById = id => state.rowById.get(id) || null;
 const areaById = id => state.index.byId.get(id) || null;
@@ -150,6 +168,7 @@ function saveURL() {
   else if (!state.autoFocus) p.set('areas', 'all');
   if (state.view !== 'areas') p.set('view', state.view);
   if (state.panel.mode === 'factory' && state.panel.id) p.set('factory', state.panel.id);
+  if (state.panel.mode === 'estate' && state.panel.id) p.set('estate', state.panel.id);
   if (!state.view3d) p.set('view3d', '0');
   // A building view has no address of its own: the address stays on what it was opened from.
   if (state.panel.mode !== 'building') nav.commit(p);
@@ -172,7 +191,7 @@ function applyTheme() {
 
 function disposeSpatial() {
   for (const k of ['siteLabels', 'terrain', 'xray', 'massing', 'pins']) { try { state[k]?.dispose(); } catch (e) { console.warn('dispose', k, e); } state[k] = null; }
-  state.areaLayers = null; state.provinceLayers = null; state.join = null; refreshJoin.key = ''; syncFocusBuilding.key = '';
+  state.areaLayers = null; state.provinceLayers = null; state.estateLayers = null; state.join = null; refreshJoin.key = ''; syncFocusBuilding.key = '';
 }
 
 /* ---------- selection ---------- */
@@ -205,7 +224,9 @@ function update({fit = false} = {}) {
     else { state.panel = fallback(); state.history = []; state.buildingSel = null; }
   }
   if (state.panel.mode === 'area' && !area) state.panel = overviewPanel();
+  if (state.panel.mode === 'estate' && !estateById(state.panel.id)) state.panel = fallback();
   if (state.panel.mode === 'overview' && area) state.panel = fallback();
+  state.estateLayers?.select(state.panel.mode === 'estate' ? state.panel.id : '');
   if (state.panel.mode !== 'factory') { state.selectedId = ''; state.pins?.select(''); state.popup?.remove(); state.popup = null; }
   else state.selectedId = state.panel.id;
   ensureFrames();
@@ -235,14 +256,27 @@ function update({fit = false} = {}) {
 function detailRows() {
   const b = currentBuilding();
   if (b) return b.rows;
+  if (state.panel.mode === 'estate') return estateProfile()?.rows || [];
   return state.rows;
+}
+
+/** The open estate's profile for the current scope and measure (cached: the panel, the pins and the table read it). */
+function estateProfile() {
+  if (state.panel.mode !== 'estate' || !state.estates) return null;
+  const key = `${state.panel.id}|${state.scopeKey}|${state.metric}`;
+  if (estateProfile.key !== key || estateProfile.scope !== state.scopeRows) {
+    estateProfile.key = key; estateProfile.scope = state.scopeRows;
+    const scopeIds = new Set(state.scopeRows.map(r => r.id));
+    estateProfile.value = buildEstateProfile(state.estates, state.panel.id, {scopeIds, rowById, families: state.data.families, metric: state.metric});
+  }
+  return estateProfile.value;
 }
 
 /** Counter + table follow the rows that carry detail. */
 function syncList() {
   const rows = detailRows(), b = currentBuilding();
   $('result-count').textContent = num(rows.length);
-  $('results-title').textContent = b ? 'โรงงานในอาคารนี้' : 'โรงงานตามตัวกรอง';
+  $('results-title').textContent = b ? 'โรงงานในอาคารนี้' : state.panel.mode === 'estate' ? 'โรงงานรอบนิคม' : 'โรงงานตามตัวกรอง';
   const sig = rows.map(r => r.id).join(',');
   if (syncList.sig !== sig) state.page = 0;
   syncList.sig = sig;
@@ -272,6 +306,7 @@ function wantedProvinces() {
   if (area) codes.add(area.province);
   for (const id of state.focusIds) { const a = areaById(id); if (a) codes.add(a.province); }
   if (state.panel.mode === 'factory') { const r = rowById(state.panel.id); if (r?.province) codes.add(r.province); }
+  if (state.panel.mode === 'estate') { const e = estateById(state.panel.id); if (e?.province) codes.add(e.province); }
   return [...codes].filter(Boolean).slice(0, 8);
 }
 function ensureFrames() { state.frames?.ensureMany(wantedProvinces()); }
@@ -309,6 +344,9 @@ function renderCrumbs() {
   if (mode === 'factory' || mode === 'building') {
     const r = mode === 'factory' ? rowById(id) : currentBuilding()?.rows[0];
     crumbs = buildBreadcrumb({area: r?.area ? areaById(r.area) : null, province: r?.province || ''});
+  } else if (mode === 'estate') {
+    // An estate is named by its source province label (the catalogue's), never placed by point-in-polygon.
+    crumbs = buildBreadcrumb({province: estateById(id)?.province || ''});
   } else {
     crumbs = buildBreadcrumb({province: $('province').value, area: state.selectedArea ? areaById(state.selectedArea) : null});
   }
@@ -316,6 +354,7 @@ function renderCrumbs() {
   // Tab title: what the view shows, then the product, ≤ 60 characters (LDS FAVICON-01, js/shell/title.js).
   const place = crumbs[crumbs.length - 1].label;
   document.title = pageTitle(mode === 'factory' ? rowById(id)?.title || place
+    : mode === 'estate' ? estateById(id)?.name || place
     : mode === 'building' ? `อาคาร ${place}` : `${unit().subject} ${place}`);
   return crumbs;
 }
@@ -326,7 +365,9 @@ const countClassOf = a => state.areaModel?.byId.get(a.id)?.fill || 'var(--scale-
 function panelCtx() {
   const f = values();
   const osm = /planet\/(\d{4})(\d{2})(\d{2})_/.exec(state.tileTemplate || '');
-  return {meta: state.data.meta || {}, unit: unit(), index: state.index, sources: state.data.sources || [], filtered: NARROWING.some(k => f[k]), osmDate: osm ? `${osm[1]}-${osm[2]}-${osm[3]}` : ''};
+  return {meta: state.data.meta || {}, unit: unit(), index: state.index, sources: state.data.sources || [], filtered: NARROWING.some(k => f[k]), osmDate: osm ? `${osm[1]}-${osm[2]}-${osm[3]}` : '',
+    // CityMETER Industrial Estate (release 0.6.0): links into the estate demo, outlines on this map, directory name matches.
+    ...(state.estates ? {estateHref, estateLogo, estateOutlined: id => Boolean(state.estates.outlineById.has(id)), estateMatches: fid => nameMatches(state.estates, fid)} : {})};
 }
 
 /** Rows for the province frames: current filters WITHOUT the province filter, so every frame keeps its own count. */
@@ -363,6 +404,7 @@ function renderPanel(summary = summarize(state.rows)) {
   if (mode === 'area') html = renderArea(buildAreaProfile(state.scopeRows, id, state.index, families, {metric, ...context}), countClassOf, ctx);
   else if (mode === 'building') html = renderBuilding(buildBuildingProfile(currentBuilding(), state.index, families), ctx);
   else if (mode === 'factory') html = renderFactory(buildFactoryDetail(rowById(id), {scopeRows: state.scopeRows, allRows: state.data.rows, index: state.index, families, building: factoryBuilding(id)}), ctx);
+  else if (mode === 'estate') html = renderEstate(estateProfile(), ctx);
   state.renderedSig = panelSpatialSig();
   if (!html) {
     const f = values();
@@ -426,7 +468,7 @@ function goBack() {
   if (!previous) { state.selectedArea = ''; state.panel = overviewPanel(); update({fit: true}); return; }
   // Leaving or reaching a building view always moves the camera.
   const fromView = twoPoint();
-  const fit = fromView || ['building', 'factory'].includes(previous.mode) || previous.area !== state.selectedArea || previous.province !== $('province').value;
+  const fit = fromView || ['building', 'factory', 'estate'].includes(previous.mode) || state.panel.mode === 'estate' || previous.area !== state.selectedArea || previous.province !== $('province').value;
   if (previous.province !== $('province').value) $('province').value = previous.province || '';
   state.selectedArea = previous.area || '';
   if (previous.mode === 'building') state.buildingSel = previous.building || null;
@@ -451,6 +493,24 @@ function selectArea(id, {fromMap = false} = {}) {
   update();
   if (!fromMap) openMobilePanel();
   if (state.loaded) fitRecord(area, {maxZoom: 16});
+}
+
+/**
+ * Open an industrial estate (an outline on the map, the province's estate list, `e=estate:<id>`): its record, its page in
+ * the estate demo and the registrations ≤ 3 km from its outline. The estate is the place: the จังหวัด filter is cleared
+ * (the set crosses province lines); the other filters stay.
+ */
+function selectEstate(id, {fromMap = false} = {}) {
+  const e = estateById(id);
+  if (!e) return;
+  if (state.panel.mode !== 'estate' || state.panel.id !== id) pushHistory();
+  $('province').value = '';
+  state.selectedArea = '';
+  state.focusAreaIds = [];
+  state.panel = {mode: 'estate', id};
+  update({fit: true});
+  if (!fromMap) openMobilePanel({frame: false});
+  announce(`เลือก ${e.name}`);
 }
 
 function factoryPopup(r) {
@@ -859,7 +919,7 @@ function filterGroup(id) {
   $('group').value = id;
   state.focusAreaIds = [];
   state.history = [];
-  const keep = state.panel.mode === 'area';
+  const keep = state.panel.mode === 'area' || state.panel.mode === 'estate';
   if (!keep) state.panel = overviewPanel();
   update({fit: !keep});
 }
@@ -890,6 +950,7 @@ function onPanelAction(event) {
   switch (action) {
     case 'select-area': selectArea(id); break;
     case 'select-factory': selectFactory(id); break;
+    case 'select-estate': selectEstate(id); break;
     case 'select-building': selectBuilding(id); break;
     case 'select-province': selectProvince(id); break;
     case 'filter-group': filterGroup(value); break;
@@ -1078,6 +1139,21 @@ function fitRecord(record, {maxZoom = 16, instant = false} = {}) {
   fitPitched(state.map, bounds, {preset, padding: pitched ? pitchedPadding() : cameraPadding(), maxZoom, minZoom: 5, animate: animate() && !instant, points: recordPoints(record), shift: mobilePortrait() ? -0.08 : null});
 }
 
+/** Frame the open estate with its 3 km reach (its outline when it has one, else its province). */
+function fitEstate({instant = false} = {}) {
+  const e = estateById(state.panel.id);
+  if (!e) return false;
+  const box = estateBounds(e, state.estates.km);
+  if (!box) { const p = provinceRecord(e.province); if (p) fitRecord(p, {maxZoom: 12, instant}); return Boolean(p); }
+  const bounds = boundsOf([box]);
+  const preset = sheetOpen() ? 'plan' : cameraPreset();
+  const pitched = preset !== 'plan' && !mobilePortrait();
+  const outline = state.estates.outlineById.get(e.id);
+  fitPitched(state.map, bounds, {preset, padding: pitched ? pitchedPadding() : cameraPadding(), maxZoom: 15, minZoom: 8, animate: animate() && !instant,
+    points: [...box, [box[0][0], box[1][1]], [box[1][0], box[0][1]], ...(outline ? vertices([outline]) : [])], shift: mobilePortrait() ? -0.08 : null});
+  return true;
+}
+
 function fitCountry({instant = false} = {}) {
   fitPitched(state.map, boundsOf([countryBox()]), {preset: 'plan', padding: cameraPadding(), maxZoom: 7, minZoom: 4, animate: animate() && !instant});
 }
@@ -1091,6 +1167,7 @@ function fitMap({instant = false} = {}) {
     const r = rowById(state.panel.id), record = r?.area ? areaById(r.area) : r?.province ? provinceRecord(r.province) : null;
     if (record) { fitRecord(record, {maxZoom: 15, instant}); return; }
   }
+  if (state.panel.mode === 'estate' && fitEstate({instant})) return;
   const area = state.selectedArea ? areaById(state.selectedArea) : null;
   if (area) { fitRecord(area, {instant}); return; }
   // A spread Aha (no district stands out) frames the leading province's districts that hold rows.
@@ -1249,6 +1326,10 @@ function massingRegions() {
     const a = r?.area ? areaById(r.area) : null;
     if (a?.feature) return outerRings(a.feature);
   }
+  if (state.panel.mode === 'estate') {
+    const outline = state.estates?.outlineById.get(state.panel.id);
+    if (outline) return outerRings(outline);
+  }
   const records = state.selectedArea ? [areaById(state.selectedArea)] : state.focusIds.map(areaById);
   return records.map(a => a?.feature).filter(Boolean).flatMap(outerRings);
 }
@@ -1330,6 +1411,9 @@ function onMapClick(e) {
   const hit = buildingTarget(point);
   if (hit?.kind === 'factory') { selectFactory(hit.id, {fly: false, showPopup: true, fromPin: true}); return; }
   if (hit?.kind === 'building') { selectBuilding(hit.key); return; }
+  // An industrial estate's outline (from ESTATE_MIN_ZOOM): its estate view (a click inside the open one changes nothing).
+  const estate = state.estateLayers?.hitTest(point) || '';
+  if (estate) { if (state.panel.mode !== 'estate' || state.panel.id !== estate) selectEstate(estate, {fromMap: true}); return; }
   if (belowAreaZoom()) {
     // Province view: a เขต/อำเภอ of the selected จังหวัด; anywhere else a province frame (another จังหวัด).
     const area = provinceViewArea(point);
@@ -1355,6 +1439,9 @@ function onMapMove(e) {
     // A registration under a fine pointer opens its card (icon chips); leaving it closes the card.
     state.siteLabels?.hover(pinRow);
     let over = Boolean(pinRow) || Boolean(state.xray?.hitTest([p.x, p.y])) || Boolean(buildingTarget(p));
+    const estate = over ? '' : state.estateLayers?.hitTest(p) || '';
+    state.estateLayers?.hover(estate);
+    over = over || Boolean(estate);
     let area = '';
     if (!over && belowAreaZoom()) {
       const inProvince = provinceViewArea(p);
@@ -1380,6 +1467,14 @@ function installSpatialLayers() {
   const palette = basemapPalette(theme());
   state.provinceLayers = state.provincesGeo?.features?.length ? installProvinceLayers(map, state.provincesGeo) : null;
   state.areaLayers = installAreaLayers(map, {areas: state.frames.areas()});
+  // Industrial estate outlines (CityMETER Industrial Estate, OpenStreetMap): a dashed foundation line under the buildings.
+  if (state.estates?.outlines.features.length) {
+    try {
+      state.estateLayers = installEstateLayers(map, state.estates.outlines, {beforeId: MASSING_BEFORE,
+        colors: {line: cssVar('--text-secondary', '#5F635A'), halo: cssVar('--map-marker-halo', '#FFFFFF'), hover: cssVar('--map-hover-stroke', '#347DA8'), selected: cssVar('--map-selected-stroke', '#176B82')}});
+      state.estateLayers.select(state.panel.mode === 'estate' ? state.panel.id : '');
+    } catch (e) { state.estateLayers = null; console.warn('Estate outlines unavailable', e); }
+  }
   state.massing = installMassing(map, {
     beforeId: MASSING_BEFORE,
     // The open building is drawn in the data colour (LDS map.activeLayer), read from the theme.
@@ -1437,6 +1532,7 @@ function installSpatialLayers() {
     // A deep link to a registration with a point opens on its building (a 90 m box until the tiles arrive).
     if (twoPoint()) frameFocus({instant: true});
     else if (r && (r.area || r.province)) fitRecord(r.area ? areaById(r.area) : provinceRecord(r.province), {maxZoom: 15, instant: true});
+    else if (state.panel.mode === 'estate' && fitEstate({instant: true})) { /* the estate and its 3 km reach */ }
     else fitMap({instant: true});
     state.lastPreset = cameraPreset();
   }
@@ -1541,7 +1637,7 @@ function initMap() {
     state.map.on('moveend', scheduleLabelView);
     // The open registration's terrain chips read the basemap tiles round it: read again once the map has settled there.
     state.map.on('idle', () => { if (state.loaded && state.panel.mode === 'factory') fillTerrain(rowById(state.panel.id)); });
-    state.map.on('mouseout', () => { state.areaLayers?.hover(''); });
+    state.map.on('mouseout', () => { state.areaLayers?.hover(''); state.estateLayers?.hover(''); });
     state.map.on('style.load', installSpatialLayers);
     state.map.on('click', onMapClick);
     state.map.on('mousemove', onMapMove);
@@ -1615,6 +1711,7 @@ function closeMobilePanel() {
     $('mobile-panel').focus({preventScroll: true});
     if (state.panel.mode === 'overview') renderPanel();
     else if (wasOpen && state.loaded && state.panel.mode === 'area') { const a = areaById(state.panel.id); if (a) fitRecord(a); }
+    else if (wasOpen && state.loaded && state.panel.mode === 'estate') fitEstate();
     // The building fills the larger map again.
     else if (wasOpen && state.loaded && twoPoint()) frameFocus();
     updateSpatialLayers();
@@ -1683,6 +1780,9 @@ function restoreFromURL() {
   if (state.selectedArea) state.panel = {mode: 'area', id: state.selectedArea};
   const factory = p.get('factory') && rowById(p.get('factory'));
   if (factory) state.panel = {mode: 'factory', id: factory.id};
+  // An estate (e=estate:<id>): the estate is the place, so a province in the same address does not narrow its set.
+  const estate = !factory && p.get('estate') && estateById(p.get('estate'));
+  if (estate) { state.panel = {mode: 'estate', id: estate.id}; state.selectedArea = ''; $('province').value = ''; }
 }
 
 /** Browser back / forward (citymeter-shell): show the level the restored address names. */
@@ -1702,7 +1802,8 @@ function wireEvents() {
       state.focusAreaIds = [];
       state.history = [];
       if (f === 'province') state.selectedArea = '';
-      state.panel = state.selectedArea ? {mode: 'area', id: state.selectedArea} : overviewPanel();
+      state.panel = state.selectedArea ? {mode: 'area', id: state.selectedArea}
+        : state.panel.mode === 'estate' && f !== 'province' ? state.panel : overviewPanel();
       update({fit: true});
     }, f === 'search' ? 450 : 0);
   });
@@ -1763,11 +1864,13 @@ function wireEvents() {
 
 async function init() {
   try {
-    const [rowsJSON, indexJSON, provincesJSON] = await Promise.all([
+    const [rowsJSON, indexJSON, provincesJSON, estatesJSON] = await Promise.all([
       // Every registration of the registry (~1.9 MB over the wire, gzip): a slow phone link still gets there.
       fetchJSON('data/factories.json', {timeout: 90000}),
       fetchJSON('data/area-index.json', {timeout: 30000}),
       fetchJSON('data/provinces.geojson', {timeout: 30000}).catch(e => { console.warn('Province frames unavailable', e); return null; }),
+      // CityMETER Industrial Estate context (outlines, around sets, directory name matches): the page works without it.
+      fetchJSON(`data/estate-context.json${RELEASE ? `?v=${RELEASE}` : ''}`, {timeout: 30000}).catch(e => { console.warn('Estate context unavailable', e); return null; }),
     ]);
     if (!Array.isArray(indexJSON?.provinces) || !indexJSON.provinces.length || !Array.isArray(indexJSON?.areas?.id)) {
       const e = new Error('Invalid area index'); e.resource = 'data/area-index.json'; e.phase = 'data-schema'; throw e;
@@ -1779,6 +1882,8 @@ async function init() {
     registerDataNames({index: state.index, data: state.data});
     if (state.data.dropped) console.warn('Rows outside the area index', state.data.dropped);
     state.rowById = new Map(state.data.rows.map(r => [r.id, r]));
+    state.estates = decodeEstateContext(estatesJSON);
+    $('legend-estate').hidden = !state.estates?.outlines.features.length;
     state.frames = createFrameStore({index: state.index, fetchJSON, version: RELEASE, onLoad: onFramesLoaded,
       onError: (code, e) => { console.warn('Province outlines unavailable', code, e); $('map-status').dataset.framesError = code; }});
     // Buildings per area (owner 2026-11-01, point 3): which อปท./เขต draw CityMETER Building V4 (js/shell/building-units.js).

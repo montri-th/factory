@@ -741,6 +741,11 @@ td.num, th.num { text-align: right; }
 .estate-name small { display: block; color: var(--text-secondary); font-size: 11px; }
 .estate-type { grid-area: type; color: var(--text-metadata); font-size: 11px; }
 .estate-link { grid-area: link; font-size: 12px; white-space: nowrap; }
+/* Release 0.6.0: an outlined estate opens on the map (its name is a button); its page in the estate demo and its
+   official page stack on the right. */
+.estate-links { grid-area: link; display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.estate-links .estate-link { grid-area: auto; }
+.estate-name .link-button { text-align: left; font: inherit; }
 .registry-list .mix-label, .industry-list .mix-label { white-space: normal; }
 .industry-list li { grid-template-columns: minmax(0, 190px) minmax(0, 1fr) 56px; }
 .aha-industry .rail-compare li { grid-template-columns: minmax(0, 120px) minmax(0, 1fr) 44px; }
@@ -748,3 +753,19 @@ td.num, th.num { text-align: right; }
 @media (max-width: 760px) and (orientation: portrait) {
   .industry-list li { grid-template-columns: minmax(0, 150px) minmax(0, 1fr) 48px; }
 }
+
+/* ---------- CityMETER Industrial Estate in Factory (release 0.6.0) ----------
+   The outlines are a dashed foundation line (--text-secondary), never a data colour; the open one takes
+   --map-selected-stroke. Logo plates use the LDS foundation surfaces: dark --surface-card (#20292D) behind a mark made for
+   dark ground, light --surface-raised (#FFFFFF) behind a mark made for light ground in the dark theme. */
+.legend-estate { display: inline-block; width: 16px; height: 0; border-top: 2px dashed var(--text-secondary); }
+.map-panel.is-province-zoom .legend-estate-item { display: none; }
+.estate-identity { display: flex; align-items: center; gap: 8px; margin: 6px 0 2px; }
+.estate-mark { display: inline-flex; align-items: center; height: 32px; max-width: 120px; border-radius: 8px; overflow: hidden; }
+.estate-mark img { display: block; height: 100%; width: auto; max-width: 100%; object-fit: contain; }
+.estate-mark.surface-dark { background: #20292D; padding: 3px 6px; }
+:root[data-theme="dark"] .estate-mark.surface-light { background: #FFFFFF; padding: 3px 6px; }
+.estate-mark-caption { font-size: 12px; color: var(--text-metadata); }
+.detail-actions a.btn { border: 1px solid var(--border-default); border-radius: 999px; min-height: 40px; padding: 8px 16px; text-decoration: none; color: var(--text-primary); background: var(--surface-raised); }
+.detail-actions a.btn.primary { color: var(--surface-canvas); background: var(--text-primary); border-color: var(--text-primary); }
+.detail-actions a.btn.primary:hover { background: var(--text-secondary); border-color: var(--text-secondary); }

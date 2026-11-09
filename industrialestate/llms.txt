@@ -1,0 +1,13 @@
+# CityMETER Industrial Estate
+
+> Thailand's industrial estates, parks and zones (106 catalogue records of the industrial-estate research master, registry research.TH.industrial_estates, data contract industrial-estate-demo/1.0.0) on a map: the 46 OpenStreetMap outlines the master selected for the demo, IEAT factory-directory listings per estate (snapshot 2026-11-04), name candidates in CityMETER Factory, estate, parent-company or developer logos, and the CityMETER Factory registrations within 3 km of each outline. A Landometer CityMETER public demo, release 1.0.0 (2026-11-10). Thai and English (?lang=en).
+
+- Pages: https://montri-th.github.io/factory/industrialestate/ and https://citymeter.pages.dev/industrialestate/
+- Address: ?d=industrialEstate&at=<province code>&e=estate:<estate_id> (citymeter-shell grammar)
+- Data: data/estates.json (records), data/boundaries.geojson (© OpenStreetMap contributors, ODbL 1.0), data/directory.json (IEAT directory by estate), data/around.json (Factory points round each outline)
+- Method and limits: DATA_METHOD.md · product statement: PRODUCT_STATEMENT.md
+- Companion demo: CityMETER Factory, https://montri-th.github.io/factory/ (?d=factory&e=estate:<estate_id> opens the same estate)
+
+Counts: 106 records in 21 provinces (84 industrial estates, 16 parks, 6 zones); 46 outlines; 6,811 directory listings in 56 estates (50 estates have no listing in this snapshot: no data, not zero); verified factories: no data.
+
+Do not claim from this data: the number of factories, tenants, companies, workers or jobs in an estate; that a registration within 3 km is inside or a member of an estate; a legal or current estate boundary, its area or a density; a ranking of estates.

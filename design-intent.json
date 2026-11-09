@@ -1,7 +1,7 @@
 {
   "artifact": "CityMETER Factory — 3D-first, district-first map of DIW-reported workers at every core factory registration of the research master (DIW registry outside IEAT industrial estates and MOI-operating registrations) across Thailand, with official industry groups, worker bands and the 95+ lens, functional classes, the industrial-area register as context and a nearby set per registration",
-  "productVersion": "0.5.1",
-  "updatedOn": "2026-11-05",
+  "productVersion": "0.6.0",
+  "updatedOn": "2026-11-10",
   "ldsVersion": "0.9.7",
   "release": "v0.9.7-owner.1",
   "revision": "standalone-0.9.7-r1",
@@ -25,7 +25,7 @@
     "reportedDifference": "LDS analytical scale records list dark noData #3B4849 / zeroOutline #BAC6C0, while machine.tokens.dataState lists dark #404844 / #93A398; the map follows the EVID-05 treatment (dataState), as in Restaurants, Pharmacy and Hotel, and the difference stays reported to the owner",
     "parity": "scripts/check-lds-parity.mjs against the LDS base file (and the LI profile hash): handoff/VERIFICATION.md",
     "notDistributed": "full LDS library, the Location Intelligence Profile, other analytical families",
-    "context": "registry context and the industrial-area register as neutral bars, chips and lists; size cue of pins by workers; foundation fill for ordinal bars (worker bands, functional classes, DIW groups)"
+    "context": "registry context and the industrial-area register as neutral bars, chips and lists; size cue of pins by workers; foundation fill for ordinal bars (worker bands, functional classes, DIW groups); since 0.6.0 the 46 industrial-estate outlines of CityMETER Industrial Estate (OpenStreetMap, the master’s demo selection) as a dashed foundation line (--text-secondary) on a halo casing (--map-marker-halo), the open estate in --map-selected-stroke — never a data colour"
   },
   "firstAha": "share of the leading province’s workers at the registrations placed at district level that sit in up to three districts with the most workers (never cutting a tie, never every district holding workers), the industry families of those rows as bars with each share (numerator and denominator in titles and accessible text), and the district(s) with the most workers outside it with its first family; the same with registrations under the count measure; computed per selection; the map opens in the 3D city preset with those districts focused automatically and the rest quiet",
   "countingUnit": "measure switch: workers (คน, default; Σ DIW-reported workers) or registrations (ทะเบียน, FIDs — not unique plants)",

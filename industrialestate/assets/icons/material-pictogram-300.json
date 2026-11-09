@@ -1,0 +1,102 @@
+{
+  "family": "LDS Material Symbols Rounded Pictogram",
+  "file": "material-pictogram-300.woff2",
+  "bytes": 3148,
+  "sha256": "267debecc08b8b278bb7888b15cafd6821bab4019f593104cfac5ece7cdd71ad",
+  "source": "google/material-design-icons variablefont/MaterialSymbolsRounded[FILL,GRAD,opsz,wght].ttf",
+  "sourceSha256": "7e74e36533ccee12c2b81e75bfcf3ccf123d3bb7e7e46d65d94445f23db0c97c",
+  "license": "Apache-2.0 (assets/icons/material-symbols-Apache-2.0.txt)",
+  "axes": {
+    "FILL": 0,
+    "wght": 300,
+    "GRAD": 0,
+    "opsz": 24
+  },
+  "glyphs": {
+    "area": {
+      "name": "map",
+      "codepoint": "U+E55B"
+    },
+    "province": {
+      "name": "location_city",
+      "codepoint": "U+E7F1"
+    },
+    "segment": {
+      "name": "category",
+      "codepoint": "U+E72C"
+    },
+    "ai": {
+      "name": "auto_awesome",
+      "codepoint": "U+E65F"
+    },
+    "streetview": {
+      "name": "streetview",
+      "codepoint": "U+E56E"
+    },
+    "maps": {
+      "name": "location_on",
+      "codepoint": "U+E0C8"
+    },
+    "building": {
+      "name": "apartment",
+      "codepoint": "U+EA40"
+    },
+    "factory": {
+      "name": "factory",
+      "codepoint": "U+EBBC"
+    },
+    "workers": {
+      "name": "groups",
+      "codepoint": "U+F233"
+    },
+    "estate": {
+      "name": "warehouse",
+      "codepoint": "U+EBB8"
+    },
+    "status": {
+      "name": "fact_check",
+      "codepoint": "U+F0C5"
+    },
+    "class": {
+      "name": "badge",
+      "codepoint": "U+EA67"
+    },
+    "compare": {
+      "name": "compare_arrows",
+      "codepoint": "U+E915"
+    },
+    "sea": {
+      "name": "waves",
+      "codepoint": "U+E176"
+    },
+    "elevation": {
+      "name": "landscape",
+      "codepoint": "U+E564"
+    },
+    "relief": {
+      "name": "height",
+      "codepoint": "U+EA16"
+    },
+    "forest": {
+      "name": "forest",
+      "codepoint": "U+EA99"
+    },
+    "rank": {
+      "name": "leaderboard",
+      "codepoint": "U+F20C"
+    },
+    "date": {
+      "name": "event",
+      "codepoint": "U+E878"
+    },
+    "distance": {
+      "name": "straighten",
+      "codepoint": "U+E41C"
+    },
+    "dataset": {
+      "name": "database",
+      "codepoint": "U+F20E"
+    }
+  },
+  "status": "test exception to LDS nav-7 (owner 2026-10-22; actions and building added 2026-10-29; terrain glyphs 2026-11-01 for the map labels; rank, date, distance and dataset 2026-11-01 for short copy; factory, workers, estate, status and class 2026-11-05 for CityMETER Factory); nav-7 subset unchanged"
+}
