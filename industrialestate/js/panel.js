@@ -168,7 +168,7 @@ export function renderEstate(ctx) {
       <div class="estate-brand">${logoMark(e, {size: 'lg', base})}${e.logo ? `<span class="logo-caption" title="${esc(e.logo.label)}">${esc(cap)}${e.logo.label && e.logo.label !== nameOf(e) ? ` · ${esc(shortLabel(e.logo.label))}` : ''}</span>` : (e.logoLabel ? `<span class="logo-caption" title="${esc(e.logoLabel)}">${T('ผู้พัฒนา', 'Developer')} · ${esc(shortLabel(e.logoLabel))}</span>` : '')}</div>
       <p class="detail-kicker">${pic('estate')}${esc(typeOf(e))} · ${esc(provinceName(e.province))}</p>
       <h2 class="detail-title">${esc(nameOf(e))}</h2>
-      ${EN ? (e.name !== nameOf(e) ? `<p class="detail-sub" lang="th">${esc(e.name)}</p>` : '') : (e.nameEn ? `<p class="detail-sub" lang="en">${esc(e.nameEn)}</p>` : '')}
+      ${EN ? (e.name !== nameOf(e) ? `<p class="detail-sub" lang="th" translate="no">${esc(e.name)}</p>` : '') : (e.nameEn ? `<p class="detail-sub" lang="en">${esc(e.nameEn)}</p>` : '')}
       <div class="metrics compact">
         ${metricTile(e.listed ? num(e.dir.n) : '—', T('รายชื่อในทำเนียบ', 'directory listings'), 'factory', e.listed ? T(`รายชื่อในทำเนียบ กนอ. ${dateText(meta.directorySnapshotOn)} (ไม่ใช่จำนวนโรงงานที่ยืนยัน)`, `IEAT directory, ${dateText(meta.directorySnapshotOn)} (not a count of verified factories)`) : T('ไม่มีรายชื่อในทำเนียบรอบนี้ ไม่ได้แปลว่าไม่มีโรงงาน', 'No listing in this directory snapshot, which does not mean no factory'))}
         ${metricTile(e.dir.cand ? num(e.dir.cand) : '—', T('ชื่อตรงกับทะเบียนโรงงาน', 'names matching a registration'), 'compare', T('ทะเบียนโรงงาน (FID) ที่ชื่อผู้ประกอบการตรงกับรายชื่อในทำเนียบ — ผู้สมัครจากชื่อ ยังไม่ยืนยันว่าเป็นแห่งเดียวกัน', 'Factory registrations (FID) whose operator name matches a listing — name candidates, not confirmed as the same plant'))}
@@ -180,12 +180,19 @@ export function renderEstate(ctx) {
       <p class="hint">${esc(boundaryWords(e))}</p>
       ${factoryHref ? `<p><a class="source-link" href="${esc(factoryHref)}">${T(`ดูโรงงาน${provinceName(e.province)}ใน CityMETER Factory`, `See the factories of ${provinceName(e.province)} in CityMETER Factory`)}</a></p>` : ''}
     </section>`;
+  // R8 (1.1.0): the developer's own customer list, linked — its counts stay in the register, never shown or summed.
+  const ownerList = e.ownerList ? `<p class="owner-list">${link(e.ownerList.url, e.ownerList.shared ? T('รายชื่อลูกค้ารวมของผู้พัฒนา', 'The developer’s customer list (all its parks)') : T('รายชื่อลูกค้าบนเว็บผู้พัฒนา', 'Customer list on the developer’s site'))} <span class="hint">${esc(T(`เข้าดู ${dateText(e.ownerList.on)}`, `seen ${dateText(e.ownerList.on)}`))}</span></p>` : '';
   const dirHTML = `
     <section aria-labelledby="es-dir">${heading('factory', T('ทำเนียบ กนอ.', 'IEAT directory'), 'es-dir')}
       ${e.listed ? directoryState : `<p class="hint">${T('ไม่มีรายชื่อของนิคมนี้ในทำเนียบรอบนี้', 'This estate has no listing in this directory snapshot')}</p>`}
+      ${ownerList}
     </section>`;
+  // R8 outline QA: the outline's area is more than 15 % from the area its source states (neither area is shown).
+  const qa = e.boundary.qa;
+  const qaText = qa ? `${esc(qa.dir === 'smaller' ? T('กรอบเล็กกว่าพื้นที่ที่แหล่งระบุเกิน 15% อาจไม่ครบทั้งโครงการ', 'The outline is over 15% smaller than the area its source states and may miss part of the project') : T('กรอบใหญ่กว่าพื้นที่ที่แหล่งระบุเกิน 15% อาจรวมพื้นที่อื่น', 'The outline is over 15% larger than the area its source states and may take in other land'))}${qa.url ? ` · ${link(qa.url, T('แหล่งพื้นที่', 'area source'))}` : ''} · ${esc(T(`ตรวจ ${dateText(qa.on)}`, `checked ${dateText(qa.on)}`))}` : '';
   const facts = [
     [T('ขอบเขต', 'Outline'), e.outline ? `${esc(boundaryWords(e))} · ${link(`https://www.openstreetmap.org/${e.boundary.osm}`, `${e.boundary.osm} v${e.boundary.osmVersion}`)} · ${esc(dateText(e.boundary.snapshot))}` : esc(boundaryWords(e))],
+    ...(qa ? [[T('เทียบพื้นที่', 'Area check'), qaText]] : []),
     [T('ผู้พัฒนาตามแหล่ง', 'Developer named by the source'), esc(developer || e.developer || '—')],
     [T('หน้าในบัญชี กนอ.', 'IEAT catalogue page'), e.url ? link(e.url, T('industrial-estates.ieat.go.th', 'industrial-estates.ieat.go.th')) : '—'],
     [T('รหัสในทะเบียนวิจัย', 'Register id'), `<span class="data-number">${esc(e.id)}</span>`],

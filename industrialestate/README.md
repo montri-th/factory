@@ -32,7 +32,7 @@
 - `data/boundaries.geojson` — ขอบเขต OpenStreetMap 46 แห่ง (© OpenStreetMap contributors, ODbL 1.0; ลดจุดที่ 1.5 ม.)
 - `data/directory.json` — ทำเนียบ กนอ. ตามนิคม (โหลดเมื่อเปิดนิคม)
 - `data/around.json` — จุดโรงงานรอบนิคมจาก CityMETER Factory (โหลดเมื่อใช้)
-- `assets/logos/` — โลโก้ที่ SHA-256 ตรงกับ `LOGO_LIBRARY` ของทะเบียนวิจัย (`manifest.json`)
+- `assets/logos/` — โลโก้ที่ SHA-256 ตรงกับ `LOGO_LIBRARY` ของทะเบียนวิจัย โดยแถวของ `LOGO_LIBRARY_R8` ใช้แทนแถวเดิม (`manifest.json` → `excluded`: ภาพ Bluetech ที่เลิกใช้)
 - `scripts/build-data.py` · `scripts/build-logos.py` — สร้างข้อมูลและโลโก้จากชีตวิจัย (ไม่เผยแพร่ชีตหรือไฟล์ export)
 - `../data/estate-context.json` — บริบทนิคมที่ CityMETER Factory ใช้ (สร้างพร้อมกันด้วย `build-data.py`)
 

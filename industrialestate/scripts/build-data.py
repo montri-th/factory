@@ -4,7 +4,11 @@
 Inputs (never committed: the research sheet export and the boundary bundle stay outside the repository):
   --sheet    the Research Master exported as .xlsx ("CityMETER Industrial Estates — นิคม สวน และเขตอุตสาหกรรม
              106 รายการ — Research Master 2026-10-25"), tabs DEMO_CATALOG, DEMO_BOUNDARIES, DEMO_FACTORY_LINKS,
-             DEMO_FID_CANDIDATES, DEMO_LINK_SUMMARY, LOGO_LIBRARY, 01_ESTATES, 12_ALIASES
+             DEMO_FID_CANDIDATES, DEMO_LINK_SUMMARY, LOGO_LIBRARY, 01_ESTATES, 12_ALIASES; and when present the R8
+             review tabs (release 1.1.0): LOGO_LIBRARY_R8 (replaces its entity's LOGO_LIBRARY row), 10_FIELD_EVIDENCE_R8
+             (name_en with evidence_status source_supported fills an empty English name), 29_BOUNDARY_QA_R8 (an outline
+             whose area differs from the area its source states by more than 15 % says so, without either area) and
+             DEMO_DIRECTORY_SOURCES_R8 (an owner's customer list is linked, its counts never shown or summed)
   --r7       industrial-boundary-research-r7-20261026.geojson (the boundary bundle DEMO_BOUNDARIES names in
              source_bundle_sha256); only the 46 features DEMO_BOUNDARIES selects for the demo are read
   --logos    folder of display copies made by scripts/build-logos.py (logo manifest included)
@@ -52,6 +56,7 @@ BOUNDARY_STATES = {
     'hold_no_eligible_licensed_whole_source': 'license',
 }
 AROUND_KM = 3.0
+QA_GAP = 0.15   # R8 outline QA: an outline whose area is more than 15 % from its source's stated area says so
 PERSON = re.compile(r'^\s*(นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.|mr\.?\s|mrs\.?\s|ms\.?\s|miss\s)', re.I)
 EXCLUDED_FIELDS = [
     'directory names written as a natural person\'s (shown as ผู้ประกอบการบุคคลธรรมดา, never sent to Google)',
@@ -252,6 +257,22 @@ def main():
     summary = {r['estate_id']: r for r in tab(wb, 'DEMO_LINK_SUMMARY')}
     logos = {r['entity_id']: r for r in tab(wb, 'LOGO_LIBRARY')}
     master = {r['estate_id']: r for r in tab(wb, '01_ESTATES')}
+    # R8 review tabs (2026-11-10): supplemental rows joined by estate_id only; the canonical tabs are not changed.
+    has = lambda name: name in wb.sheetnames
+    r8_logos = tab(wb, 'LOGO_LIBRARY_R8') if has('LOGO_LIBRARY_R8') else []
+    for r in r8_logos:
+        logos[r['entity_id']] = r
+    names_r8 = {}
+    for r in (tab(wb, '10_FIELD_EVIDENCE_R8') if has('10_FIELD_EVIDENCE_R8') else []):
+        if r['field_name'] == 'name_en' and r['evidence_status'] == 'source_supported' and clean(r['observed_value']):
+            assert r['estate_id'] not in names_r8, r['estate_id']
+            names_r8[r['estate_id']] = clean(r['observed_value'])
+    qa_r8 = {r['estate_id']: r for r in (tab(wb, '29_BOUNDARY_QA_R8') if has('29_BOUNDARY_QA_R8') else [])}
+    lists_r8 = {}
+    for r in (tab(wb, 'DEMO_DIRECTORY_SOURCES_R8') if has('DEMO_DIRECTORY_SOURCES_R8') else []):
+        if r['source_type'] == 'operator_customer_list' and str(r['source_url'] or '').startswith('https://'):
+            assert r['estate_id'] not in lists_r8, r['estate_id']
+            lists_r8[r['estate_id']] = r
     aliases = {}
     for r in tab(wb, '12_ALIASES'):
         if r['alias'] and r.get('alias_status') in ('source_supported', None, 'reviewed', 'accepted'):
@@ -289,7 +310,7 @@ def main():
         rec = {
             'id': eid,
             'name': clean(c['name_th']),
-            'nameEn': clean(c['name_en']) or None,
+            'nameEn': clean(c['name_en']) or names_r8.get(eid) or None,
             'type': TYPE_INDEX[clean(c['industrial_area_type'])],
             'province': prov['id'],
             'grain': 'campus' if 'campus' in (c['entity_grain'] or '') else 'listed',
@@ -315,6 +336,16 @@ def main():
                 'bbox': bbox(geometry),
                 'label': label_point(geometry),
             })
+            # R8 outline QA: the area the source states versus the outline's (QA only); whole coverage stays unconfirmed.
+            # More than 15 % apart → the page says the outline may be partial (smaller) or take in more (larger).
+            q = qa_r8.get(eid)
+            ratio = float(q['ratio']) if q and q['ratio'] not in (None, '') else None
+            if ratio and abs(ratio - 1) > QA_GAP:
+                boundary['qa'] = {
+                    'dir': 'smaller' if ratio < 1 else 'larger',
+                    'url': q['area_source_url'] if str(q['area_source_url'] or '').startswith('https://') else None,
+                    'on': iso(q['checked_on']),
+                }
             features.append({'type': 'Feature', 'id': len(features), 'properties': {'id': eid}, 'geometry': geometry})
             factory_outlines.append({'type': 'Feature', 'id': len(factory_outlines), 'properties': {'id': eid}, 'geometry': light})
             # Around-estate set: Factory registrations with a published point within AROUND_KM of the outline
@@ -353,6 +384,10 @@ def main():
         }
         assert num(s['source_directory_records']) == (n or 0), eid
         assert c['accepted_count_state'] == 'no_data' and c['accepted_factory_count'] is None, eid
+        # R8: the developer's own customer list, linked; its counts and qualifiers stay in the master (never summed).
+        ol = lists_r8.get(eid)
+        rec['ownerList'] = {'url': ol['source_url'], 'on': iso(ol['checked_on']),
+                            'shared': ol['access_status'] == 'shared_list_partial_access'} if ol else None
 
         # Logo: the master's role and label; a company or parent mark is labelled as such (owner 2026-11-10).
         lg = logos.get(eid)
@@ -437,11 +472,20 @@ def main():
             'logos': sum(1 for e in estates if e['logo']),
             'logoFallback': sum(1 for e in estates if not e['logo']),
             'verifiedFactories': None,
+            # R8 review round (2026-11-10)
+            'namesEnR8': sum(1 for e in estates if e['id'] in names_r8 and e['nameEn'] == names_r8[e['id']]),
+            'outlineQa': sum(1 for e in estates if e['boundary'].get('qa')),
+            'outlineQaRows': sum(1 for e in estates if e['boundary']['state'] == 'shown' and e['id'] in qa_r8),
+            'ownerLists': sum(1 for e in estates if e['ownerList']),
         },
+        'r8': {'checkedOn': '2026-11-10', 'note': 'R8 review tabs are supplemental records joined by estate_id: logos (LOGO_LIBRARY_R8), English names '
+               '(10_FIELD_EVIDENCE_R8, source_supported), outline QA (29_BOUNDARY_QA_R8: more than 15 % from the source area; whole coverage '
+               'unconfirmed for every outline) and owner customer lists (DEMO_DIRECTORY_SOURCES_R8, linked, counts never shown). No new geometry.'},
         'around': {'km': AROUND_KM, 'source': 'CityMETER Factory rows with a published point (data/factories.json of this repository)',
                    'rule': 'straight-line distance from the point to the OpenStreetMap outline ≤ 3 km (0 inside it); a context set, never membership'},
         'inputs': {
-            'sheet': {'file': Path(args.sheet).name, 'sha256': sha256(args.sheet), 'tabs': ['DEMO_CATALOG', 'DEMO_BOUNDARIES', 'DEMO_FACTORY_LINKS', 'DEMO_FID_CANDIDATES', 'DEMO_LINK_SUMMARY', 'LOGO_LIBRARY', '01_ESTATES', '12_ALIASES', 'DEMO_README']},
+            'sheet': {'file': Path(args.sheet).name, 'sha256': sha256(args.sheet), 'tabs': ['DEMO_CATALOG', 'DEMO_BOUNDARIES', 'DEMO_FACTORY_LINKS', 'DEMO_FID_CANDIDATES', 'DEMO_LINK_SUMMARY', 'LOGO_LIBRARY', '01_ESTATES', '12_ALIASES', 'DEMO_README']
+                      + [t for t in ('LOGO_LIBRARY_R8', '10_FIELD_EVIDENCE_R8', '29_BOUNDARY_QA_R8', 'DEMO_DIRECTORY_SOURCES_R8') if has(t)]},
             'r7': {'file': Path(args.r7).name, 'sha256': sha256(args.r7)},
             'factory': {'file': 'data/factories.json', 'sha256': sha256(args.factory)},
             'logos': {'manifest': 'assets/logos/manifest.json'},

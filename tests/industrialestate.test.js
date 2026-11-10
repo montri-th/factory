@@ -115,9 +115,43 @@ test('logos: a display file only when its source SHA-256 is the library’s, no 
   assert.equal(logoCaption({logo: {}, logoRole: 'company_or_shared_brand'}), 'ผู้พัฒนา');
 });
 
+test('R8 review round (1.1.0): the rejected Bluetech artwork is gone; recovered and new marks, English names, outline QA, owner lists', () => {
+  const manifest = json('assets/logos/manifest.json');
+  assert.deepEqual(manifest.excluded, ['EST-IEAT-2704'], 'the Bluetech artwork belongs to an unrelated company (R8)');
+  assert.deepEqual(manifest.missing, []);
+  assert.ok(!manifest.logos.some(l => l.sourceSha256.startsWith('f0c45351a7a5')) && !existsSync(join(DIR, 'assets/logos/logo-f0c45351a7a5fd9c.webp')));
+  const {estates, byId, meta} = model();
+  const blue = byId.get('EST-IEAT-2704');
+  assert.deepEqual([blue.logo, blue.logoLabel, blue.logoRole], [null, null, 'text_fallback']);
+  assert.equal(readJSON('data/estate-context.json').estates.find(e => e.id === 'EST-IEAT-2704').logo, null, 'Factory shows the name too');
+  assert.deepEqual(['EST-IEAT-2721', 'EST-IEAT-2751', 'EST-IEAT-2731', 'EST-IEAT-2685'].map(id => [byId.get(id).logo?.label, byId.get(id).logoRole]),
+    [['AMATA', 'verified_parent_company'], ['UBD', 'company_or_shared_brand'], ['Yamato', 'exact_estate_mark'], ['MLD', 'company_or_shared_brand']]);
+  assert.deepEqual([meta.counts.logos, meta.counts.logoFallback], [99, 7]);
+  assert.equal(shortLabel('กนอ.'), 'กนอ.');
+  assert.equal(byId.get('EST-AREA-SAHA-KABINBURI').nameEn, 'SAHA Group Industrial Park - Kabinburi');
+  assert.equal(byId.get('EST-AREA-SURANAREE').nameEn, null, 'not found in the bounded search: the name stays Thai');
+  assert.equal(meta.counts.namesEnR8, 16);
+  const qa = estates.filter(e => e.boundary.qa);
+  assert.equal(qa.length, 15);
+  for (const e of qa) {
+    assert.ok(e.outline, e.id);
+    assert.deepEqual(Object.keys(e.boundary.qa).sort(), ['dir', 'on', 'url'], `${e.id}: no area or ratio is published`);
+  }
+  assert.deepEqual([byId.get('EST-AREA-SAHA-KABINBURI').boundary.qa.dir, byId.get('EST-IEAT-2699').boundary.qa.dir], ['smaller', 'larger']);
+  const lists = estates.filter(e => e.ownerList);
+  assert.equal(lists.length, 17);
+  for (const e of lists) assert.deepEqual(Object.keys(e.ownerList).sort(), ['on', 'shared', 'url'], `${e.id}: a link and its date, never a count`);
+  const families = {th: json('data/around.json').meta.families, en: json('data/around.json').meta.familiesEn};
+  const html = text(renderEstate({estate: byId.get('EST-AREA-SAHA-KABINBURI'), meta, base: '', families, factoryHref: '', factoryRowHref: () => '', directoryState: ''}));
+  assert.ok(html.includes('กรอบเล็กกว่าพื้นที่ที่แหล่งระบุเกิน 15%') && html.includes('รายชื่อลูกค้าบนเว็บผู้พัฒนา'), 'area check and owner list');
+  assert.ok(!/\d[\d,]* ไร่/.test(html), 'no area figure on the page');
+});
+
 test('map names: short, never overlapping, the open estate first', () => {
   assert.equal(shortName('นิคมอุตสาหกรรมลาดกระบัง'), 'ลาดกระบัง');
   assert.equal(shortName('Lat Krabang Industrial Estate'), 'Lat Krabang');
+  assert.equal(shortName('Nava Nakorn Industrial Estate, Nakhon Ratchasima'), 'Nava Nakorn, Nakhon Ratchasima', 'no space before a comma');
+  assert.equal(shortName('Nava Nakorn Industrial Promotion Zone, Pathum Thani'), 'Nava Nakorn, Pathum Thani');
   const shown = placeChips([{id: 'a', x: 100, y: 100, w: 80, h: 24, priority: 1}, {id: 'b', x: 110, y: 104, w: 80, h: 24, priority: 1e6}], {width: 400, height: 400});
   assert.deepEqual([...shown], ['b']);
   const {estates} = model();
