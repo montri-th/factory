@@ -12,3 +12,4 @@ Set 2026-11-10 (release 1.0.0) on the owner request “ช่วยสร้า�
 - Thai and English on every page (`?lang=en`, citymeter-shell `js/shell/i18n.js`); names without English in the source stay Thai. Review at 390 px and desktop, light and dark, before claiming done; local renders are not proof of a live release.
 - `js/shell/` and `navigation.css` are citymeter-shell bytes: change them in every repository at once (`js/shell/manifest.json`). Releases bump one cache tag `?v=YYYYMMDD-rN` on every entry and the import map in `index.html`.
 - Every page carries `<meta name="robots" content="noindex, nofollow">` (owner 2026-11-08).
+- 1.0.1 (live check 2026-11-10): on a phone the camera frames the strip above the sheet at its tallest (56dvh), because the sheet grows as the directory and around data arrive; the around-estate bars are workers and say so (“คนงานตามอุตสาหกรรม (คน)”).

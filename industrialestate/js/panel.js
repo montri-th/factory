@@ -213,7 +213,7 @@ function aroundSection(e, {families, factoryHref}) {
   return `
     <section aria-labelledby="es-around">${heading('distance', T(`โรงงานรอบนิคม ${AROUND_KM} กม.`, `Factories within ${AROUND_KM} km`), 'es-around')}
       <p>${a.n ? T(`${nw(`<strong class="data-number">${num(a.n)}</strong> ทะเบียน`)}ใน CityMETER Factory`, `${nw(`<strong class="data-number">${num(a.n)}</strong> registrations`)} in CityMETER Factory`) : T('ไม่มีทะเบียนที่มีพิกัดในระยะนี้', 'No registration with a point in this range')}${workers ? ` · ${workers}` : ''}</p>
-      ${bars}
+      ${bars ? `<p class="hint">${T('คนงานตามอุตสาหกรรม (คน)', 'Workers by industry')}</p>${bars}` : ''}
       ${a.n ? `<p><button type="button" class="link-button" data-action="show-around">${T('ดูจุดบนแผนที่', 'Show them on the map')}</button>${factoryHref ? ` · <a class="source-link" href="${esc(factoryHref)}">${T('เปิดใน CityMETER Factory', 'Open in CityMETER Factory')}</a>` : ''}</p>` : (factoryHref ? `<p><a class="source-link" href="${esc(factoryHref)}">${T('เปิดใน CityMETER Factory', 'Open in CityMETER Factory')}</a></p>` : '')}
     </section>`;
 }
