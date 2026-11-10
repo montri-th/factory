@@ -4,7 +4,7 @@
 | --- | --- |
 | Feature / dataset | Industrial Estate — นิคม สวน และเขตอุตสาหกรรม 106 รายการทั่วประเทศ พร้อมขอบเขต OpenStreetMap 46 แห่ง ทำเนียบโรงงานในนิคมของ กนอ. โลโก้ และโรงงานรอบนิคมจาก CityMETER Factory |
 | กลุ่มในทะเบียนชุดข้อมูล | Land (registry `research.TH.industrial_estates`, อ่าน 10 พ.ย. 2569) |
-| รุ่น | 1.0.1 (10 พ.ย. 2569) · citymeter-shell 0.5.4 · LDS 0.9.7 |
+| รุ่น | 1.0.2 (10 พ.ย. 2569) · citymeter-shell 0.5.4 · LDS 0.9.7 |
 | คำถามหลัก | นิคมอุตสาหกรรมอยู่ตรงไหน ใครพัฒนา และในทำเนียบมีใครบ้าง |
 | แหล่งข้อมูล / วิธี (สรุป) | ชีตวิจัย “CityMETER Industrial Estates … Research Master 2026-10-25” แท็บ `DEMO_*`, `LOGO_LIBRARY`, `01_ESTATES`, `12_ALIASES` ตามสัญญาข้อมูล `industrial-estate-demo/1.0.0` · ขอบเขต OpenStreetMap ที่ทะเบียนเลือก · ทำเนียบ กนอ. snapshot 4 พ.ย. 2569 · CityMETER Factory (`DATA_METHOD.md`) |
 
