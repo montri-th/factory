@@ -23,6 +23,7 @@ everything from the data at run time, so these are fixtures, not constants.
 - **ผู้ประกอบการบุคคลธรรมดา** = ทะเบียนที่ชื่อเป็นชื่อบุคคล (6,036 ทะเบียน) แสดงโดยไม่มีชื่อและไม่มีจุด ยังนับในยอดของพื้นที่
 - **โรงงานใกล้เคียง** = ทะเบียนหมวดอุตสาหกรรมเดียวกัน คนงานครึ่งเท่าถึงสองเท่า (ทุกขนาดเมื่อทะเบียนนั้นไม่มีตัวเลขคนงานหรือระบุ 0 คน) ในระยะตรง 3 กม. จากจุด เรียงใกล้ก่อน เป็นรายชื่อเริ่มต้นสำหรับเทียบ ไม่ใช่ห่วงโซ่อุปทานหรือคู่แข่งที่ยืนยันแล้ว
 - **อาคาร** = อาคารบนแผนที่ (CityMETER Building V4 หรือ OpenStreetMap ตามพื้นที่) ความสูง “สูงราว” เป็นค่าประมาณ “โรงงานในอาคารนี้” = จุดของทะเบียนอยู่ในขอบอาคาร เมื่อจุดไม่อยู่ในอาคารใด มุมมองอาคารเปิดที่อาคารใกล้จุดที่สุด (≤ 300 ม. ไม่มีก็ ≤ 800 ม.) เป็นการเลือกมุมกล้องเท่านั้น
+- **ทั้งโรงงาน N อาคาร (ไซต์, 0.7.0)** = อาคาร CityMETER Building V4 ในกรอบพื้นที่โรงงานของ OpenStreetMap (`man_made=works`) ที่จุดของทะเบียนนี้ตกอยู่ และไม่มีจุดของทะเบียนอื่นในชุดนี้ในกรอบ (ข้อมูล OSM ถึง 6 พ.ย. 2569, © OpenStreetMap contributors, ODbL) ตรวจด้วยกฎอัตโนมัติ แล้วสุ่มเทียบภาพดาวเทียม (ผิด 2 จาก 45) ไม่ใช่โฉนด เนื้อที่ หรือกรรมสิทธิ์ และไม่ได้บอกว่าในกรอบมีโรงงานกี่แห่ง ทะเบียนที่ไม่มีไซต์ใช้อาคารใกล้จุดเหมือนเดิม (§4.1)
 - **ภูมิประเทศ** = พื้นดินรอบจุด (รัศมี 500 ม.) จาก SRTM 30 ม. (สำรวจปี 2543) และแผนที่ OSM ไม่ใช่การประเมินความเสี่ยงน้ำท่วมหรือความเหมาะสมของที่ดิน
 
 ## 1. Sources
@@ -76,6 +77,30 @@ when the point falls inside the registration's own district outline: 585 points 
 and 5 outside every outline are withheld (`row.off`, `meta.checks.pointWithheld`). Points of registrations known only by a
 natural person's name (1,020 of them had one) are not published. 15,654 rows carry a point; the others count in their
 district and are listed in panels and the table without a symbol.
+
+## 4.1 Sites (release 0.7.0)
+
+Owner 2026-11-10 08:17 approved boundary_source `osm_polygon_auto` for this dataset. Built from the Geofabrik extract
+`thailand-261106.osm.pbf` (OSM data to 2026-11-06 21:21:21 UTC) and the 15,654 published points:
+
+1. **Area:** the smallest OpenStreetMap area holding the point that is `man_made=works`, `landuse=industrial` or
+   `industrial=*`, not a building, not estate-wide (no estate word in its names; not the same area as one of the 46 estate
+   outlines, IoU > 0.5), 1,000 m² – 5 km², holding no other published point of this dataset, and unnamed or named for the
+   registration (the name rules of the skill `osm-area-site-join`). 550 points pass; 789 share their area with other
+   points, 1,462 lie only in estate-wide areas, 11,773 have no area at all.
+2. **Buildings:** CityMETER Building V4 read with the page's own code; a building belongs when its interior point lies in
+   the area, one mostly outside is dropped and one mostly inside added, the building the point stands in is never
+   dropped; two buildings or more make a site, within 1,000 m of the point. 448 sites (10,972 buildings); not built: 63
+   points where the map draws OpenStreetMap buildings, 16 areas reaching past 1 km, 23 with no or one building.
+3. **Sample against imagery** (30 random sites, then 30 more of `man_made=works` / `industrial=*`): all areas 3 wrong of 30
+   (two `landuse=industrial` areas covering houses or several plants, one works area covering a whole block);
+   `man_made=works` 2 wrong of 45. Only the `man_made=works` sites are published: **221 sites, 4,899 buildings** (mostly
+   in Chon Buri, Rayong and Samut Prakan estates); the 227 others are held for a layout check.
+
+`data/factory-sites.json` carries per registration the interior points of its site's buildings (6 decimals), the
+OpenStreetMap element page, the count and the dates — never the area, the OSM names or the notes. A site is a group of
+buildings for the map: not a deed, a land area, ownership, the number of factories in the area or their workers. Many
+registrations without a published point may lie in the same areas; the rule only sees published points.
 
 ## 5. Industry, function and status
 
@@ -147,6 +172,7 @@ beyond spacing and legal-form words (3,405 rows).
 python3 -I scripts/build-data.py --csv <dir of tab CSV exports> --workers <fid,workers,class of the DIW exports> \
   --estates <dir of estate-master CSVs> --index data/area-index.json --frames data/frames \
   --out data/factories.json --report data/build-report.json --built-on YYYY-MM-DD
+python3 -I scripts/build-sites.py --sites <site rows CSV: the research site tab's export>   # data/factory-sites.json (§4.1)
 npm test
 ```
 

@@ -61,7 +61,8 @@ import {installProvinceLayers, buildProvinceModel, PROVINCE_FILL_MAX_ZOOM, PROVI
 import {createFrameStore, provinceLocator} from './frames.js';
 import {buildOverview, buildAreaProfile, buildFactoryDetail, buildBuildingProfile, listOrder} from './profile-model.js';
 import {renderOverview, renderArea, renderBuilding, renderFactory, renderEstate, renderFilterChips, terrainChipsHTML, esc, num, pct, words} from './panel.js';
-import {joinBuildings, nearestBuilding} from './shell/building-join.js';
+import {joinBuildings, nearestBuilding, buildingsAtPoints} from './shell/building-join.js';
+import {decodeSites, attachSites, siteReach} from './sites.js';
 import {buildMapStyle, basemapPalette, TILEJSON_URL, MASSING_BEFORE, VENUE_XRAY_BEFORE} from './shell/map-style.js';
 import {installMassing, outerRings} from './massing.js';
 import {createBuildingUnitStore, cmTileUrl, CM_ATTRIBUTION} from './shell/building-units.js';
@@ -107,6 +108,8 @@ const state = {
   xray: null, framed: null, userCamera: false,
   // CityMETER Industrial Estate context (js/estates.js): decoded data/estate-context.json and its map layer.
   estates: null, estateLayers: null,
+  // Factory sites (js/sites.js, release 0.7.0): how many registrations carry one (data/factory-sites.json).
+  sites: 0,
 };
 
 /* ---------- address (citymeter-shell, js/shell/url.js) ---------- */
@@ -649,10 +652,26 @@ function nearestOf(r) {
 }
 
 /**
- * The building being looked at: the open building; else the building the open registration's point falls in, else the
- * drawn building nearest its pin (`near`: the camera's building, named “อาคารใกล้หมุด”, never a join).
- * {id, key, refs, anchor: [lon, lat], near} — key/refs are null/[] while no building is known (tiles still loading, or
- * nothing drawn within the reach); null without a point.
+ * The drawn buildings of the open registration's site (data/factory-sites.json, js/shell/building-join.js#buildingsAtPoints),
+ * per join and pieces; null for a registration without a site.
+ */
+function siteOf(r) {
+  if (!r?.site) return null;
+  const pieces = state.massing?.buildings() || [], join = state.join;
+  if (siteOf.id !== r.id || siteOf.join !== join || siteOf.pieces !== pieces) {
+    Object.assign(siteOf, {id: r.id, join, pieces});
+    siteOf.value = join ? buildingsAtPoints(pieces, r.site.points, join.keyOfPiece) : null;
+  }
+  return siteOf.value;
+}
+
+/**
+ * The building being looked at: the open building; for a registration with a site, every drawn building of its site,
+ * framed together (`site.n`: buildings found; the panel's chip counts the site's own list); else the building the open
+ * registration's point falls in, else the drawn building nearest its pin (`near`: the camera's building, named
+ * “อาคารใกล้หมุด”, never a join).
+ * {id, key, refs, anchor: [lon, lat], near, site?} — key/refs are null/[] while no building is known (tiles still
+ * loading, or nothing drawn within the reach); null without a point.
  */
 function focusTarget() {
   const {mode, id} = state.panel, j = state.join;
@@ -666,6 +685,8 @@ function focusTarget() {
   if (mode === 'factory') {
     const r = rowById(id);
     if (!hasPoint(r)) return null;
+    const site = siteOf(r);
+    if (site?.refs.length) return {id: `factory:${r.id}`, key: `site:${r.id}`, refs: site.refs, anchor: [r.longitude, r.latitude], near: false, site: {n: site.keys.length}};
     const inside = j?.byRow.get(r.id) || null;
     const near = inside ? null : nearestOf(r)?.key || null;
     return {id: `factory:${r.id}`, ...of(inside || near), anchor: [r.longitude, r.latitude], near: Boolean(near)};
@@ -697,8 +718,9 @@ function focusShape(target = focusTarget()) {
     return pts.map(q => [q[0], q[1], q[2], q[2] ? g : low]);
   });
   if (!points.length) points = rings.flatMap(({ring, height}) => ring.flatMap(([lng, lat]) => [[lng, lat, 0], [lng, lat, height]]));
-  // The building nearest the pin is framed with the pin, so the registration's symbol stays in view beside it.
-  if (points.length && target?.near) points = [...points, terrain ? [target.anchor[0], target.anchor[1], 0, pinGround] : [target.anchor[0], target.anchor[1], 0]];
+  // The building nearest the pin, or a site (a gate pin at the edge of its works), is framed with the pin, so the
+  // registration's symbol stays in view beside it.
+  if (points.length && (target?.near || target?.site)) points = [...points, terrain ? [target.anchor[0], target.anchor[1], 0, pinGround] : [target.anchor[0], target.anchor[1], 0]];
   if (!points.length && target) {
     // Not known yet: a 90 m box round the point (12 m tall), framed the same way.
     const [lon, lat] = target.anchor, dLat = 45 / 110574, dLng = 45 / (111320 * Math.cos((lat * Math.PI) / 180));
@@ -861,7 +883,8 @@ function applyJoin() {
   state.blueBuildings = n > 0;
   document.querySelector('.map-panel')?.classList.toggle('has-open-building', state.blueBuildings);
   const label = $('legend-building-label');
-  if (label) label.textContent = currentBuilding() ? 'อาคารที่เปิด' : focusTarget()?.near ? 'อาคารใกล้หมุด' : 'อาคารของโรงงาน';
+  const t = currentBuilding() ? null : focusTarget();
+  if (label) label.textContent = currentBuilding() ? 'อาคารที่เปิด' : t?.near ? 'อาคารใกล้หมุด' : t?.site ? 'อาคารในไซต์โรงงาน' : 'อาคารของโรงงาน';
   if (panelSpatialSig() !== state.renderedSig) renderPanel();
   syncFocusBuilding();
   refitOnNewBuilding();
@@ -1322,7 +1345,7 @@ function massingRegions() {
   }
   if (state.panel.mode === 'factory') {
     const r = rowById(state.panel.id);
-    if (hasPoint(r)) return [squareAround(r.longitude, r.latitude, reachOf(r.id))];
+    if (hasPoint(r)) return [squareAround(r.longitude, r.latitude, Math.max(reachOf(r.id), siteReach(r)))];
     const a = r?.area ? areaById(r.area) : null;
     if (a?.feature) return outerRings(a.feature);
   }
@@ -1862,6 +1885,20 @@ function wireEvents() {
   matchMedia('(max-width: 760px) and (orientation: portrait)').addEventListener?.('change', () => { if (!mobilePortrait()) $('panel').classList.remove('is-open'); renderPanel(); });
 }
 
+/**
+ * Factory sites (js/sites.js, release 0.7.0): read after the first paint — the map and the panels work without them.
+ * The open registration, when it gains a site, renders its panel and its building camera again.
+ */
+async function loadSites() {
+  const json = await fetchJSON(`data/factory-sites.json${RELEASE ? `?v=${RELEASE}` : ''}`, {timeout: 60000})
+    .catch(e => { console.warn('Factory sites unavailable', e); return null; });
+  state.sites = attachSites(decodeSites(json), state.rowById);
+  if (!state.sites || state.panel.mode !== 'factory' || !rowById(state.panel.id)?.site) return;
+  siteOf.id = null;
+  renderPanel();
+  if (state.loaded) updateSpatialLayers();
+}
+
 async function init() {
   try {
     const [rowsJSON, indexJSON, provincesJSON, estatesJSON] = await Promise.all([
@@ -1901,6 +1938,7 @@ async function init() {
     if (state.panel.mode !== 'overview') openMobilePanel();
     window.dispatchEvent(new CustomEvent('citymeter:ready'));
     startMap();
+    loadSites();
   } catch (e) {
     window.dispatchEvent(new CustomEvent('citymeter:load-error', {detail: {message: 'โหลดข้อมูลโรงงานไม่สำเร็จ กรุณาลองอีกครั้ง', resource: e.resource, status: e.status, phase: e.phase || 'startup', diagnostic: e.message}}));
     console.error(e);
