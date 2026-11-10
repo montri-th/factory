@@ -8,6 +8,10 @@ and any further originals), keeps a file only when its SHA-256 equals the librar
   assets/logos/manifest.json    source SHA-256, display file, size and the library rows still waiting for a file
 
 The mark, its colours and proportions are never redrawn; a missing file leaves the record on its text label.
+
+R8 (release 1.1.0): a `LOGO_LIBRARY_R8` row replaces the earlier `LOGO_LIBRARY` row of its entity (the review round's
+recovered originals, four new mappings and the rejected Bluetech artwork, which belongs to an unrelated company). A row
+without `logo_sha256` (text fallback, identity mismatch) wants no file, so a rejected mark is never kept by a fallback.
 """
 import argparse
 import hashlib
@@ -25,6 +29,22 @@ def sha(b):
     return hashlib.sha256(b).hexdigest()
 
 
+def library_rows(wb, name):
+    rows = [r for r in wb[name].iter_rows(values_only=True) if any(c not in (None, '') for c in r)]
+    return [dict(zip(rows[0], r)) for r in rows[1:]]
+
+
+def effective_library(wb):
+    """LOGO_LIBRARY with each entity's LOGO_LIBRARY_R8 row in place of its earlier row (R8, release 1.1.0)."""
+    lib = library_rows(wb, 'LOGO_LIBRARY')
+    if 'LOGO_LIBRARY_R8' not in wb.sheetnames:
+        return lib
+    r8 = library_rows(wb, 'LOGO_LIBRARY_R8')
+    ids = {r['entity_id'] for r in r8}
+    assert len(ids) == len(r8), 'LOGO_LIBRARY_R8: one row per entity'
+    return [r for r in lib if r['entity_id'] not in ids] + r8
+
+
 def main():
     ap = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     ap.add_argument('--sheet', required=True)
@@ -33,13 +53,12 @@ def main():
     args = ap.parse_args()
 
     wb = openpyxl.load_workbook(args.sheet, read_only=True, data_only=True)
-    rows = [r for r in wb['LOGO_LIBRARY'].iter_rows(values_only=True) if any(c not in (None, '') for c in r)]
-    head = rows[0]
-    lib = [dict(zip(head, r)) for r in rows[1:]]
+    lib = effective_library(wb)
     wanted = {}
     for r in lib:
         if r['logo_sha256']:
             wanted.setdefault(r['logo_sha256'], r)
+    excluded = sorted(r['entity_id'] for r in lib if r.get('logo_status') == 'excluded_identity_mismatch')
 
     found = {}
     for folder in args.sources:
@@ -85,8 +104,9 @@ def main():
                       'label': r['logo_label'], 'surface': r['recommended_surface'] or 'any',
                       'sourceBytes': len(b), 'derived': derived, 'rights': r['rights_notice']})
     logos.sort(key=lambda x: x['assetId'])
-    manifest = {'library': 'LOGO_LIBRARY of the industrial-estate research master', 'rule': 'a file is used only when its SHA-256 equals logo_sha256',
-                'max': [MAX_W, MAX_H], 'logos': logos, 'missing': missing}
+    manifest = {'library': 'LOGO_LIBRARY of the industrial-estate research master; a LOGO_LIBRARY_R8 row replaces its entity\'s earlier row',
+                'rule': 'a file is used only when its SHA-256 equals logo_sha256',
+                'max': [MAX_W, MAX_H], 'logos': logos, 'missing': missing, 'excluded': excluded}
     (out / 'manifest.json').write_text(json.dumps(manifest, ensure_ascii=False, indent=1) + '\n')
     print(f'{len(logos)} display copies, {len(missing)} waiting for a file')
 

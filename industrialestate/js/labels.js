@@ -6,12 +6,13 @@
  * map or sit on the bottom tray is hidden. Each chip is a button (keyboard and screen reader reachable).
  */
 const TYPE_PREFIX = /^(?:เขตประกอบการอุตสาหกรรม|นิคมอุตสาหกรรม|สวนอุตสาหกรรม|เขตอุตสาหกรรม)\s*/;
-const TYPE_SUFFIX = /\s*(?:Industrial (?:Estate|Park|Zone|Land|City|Area)s?)\b\s*/i;
+const TYPE_SUFFIX = /\s*(?:Industrial (?:Promotion )?(?:Estate|Park|Zone|Land|City|Area)s?)\b\s*/i;
 
 /** Short map name: “นิคมอุตสาหกรรมลาดกระบัง” → “ลาดกระบัง”; “Lat Krabang Industrial Estate” → “Lat Krabang”. */
 export function shortName(text) {
   const s = String(text || '').trim();
-  const cut = s.replace(TYPE_PREFIX, '').replace(TYPE_SUFFIX, ' ').replace(/\s+/g, ' ').trim();
+  // No space left before a comma where a type word was cut (“Nava Nakorn Industrial Estate, Nakhon Ratchasima”, R8 names).
+  const cut = s.replace(TYPE_PREFIX, '').replace(TYPE_SUFFIX, ' ').replace(/\s+/g, ' ').replace(/\s+,/g, ',').trim();
   return cut || s;
 }
 

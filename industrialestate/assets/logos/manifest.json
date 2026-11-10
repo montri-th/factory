@@ -1,6 +1,6 @@
 {
- "library": "LOGO_LIBRARY of the industrial-estate research master",
- "rule": "a file is used only when its SHA-256 equals logo_sha256; logo URLs of the library are not copied (AGENTS.md, excluded fields)",
+ "library": "LOGO_LIBRARY of the industrial-estate research master; a LOGO_LIBRARY_R8 row replaces its entity's earlier row",
+ "rule": "a file is used only when its SHA-256 equals logo_sha256",
  "max": [
   448,
   112
@@ -19,6 +19,34 @@
    "sourceBytes": 5543,
    "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
    "rights": "Source artwork retained. Reuse terms not established in source."
+  },
+  {
+   "sourceSha256": "110345b10e746b4c9b4296ba678592c047a56836cefa9f8eb8e82a84473f2ea0",
+   "assetId": "logo-110345b10e746b4c",
+   "file": "logo-110345b10e746b4c.webp",
+   "width": 448,
+   "height": 83,
+   "bytes": 6194,
+   "sha256": "a78afa09c601a100b9ef70bb6d97055a411c60d149342a829258b130358f8ac5",
+   "label": "Asia Industrial Estate",
+   "surface": "dark",
+   "sourceBytes": 38308,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original published artwork; trademark and reuse terms not established."
+  },
+  {
+   "sourceSha256": "135a3a19cde16eaa6a3c735db4bd7e6e63efb83338d73e1ce76931c85f500352",
+   "assetId": "logo-135a3a19cde16eaa",
+   "file": "logo-135a3a19cde16eaa.webp",
+   "width": 214,
+   "height": 112,
+   "bytes": 7492,
+   "sha256": "5ee4a297887b299dc9e4c2b1f021a3b810fe14b17ccb4307860d8b09231ef63a",
+   "label": "CPFC",
+   "surface": "light",
+   "sourceBytes": 6638,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original published artwork; trademark and reuse terms not established."
   },
   {
    "sourceSha256": "1d150eb6b852ffdabf077e187214da8108c2901ccdc10ba11b3dd9166050cde0",
@@ -63,6 +91,48 @@
    "rights": "Source artwork retained. Reuse terms not established in source."
   },
   {
+   "sourceSha256": "3583239a289946265ab0183b20c425bb4b4e90b53ecb8610e3c9a2ed74d4a9e2",
+   "assetId": "logo-3583239a28994626",
+   "file": "logo-3583239a28994626.webp",
+   "width": 128,
+   "height": 57,
+   "bytes": 2740,
+   "sha256": "64ba1de99b1eefafb49f4c5e0a049b4a55393477ab9581fe808c7884fc79c26a",
+   "label": "Filter Vision",
+   "surface": "light",
+   "sourceBytes": 8527,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Official public source; redistribution/trademark permission not established by retrieval."
+  },
+  {
+   "sourceSha256": "390ccd3ec8d57734bf59b1d4aaeeac8fe32f7b65cc151b41ad68442a86178574",
+   "assetId": "logo-390ccd3ec8d57734",
+   "file": "logo-390ccd3ec8d57734.webp",
+   "width": 345,
+   "height": 112,
+   "bytes": 8322,
+   "sha256": "8562dca6f9cfcc9d2b1321cb020f08b9d06802ee29965374015a5ebbe57d72f3",
+   "label": "UBD",
+   "surface": "dark",
+   "sourceBytes": 11483,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original artwork retained without modification. No open reuse licence or trademark permission established; source availability is not a rights grant."
+  },
+  {
+   "sourceSha256": "4194631b5c831f61179d46931271fd197029dd7778986450f042b6e36ff29fae",
+   "assetId": "logo-4194631b5c831f61",
+   "file": "logo-4194631b5c831f61.webp",
+   "width": 215,
+   "height": 112,
+   "bytes": 4480,
+   "sha256": "7564d063fb067a78a97e89e2cb90f380511a02020e6608119a5747fb23da3a9b",
+   "label": "Y GROUP",
+   "surface": "dark",
+   "sourceBytes": 9297,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Official public source; redistribution/trademark permission not established by retrieval."
+  },
+  {
    "sourceSha256": "488d48da7fb11d5399a31689ffce7cb61cb71054fc9bc0a9b5e5ecd7803dde11",
    "assetId": "logo-488d48da7fb11d53",
    "file": "logo-488d48da7fb11d53.webp",
@@ -75,6 +145,20 @@
    "sourceBytes": 41014,
    "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
    "rights": "Source artwork retained. Reuse terms not established in source."
+  },
+  {
+   "sourceSha256": "49098730e968553b44b159163a9c552c81ffcf36eb0d628cf3d395bb9df081b0",
+   "assetId": "logo-49098730e968553b",
+   "file": "logo-49098730e968553b.webp",
+   "width": 250,
+   "height": 100,
+   "bytes": 3976,
+   "sha256": "f17434b66a602f0a0cfd29d9a803ec26e1e5dd21684e39d869f40abd8a3eb876",
+   "label": "MLD",
+   "surface": "any",
+   "sourceBytes": 3839,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original artwork retained without modification. No open reuse licence or trademark permission established; source availability is not a rights grant."
   },
   {
    "sourceSha256": "535f4eb01066e03eeea587d7d546ff848d68d3af4d5eb6aca77c4c56c6708440",
@@ -119,6 +203,20 @@
    "rights": "Source artwork retained. Reuse terms not established in source."
   },
   {
+   "sourceSha256": "6032982d839a08ed40d0cb249a2613b262cbb2db246f1d180c62030edfb3fe3a",
+   "assetId": "logo-6032982d839a08ed",
+   "file": "logo-6032982d839a08ed.webp",
+   "width": 302,
+   "height": 112,
+   "bytes": 12962,
+   "sha256": "c075e62868ae428cc59c352c78908712f51cdb0f463257bc5d22b3b563197cd4",
+   "label": "SCG Decor",
+   "surface": "light",
+   "sourceBytes": 241406,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Official public source; redistribution/trademark permission not established by retrieval."
+  },
+  {
    "sourceSha256": "685b6d429a53011f0f3888da9a1385f5aac57a4f1ce88d9e1b0fa5338d55e2d6",
    "assetId": "logo-685b6d429a53011f",
    "file": "logo-685b6d429a53011f.webp",
@@ -131,6 +229,20 @@
    "sourceBytes": 8534,
    "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
    "rights": "Source artwork retained. Reuse terms not established in source."
+  },
+  {
+   "sourceSha256": "698997535a9411b6a862342b83396deff4ed7ded883834f6234d999d14bd5723",
+   "assetId": "logo-698997535a9411b6",
+   "file": "logo-698997535a9411b6.webp",
+   "width": 209,
+   "height": 112,
+   "bytes": 6338,
+   "sha256": "305a713febdf9434356fb20ba18c8a9b9bce4cd751b83be5abc08e978dc10e86",
+   "label": "Bhakasa Industrial",
+   "surface": "light",
+   "sourceBytes": 42119,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original published artwork; trademark and reuse terms not established."
   },
   {
    "sourceSha256": "73428ea990af2e74a1cecc18ed1b8cdf492bb30711b4a2a87f79506edd817db3",
@@ -147,6 +259,48 @@
    "rights": "Source artwork retained. Reuse terms not established in source."
   },
   {
+   "sourceSha256": "7ae618796146edfa2b48c7da3b18b6c58715d50aaf6e60c1e6f75dfefa67a4b8",
+   "assetId": "logo-7ae618796146edfa",
+   "file": "logo-7ae618796146edfa.webp",
+   "width": 244,
+   "height": 112,
+   "bytes": 12704,
+   "sha256": "c8aa5f55cdb986b2e128516e076f01ae25c5d3a98de9ae29d8cca26477e05f17",
+   "label": "TEIL",
+   "surface": "light",
+   "sourceBytes": 5861,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original published artwork; trademark and reuse terms not established."
+  },
+  {
+   "sourceSha256": "838a54fb5a28adf9d1398ddfdd3c1bdb197830a140dfd796a84b4e3154bf4f2c",
+   "assetId": "logo-838a54fb5a28adf9",
+   "file": "logo-838a54fb5a28adf9.svg",
+   "width": 165,
+   "height": 165,
+   "bytes": 32760,
+   "sha256": "838a54fb5a28adf9d1398ddfdd3c1bdb197830a140dfd796a84b4e3154bf4f2c",
+   "label": "Hermes Industrial Estate",
+   "surface": "dark",
+   "sourceBytes": 32760,
+   "derived": "original bytes",
+   "rights": "Original published artwork; trademark and reuse terms not established."
+  },
+  {
+   "sourceSha256": "871a82d7b198172862a4b2a368a10368e30c60f2b9ab25108a69eba496de2fd8",
+   "assetId": "logo-871a82d7b1981728",
+   "file": "logo-871a82d7b1981728.webp",
+   "width": 207,
+   "height": 53,
+   "bytes": 7280,
+   "sha256": "2dc3078990fa8bff63f4adafab9a8576c81c56a2e935a087e7226aca04f66ab9",
+   "label": "SCGC",
+   "surface": "light",
+   "sourceBytes": 11134,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Official public source; redistribution/trademark permission not established by retrieval."
+  },
+  {
    "sourceSha256": "88882f07226a2f12bb54beaf77f11e30229061265c5f17af86cf222cf9eee8b7",
    "assetId": "logo-88882f07226a2f12",
    "file": "logo-88882f07226a2f12.svg",
@@ -161,6 +315,20 @@
    "rights": "Source artwork retained. Reuse terms not established in source."
   },
   {
+   "sourceSha256": "a0fe67bc2b647758d9629e2c8a34c3f5a0aac912a508f8b75c2404cf101b97f8",
+   "assetId": "logo-a0fe67bc2b647758",
+   "file": "logo-a0fe67bc2b647758.webp",
+   "width": 112,
+   "height": 112,
+   "bytes": 6744,
+   "sha256": "143f1d037093d9870368ba37284867548304d147b9ac17bfb1b99bda19939817",
+   "label": "Udon Thani Industrial City",
+   "surface": "light",
+   "sourceBytes": 192920,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original published artwork; trademark and reuse terms not established."
+  },
+  {
    "sourceSha256": "b0c75a1bc0fb687787502b576be814f9e36ab87bce464cfb32ff6f8acde89208",
    "assetId": "logo-b0c75a1bc0fb6877",
    "file": "logo-b0c75a1bc0fb6877.webp",
@@ -173,6 +341,20 @@
    "sourceBytes": 12368,
    "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
    "rights": "Source artwork retained. Reuse terms not established in source."
+  },
+  {
+   "sourceSha256": "b3653957afc38ddf6eec375bb769085866807c3d574fa0fdb34db9a4e4c04b6a",
+   "assetId": "logo-b3653957afc38ddf",
+   "file": "logo-b3653957afc38ddf.webp",
+   "width": 240,
+   "height": 57,
+   "bytes": 4162,
+   "sha256": "8a5109ee5ed290d4204f9ed73c18fd0d8856103a01eac44b943a887109e86dfd",
+   "label": "Asia Clean Industrial Estate",
+   "surface": "light",
+   "sourceBytes": 4816,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original published artwork; trademark and reuse terms not established."
   },
   {
    "sourceSha256": "bb6ccb5ca4a9f0f14679099840c66a8ebbf6cfd2e9f75c5db19aa2698622ba9c",
@@ -301,6 +483,20 @@
    "rights": "Source artwork retained. Reuse terms not established in source."
   },
   {
+   "sourceSha256": "ddeb4aa0319882b53d356ae7497541850f2eb9d5bcdea73d0c502554b10b066d",
+   "assetId": "logo-ddeb4aa0319882b5",
+   "file": "logo-ddeb4aa0319882b5.webp",
+   "width": 71,
+   "height": 112,
+   "bytes": 7694,
+   "sha256": "05bb962de5ed0f6765b6f1ca3f4d9d1df9bcbd7708e25dde3bf4f3e3b46eaefd",
+   "label": "กนอ.",
+   "surface": "light",
+   "sourceBytes": 112453,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original published artwork; trademark and reuse terms not established."
+  },
+  {
    "sourceSha256": "de0beacc88340324d4f123d43576d98068bada5cf1671eb5b761a6646d2df949",
    "assetId": "logo-de0beacc88340324",
    "file": "logo-de0beacc88340324.webp",
@@ -329,18 +525,18 @@
    "rights": "Source artwork retained. Reuse terms not established in source."
   },
   {
-   "sourceSha256": "f0c45351a7a5fd9c42808269b740495b2e1a8e6ab385620253f4e4ac49538672",
-   "assetId": "logo-f0c45351a7a5fd9c",
-   "file": "logo-f0c45351a7a5fd9c.webp",
-   "width": 448,
-   "height": 90,
-   "bytes": 9310,
-   "sha256": "fbed4f0c0d0917a28c0f8b67168ab19c9135e72d7d88941d436f96c2bd01775f",
-   "label": "Bluetech",
-   "surface": "dark",
-   "sourceBytes": 12354,
+   "sourceSha256": "ef3986fa6ff3da015783fe70f480da04a5942c351cf2842e5889dac2a1e95920",
+   "assetId": "logo-ef3986fa6ff3da01",
+   "file": "logo-ef3986fa6ff3da01.webp",
+   "width": 293,
+   "height": 112,
+   "bytes": 14110,
+   "sha256": "2c9f37a40c31b131425fa064ae39490e9b49bc4fd83c3974a38c6164288b02bb",
+   "label": "Yamato",
+   "surface": "light",
+   "sourceBytes": 8366,
    "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
-   "rights": "Source artwork retained. Reuse terms not established in source."
+   "rights": "Original artwork retained without modification. No open reuse licence or trademark permission established; source availability is not a rights grant."
   },
   {
    "sourceSha256": "f1b880b58658354d26fc7797f62261fa502cfd9afb9f44ac97a031743b793d20",
@@ -371,6 +567,20 @@
    "rights": "Source artwork retained. Reuse terms not established in source."
   },
   {
+   "sourceSha256": "fe74464837cb0298182872d9b5e40093902b75046be181797c6bd960e9d7cb25",
+   "assetId": "logo-fe74464837cb0298",
+   "file": "logo-fe74464837cb0298.webp",
+   "width": 214,
+   "height": 112,
+   "bytes": 10682,
+   "sha256": "3167fc8676afdd60b0fd1fb25b025bbb9c8520e409ea5c3d6feb6d0235344242",
+   "label": "G.K. Land",
+   "surface": "light",
+   "sourceBytes": 64627,
+   "derived": "scaled to fit 448×112 px, WebP q92 (source SHA-256 verified)",
+   "rights": "Original published artwork; trademark and reuse terms not established."
+  },
+  {
    "sourceSha256": "ff0daebb42925bd80ea20dd4ac46ccb36d4216c529f285b603d007521e2299f0",
    "assetId": "logo-ff0daebb42925bd8",
    "file": "logo-ff0daebb42925bd8.webp",
@@ -385,84 +595,8 @@
    "rights": "Source artwork retained. Reuse terms not established in source."
   }
  ],
- "missing": [
-  {
-   "sourceSha256": "ddeb4aa0319882b53d356ae7497541850f2eb9d5bcdea73d0c502554b10b066d",
-   "assetId": "logo-ddeb4aa0319882b5",
-   "label": "Industrial Estate Authority of Thailand",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "135a3a19cde16eaa6a3c735db4bd7e6e63efb83338d73e1ce76931c85f500352",
-   "assetId": "logo-135a3a19cde16eaa",
-   "label": "CP Future City Development Corporation",
-   "mime": "image/webp"
-  },
-  {
-   "sourceSha256": "b3653957afc38ddf6eec375bb769085866807c3d574fa0fdb34db9a4e4c04b6a",
-   "assetId": "logo-b3653957afc38ddf",
-   "label": "Asia Clean Industrial Estate",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "838a54fb5a28adf9d1398ddfdd3c1bdb197830a140dfd796a84b4e3154bf4f2c",
-   "assetId": "logo-838a54fb5a28adf9",
-   "label": "Hermes Industrial Estate",
-   "mime": "image/svg+xml"
-  },
-  {
-   "sourceSha256": "4194631b5c831f61179d46931271fd197029dd7778986450f042b6e36ff29fae",
-   "assetId": "logo-4194631b5c831f61",
-   "label": "Y GROUP",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "871a82d7b198172862a4b2a368a10368e30c60f2b9ab25108a69eba496de2fd8",
-   "assetId": "logo-871a82d7b1981728",
-   "label": "SCG Chemicals (SCGC)",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "110345b10e746b4c9b4296ba678592c047a56836cefa9f8eb8e82a84473f2ea0",
-   "assetId": "logo-110345b10e746b4c",
-   "label": "Asia Industrial Estate",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "3583239a289946265ab0183b20c425bb4b4e90b53ecb8610e3c9a2ed74d4a9e2",
-   "assetId": "logo-3583239a28994626",
-   "label": "Filter Vision",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "698997535a9411b6a862342b83396deff4ed7ded883834f6234d999d14bd5723",
-   "assetId": "logo-698997535a9411b6",
-   "label": "Bhakasa Industrial",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "6032982d839a08ed40d0cb249a2613b262cbb2db246f1d180c62030edfb3fe3a",
-   "assetId": "logo-6032982d839a08ed",
-   "label": "SCG Decor",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "a0fe67bc2b647758d9629e2c8a34c3f5a0aac912a508f8b75c2404cf101b97f8",
-   "assetId": "logo-a0fe67bc2b647758",
-   "label": "Udon Thani Industrial City",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "7ae618796146edfa2b48c7da3b18b6c58715d50aaf6e60c1e6f75dfefa67a4b8",
-   "assetId": "logo-7ae618796146edfa",
-   "label": "Thai Eastern Industrial Land",
-   "mime": "image/png"
-  },
-  {
-   "sourceSha256": "fe74464837cb0298182872d9b5e40093902b75046be181797c6bd960e9d7cb25",
-   "assetId": "logo-fe74464837cb0298",
-   "label": "G.K. Land / Siam Green City",
-   "mime": "image/jpeg"
-  }
+ "missing": [],
+ "excluded": [
+  "EST-IEAT-2704"
  ]
 }

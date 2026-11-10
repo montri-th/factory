@@ -147,7 +147,7 @@ export const boundaryWords = e => T(...BOUNDARY_WORDS[e.boundary.state]);
  */
 export function shortLabel(label) {
   const s = String(label || '').trim();
-  if (/^Industrial Estate Authority of Thailand$/i.test(s)) return T('กนอ.', 'IEAT');
+  if (/^(?:Industrial Estate Authority of Thailand|กนอ\.?)$/i.test(s)) return T('กนอ.', 'IEAT');
   return s.replace(/\s+(?:Public\s+)?Company\s+Limited$/i, '').replace(/\s+(?:PCL|Co\.,?\s*Ltd\.?)$/i, '').trim();
 }
 
