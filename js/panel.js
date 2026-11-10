@@ -89,11 +89,12 @@ const CLASS_SOURCE = Object.freeze({2: 'DIW_factype2', 3: 'DIW_factype3'});
  * `data-prov`, its word for screen readers), then the method link. The estate register and the terrain sources join
  * the source part when the view shows them.
  */
-export function provenance(ctx = {}, boundary = '', {terrain = false, estates = false, outlines = ''} = {}) {
+export function provenance(ctx = {}, boundary = '', {terrain = false, estates = false, outlines = '', site = null} = {}) {
   const meta = ctx.meta || {};
   const sources = ['ทะเบียน กรอ. นอกนิคมอุตสาหกรรม', 'อก.',
     estates ? `ทะเบียนนิคมและสวนอุตสาหกรรม (งานวิจัย ${thaiDate(meta.context?.estates?.checkedOn || '')})`.replace(' ()', '') : '',
     outlines ? `ขอบเขต OpenStreetMap (${thaiDate(outlines)})` : '',
+    site ? `กรอบโรงงาน OpenStreetMap (${thaiDate(site.osmOn || site.on || '')})`.replace(' ()', '') : '',
     terrain ? `SRTM 30 ม. (2543)${ctx.osmDate ? ` · OSM ${thaiDate(ctx.osmDate)}` : ''}` : ''].filter(Boolean);
   return `<p class="hint panel-foot provenance"><span class="prov-part" data-prov="dataset">${pic('dataset')}<span class="sr-only">ชุดข้อมูล </span>CityMETER Factory · ${esc(SCOPE.short)}</span> <span class="prov-part" data-prov="source"><span class="sr-only">แหล่ง</span>จาก ${esc(sources.join(' · '))}</span><span class="prov-part" data-prov="date">${pic('date')}<span class="sr-only">ตรวจ </span>${esc(thaiDate(meta.checkedOn || ''))}</span><span class="prov-part" data-prov="boundary">${pic('area')}<span class="sr-only">ขอบเขต </span>${esc(boundary)}</span><span class="prov-part prov-method"><a href="${METHOD_URL}" target="_blank" rel="noopener">วิธีนับ</a></span></p>`;
 }
@@ -430,6 +431,9 @@ export function renderFactory(d, ctx = {}) {
   const functionChip = r.cls ? `<span class="fact-chip" title="หน้าที่ของโรงงานตามประเภทโรงงาน (การจัดกลุ่มของงานวิจัย)">${pic('factory')}${esc(r.cls.th)}</span>` : '';
   const statusChip = `<span class="fact-chip${r.moi ? '' : ' is-quiet'}" title="${esc(r.moi ? `สถานะตามข้อมูลที่ตั้งประกอบกิจการโรงงานของกระทรวงอุตสาหกรรม${r.moiOn ? ` ${thaiDate(r.moiOn)}` : ''}` : 'ไม่พบเลขทะเบียนนี้ในข้อมูลที่ตั้งประกอบกิจการโรงงานของกระทรวงอุตสาหกรรม')}">${pic('status')}${esc(MOI_TH[r.moi] ?? r.moi)}</span>`;
   const bd = d.building;
+  // The factory's site (js/sites.js, release 0.7.0): every building of it, as the map shows them together.
+  const site = r.site || null;
+  const siteChip = site ? `<span class="fact-chip" title="${esc(['อาคารในกรอบพื้นที่โรงงานของ OpenStreetMap ที่หมุดของทะเบียนนี้อยู่', site.source || 'งานวิจัย', site.on ? thaiDate(site.on) : ''].filter(Boolean).join(' · '))}">${pic('building')}ทั้งโรงงาน ${nw(`${num(site.n)} อาคาร`)}</span>` : '';
   const buildingChip = bd?.others ? `<button type="button" class="fact-chip" data-action="select-building" data-id="${esc(bd.key)}" title="จุดของโรงงานอีก ${num(bd.others)} ทะเบียนอยู่ในอาคารนี้บนแผนที่">${pic('building')}อีก ${num(bd.others)} ทะเบียนในอาคารนี้</button>` : '';
   const sameArea = d.area && d.sameArea.count ? `<p class="fact-line">${pic('factory', 'fact-icon')}ใน${esc(w.area)}${esc(d.area.name)}อีก ${nw(`<button type="button" class="link-button" data-action="select-area" data-id="${esc(d.area.id)}">${num(d.sameArea.count)} ทะเบียน</button>`)} · ${nw(`${num(d.sameArea.workers)} คน`)}</p>` : '';
   const matches = r.person ? [] : (ctx.estateMatches?.(r.id) || []);
@@ -449,7 +453,7 @@ export function renderFactory(d, ctx = {}) {
         <p class="eyebrow eyebrow-cue">${esc(fam?.th || '')}${r.industry?.th && r.industry.th !== fam?.th ? ` · ${esc(r.industry.th)}` : ''}</p>
         <h2>${esc(r.title)}</h2>
         ${nameLine}</div></div>
-      <div class="fact-chips">${workersChip}${rankChip}${areaChip}${familyChip}${functionChip}${classChip}${statusChip}${buildingChip}${coords ? '' : `<span class="fact-chip is-quiet"${r.off ? ` title="จุดในแหล่งอยู่นอก${esc(own)}ของทะเบียน"` : ''}>${noPointChip}</span>`}</div>
+      <div class="fact-chips">${workersChip}${rankChip}${areaChip}${familyChip}${functionChip}${classChip}${statusChip}${siteChip}${buildingChip}${coords ? '' : `<span class="fact-chip is-quiet"${r.off ? ` title="จุดในแหล่งอยู่นอก${esc(own)}ของทะเบียน"` : ''}>${noPointChip}</span>`}</div>
       ${sameArea}${directoryLine}
       ${actionBar(r.person ? {kind: 'area', area: d.area ? {place: `${w.area}${d.area.name}`, province: prov} : null}
         : {kind: 'factory', row: r, area: d.area ? {place: `${w.area}${d.area.name}`, province: prov} : r.province ? {place: '', province: prov} : null,
@@ -463,6 +467,7 @@ export function renderFactory(d, ctx = {}) {
           <dt>สถานะ อก.</dt><dd>${r.moi ? `${esc(r.moi)}${r.moiOn ? ` · ${nw(esc(thaiDate(r.moiOn)))}` : ''}` : 'ไม่พบใน อก.'}</dd>
           <dt>พื้นที่</dt><dd>${esc(ADMIN_TH[r.admin] || '')}${r.sub ? ` · ตำบล/แขวง${esc(r.sub)}` : ''}</dd>
           <dt>พิกัด</dt><dd>${point}</dd>
+          ${site ? `<dt>ไซต์</dt><dd>${nw(`${num(site.n)} อาคาร`)} · ${esc(site.source || 'งานวิจัย')}${site.url ? ` · ${link(site.url, 'หน้าอ้างอิง')}` : ''}${site.credit ? ` · ${link(site.credit.url, site.credit.text)}` : ''}${site.on ? ` · ${nw(esc(thaiDate(site.on)))}` : ''}</dd>` : ''}
           ${r.dup ? '<dt>ทะเบียนซ้ำ</dt><dd>ชื่อและที่อยู่ตรงกับอีกทะเบียน</dd>' : ''}
           <dt>เลขทะเบียน</dt><dd><span class="hint data-number">${esc(r.id)}</span></dd>
         </dl>
@@ -472,7 +477,7 @@ export function renderFactory(d, ctx = {}) {
     ${hasPoint(r) ? `<section class="panel-section terrain-section"><div class="section-heading">${heading('elevation', 'ภูมิประเทศ')}</div>
       <div class="fact-chips terrain-chips" data-terrain-for="${esc(r.id)}"><span class="hint">กำลังอ่านภูมิประเทศ</span></div></section>` : ''}
     ${nearbySection(d.nearby, fam)}
-    ${provenance(ctx, d.area ? `${w.area}${d.area.name} ${prov}` : prov || 'ไม่ระบุจังหวัด', {terrain: hasPoint(r)})}`;
+    ${provenance(ctx, d.area ? `${w.area}${d.area.name} ${prov}` : prov || 'ไม่ระบุจังหวัด', {terrain: hasPoint(r), site})}`;
 }
 
 /* ---------- Industrial estate (context from the estate research master; release 0.6.0) ---------- */

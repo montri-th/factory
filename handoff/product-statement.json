@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-statement",
   "productId": "citymeter-factory",
-  "productVersion": "0.6.0",
+  "productVersion": "0.7.0",
   "updatedOn": "2026-11-05",
   "dataset_id": "research.TH.factory",
   "productionDatasetCode": "factory",

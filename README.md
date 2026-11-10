@@ -40,6 +40,7 @@ npm test    # unit tests บนข้อมูลจริง (node --test)
 ## ข้อมูล
 
 - `data/estate-context.json` — บริบทนิคมจาก CityMETER Industrial Estate (106 รายการ ขอบเขต 46 แห่ง ชุดรอบนิคม ชื่อที่ตรงกับทำเนียบ) สร้างโดย `industrialestate/scripts/build-data.py`
+- `data/factory-sites.json` — ไซต์โรงงาน 221 แห่ง (0.7.0): จุดภายในของอาคาร CityMETER ในกรอบ `man_made=works` ของ OpenStreetMap ที่จุดของทะเบียนตกอยู่ (© OpenStreetMap contributors, ODbL) สร้างโดย `scripts/build-sites.py` จากแถวไซต์ของงานวิจัย (`DATA_METHOD.md` §4.1)
 - `industrialestate/` — เดโม CityMETER Industrial Estate (อ่าน `industrialestate/README.md`)
 - `data/factories.json` — 74,047 ทะเบียนโรงงาน (FID) จากแท็บ `02_FACTORIES` ของชีตวิจัย ตัวเลขคนงานจากข้อมูลเปิดของ กรอ. จำพวก 2–3 (ตรวจตรงกับแท็บ `18_WORKERS_P90` ทุกทะเบียน) และรายชื่อนิคม/สวนอุตสาหกรรม 106 แห่ง (ไม่เผยแพร่ชีตหรือไฟล์ export) — `scripts/build-data.py` · ขนาด 11.9 MB (ราว 1.9 MB เมื่อส่งแบบ gzip)
 - `data/area-index.json`, `data/frames/{CODE}.json`, `data/provinces.geojson`, `data/boundary-receipts.json` — เขต/อำเภอและจังหวัดของ CityMETER production ชุดเดียวกับ CityMETER: Hotel (`montri-th/hotel@177e592`)
