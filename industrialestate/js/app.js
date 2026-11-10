@@ -451,7 +451,10 @@ function cameraPadding() {
   const bottom = ($('insights')?.getBoundingClientRect().height || 0) + ($('map-legend')?.getBoundingClientRect().height || 0) * (mobilePortrait() ? 1 : 0) + 24;
   const top = Math.min(80, h * 0.12);
   if (sheetOpen()) {
-    const covered = el.getBoundingClientRect().bottom - $('panel').getBoundingClientRect().top;
+    // The sheet grows with its content up to its max height (56dvh) and slides in: frame above its tallest top.
+    const panel = $('panel'), max = parseFloat(getComputedStyle(panel).maxHeight);
+    const sheetTop = Math.min(panel.getBoundingClientRect().top, Number.isFinite(max) ? window.innerHeight - max : Infinity);
+    const covered = el.getBoundingClientRect().bottom - sheetTop;
     return {top, bottom: Math.max(24, Math.min(h - top - 80, covered + 16)), left: 24, right: 24};
   }
   return {top, bottom: Math.min(h * 0.45, bottom), left: Math.min(48, w * 0.06), right: Math.min(64, w * 0.08)};
