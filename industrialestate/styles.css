@@ -822,9 +822,11 @@ td.num, th.num { text-align: right; }
 .legend-around { width: 10px; height: 10px; border-radius: 50%; background: var(--series-2-fill); box-shadow: 9px 0 0 -1px var(--series-6-fill); margin-right: 8px; border: 1px solid var(--map-marker-stroke); }
 .legend-outline { width: 14px; height: 10px; border: 2px solid var(--text-primary); border-radius: 3px; }
 .legend-hatch { width: 14px; height: 10px; border: 1px solid var(--data-zero-outline); border-radius: 2px; background: repeating-linear-gradient(135deg, var(--data-zero-outline) 0 1.5px, var(--data-no-data) 1.5px 6px); }
-.around-pop { display: grid; gap: 4px; font: 400 13px/1.45 var(--font-body); color: #182327; }
-.around-pop strong { font-weight: 600; overflow-wrap: anywhere; }
-.around-pop a { font-weight: 600; }
+/* The popup of an around-estate point: theme text on the theme card (1.0.2 — the ink was the light theme's in both). */
+.around-pop { display: grid; gap: 4px; font: 400 13px/1.45 var(--font-body); color: var(--text-primary); }
+.around-pop strong { font-weight: 600; overflow-wrap: anywhere; color: var(--text-primary); }
+.around-pop span { color: var(--text-secondary); }
+.around-pop a { font-weight: 600; color: var(--text-primary); }
 @media (max-width: 760px) {
   .estate-chip { max-width: 150px; font-size: 11px; min-height: 26px; padding: 2px 8px; }
   .chart-row { grid-template-columns: minmax(0, 120px) minmax(0, 1fr) 40px; }
