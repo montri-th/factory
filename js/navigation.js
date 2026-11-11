@@ -37,6 +37,8 @@ const TITLES = {
   'country-map': 'ดูทั้งประเทศรายจังหวัด',
   'toggle-3d': 'สลับ 3 มิติ / 2 มิติ',
   'toggle-neighborhoods': 'แสดงหรือซ่อนสีและขอบเขตเขต/อำเภอ',
+  'close-mobile-panel': 'กลับไปแผนที่',
+  'sheet-back': 'กลับไปหน้าก่อน',
   'mobile-panel': 'เปิดแผงข้อมูลและตัวกรอง',
   'open-help': 'เปิดวิธีใช้',
   'open-help-sheet': 'เปิดวิธีใช้',

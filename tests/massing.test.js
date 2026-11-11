@@ -3,7 +3,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {parseVectorTile, tileToLonLat} from '../js/shell/mvt.js';
 import {pointInRing, signedArea} from '../js/shell/geometry.js';
-import {shapeTile, tilesForRegions, roundingRadiusM, encloseOffsetM, outerRings, installMassing, focusFeatureId, footprintFitPoints, HEIGHT_LIFT_M, MAX_TILES, CITY_MIN_ZOOM, FOCUS_MIN_ZOOM, CITY_LAYER, FOCUS_LAYER, FOCUS_SOURCE, OCCLUDER_LAYER, VENUE_LAYER, SCENE, FADE_NEAR_M, FADE_FAR_M} from '../js/massing.js';
+import {shapeTile, tilesForRegions, roundingRadiusM, encloseOffsetM, outerRings, installMassing, focusFeatureId, nearRing, footprintFitPoints, HEIGHT_LIFT_M, MAX_TILES, CITY_MIN_ZOOM, FOCUS_MIN_ZOOM, CITY_LAYER, FOCUS_LAYER, FOCUS_SOURCE, OCCLUDER_LAYER, VENUE_LAYER, SCENE, FADE_NEAR_M, FADE_FAR_M} from '../js/massing.js';
 import {readJSON} from './helpers.js';
 
 const tile = {z: 14, x: 12767, y: 7560};
@@ -173,6 +173,65 @@ test('installMassing reports every applied result through onResult (also empty/p
   assert.equal(results.at(-1).features, 0);
   massing.dispose();
   assert.equal(map.getLayer(CITY_LAYER), undefined);
+});
+
+test('a lean budget shapes a wide focus round the camera only, waits below its zoom, and leaves a stay\'s own square whole (0.7.0)', async () => {
+  // The ring: 16 sides round the centre of the camera's cell; the same ring until the camera has moved a third of the radius.
+  const big = [[10, 10], [20470, 10], [20470, 20470], [10, 20470], [10, 10]].map(([px, py]) => tileToLonLat(px, py, tile));
+  const at = tileToLonLat(1147, 1147, tile); // the fixture's building 101 stands here
+  const near = nearRing([big], at, 900);
+  assert.equal(near.ring.length, 17);
+  assert.deepEqual(near.ring[0], near.ring.at(-1));
+  const metres = (a, b) => Math.hypot((a[0] - b[0]) * 111320 * Math.cos((a[1] * Math.PI) / 180), (a[1] - b[1]) * 110574);
+  for (const p of near.ring) assert.ok(Math.abs(metres(p, near.center) - 900) < 12, 'every corner is 900 m from the centre');
+  assert.ok(metres(near.center, at) <= 900 / 3, 'the ring is centred within a cell of the camera');
+  assert.equal(nearRing([big], [near.center[0] + 0.0009, near.center[1]], 900).key, near.key, '100 m from the cell\'s centre: the same cell (cells are 300 m)');
+  assert.notEqual(nearRing([big], [at[0] + 0.02, at[1]], 900).key, near.key, '2 km further: another cell');
+  // A focus no wider than the ring (a stay's square, a station's) is never cut.
+  const small = [[1000, 1000], [1300, 1000], [1300, 1300], [1000, 1300], [1000, 1000]].map(([px, py]) => tileToLonLat(px, py, tile));
+  assert.equal(nearRing([small], at, 900), null);
+  assert.equal(nearRing([big], at, 0), null);
+  // shapeTile with the ring: only the focus buildings that meet it.
+  const r = roundingRadiusM(15.5), d = encloseOffsetM(r);
+  const all = shapeTile(tile, layer, {regions: [whole], radiusM: r, offsetM: d});
+  const here = shapeTile(tile, layer, {regions: [whole], radiusM: r, offsetM: d, near: nearRing([big], at, 200).ring});
+  assert.ok(all.features.length > here.features.length && here.features.some(f => f.properties.osm_id === 101), 'the building under the camera stays');
+  const away = shapeTile(tile, layer, {regions: [whole], radiusM: r, offsetM: d, near: nearRing([big], tileToLonLat(20000, 20000, tile), 200).ring});
+  assert.equal(away.features.length, 0);
+  assert.equal(here.features.find(f => f.properties.osm_id === 101).id, all.features.find(f => f.properties.osm_id === 101).id, 'ids do not depend on the ring');
+
+  // installMassing with the budget of a phone.
+  const map = fakeMap();
+  map.getCenter = () => ({toArray: () => at});
+  const bytes = readFileSync(new URL('./fixtures/mvt-sample.pbf', import.meta.url));
+  const fetched = [];
+  const massing = installMassing(map, {
+    beforeId: null, colors: {quiet: '#ECEDE8', focus: '#D9D7CD'}, tileUrl: t => `stub/${t.z}/${t.x}/${t.y}.pbf`,
+    fetchImpl: async url => { fetched.push(url); return {ok: true, arrayBuffer: async () => bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength)}; },
+    budget: {tiles: 4, cmRequests: 12, radiusM: 900, focusZoom: 14},
+  });
+  // Below the budget's zoom a wide focus is not shaped at all (the city tier draws there), and nothing is fetched.
+  const waiting = await massing.update({regions: [big], hosts: [], zoom: 11, enabled: true, city: true, latitude: 13.75});
+  assert.equal(waiting.waiting, true);
+  assert.equal(waiting.features, 0);
+  assert.equal(fetched.length, 0);
+  assert.equal(map.data[FOCUS_SOURCE].features.length, 0);
+  // From that zoom: the tiles the ring touches (never more than the budget's), and the result says it is the near part.
+  const shaped = await massing.update({regions: [big], hosts: [], zoom: 15.5, enabled: true, city: true, latitude: 13.75});
+  assert.equal(shaped.near, true);
+  assert.ok(shaped.tiles >= 1 && shaped.tiles <= 4);
+  assert.ok(fetched.includes('stub/14/12767/7560.pbf'));
+  assert.ok(shaped.features >= 1);
+  assert.equal(map.zoomRange[FOCUS_LAYER], undefined, 'a part of the focus keeps the layer\'s own zoom 13, like a cut focus: never the whole-focus zoom 12');
+  assert.equal(map.getLayer(FOCUS_LAYER).minzoom, CITY_MIN_ZOOM);
+  // The same cell again: nothing is shaped twice.
+  assert.equal((await massing.update({zoom: 15.6})).cached, true);
+  // A stay's square under the same budget is shaped whole, at any zoom.
+  const stay = await massing.update({regions: [small], hosts: [], zoom: 11, enabled: true, city: true, latitude: 13.75});
+  assert.equal(stay.near, false);
+  assert.equal(stay.waiting, undefined);
+  assert.equal(stay.features, 1);
+  massing.dispose();
 });
 
 test('venue-level eye scene: surroundings quiet, buildings standing between the camera and the venue become see-through', async () => {

@@ -68,7 +68,7 @@ import {installMassing, outerRings} from './massing.js';
 import {createBuildingUnitStore, cmTileUrl, CM_ATTRIBUTION} from './shell/building-units.js';
 import {presetFor, applyPreset, fitPitched, fitBuilding, twoPointBearing, screenBounds, groundAt, BUILDING_MAX_ZOOM} from './shell/camera.js';
 import {installVenueXray} from './shell/venue-xray.js';
-import {guardRetainedTiles, guardElevationFreeze} from './shell/maplibre-guard.js';
+import {guardRetainedTiles, guardElevationFreeze, mapBudget, budgetPixelRatio, watchContext} from './shell/maplibre-guard.js';
 import {buildBreadcrumb, renderBreadcrumb, breadcrumbText} from './breadcrumb.js';
 import {rampLegendHTML} from './scales.js';
 import {cueMarkup} from './cues.js';
@@ -424,7 +424,9 @@ function renderPanel(summary = summarize(state.rows)) {
   if (mode === 'factory') fillTerrain(rowById(id));
   $('panel').dataset.mode = mode;
   const key = `${mode}:${id}:${$('province').value}:${$('group').value}`;
-  if (key !== renderPanel.lastKey) $('panel').scrollTop = 0;
+  $('sheet-back').hidden = state.panel.mode === 'overview';
+  // A new subject opens the phone sheet at its resting height (short for an item or an area).
+  if (key !== renderPanel.lastKey) { $('panel').scrollTop = 0; setSheet(restSheet()); state.readerPitch = false; state.readerMovedAt = 0; }
   renderPanel.lastKey = key;
 }
 
@@ -1361,7 +1363,7 @@ function updateSpatialLayers() {
   if (!state.loaded) return;
   // Terrain mode reads the land at hilly sites — also round a building or registration being looked at (Hotel 0.3.0):
   // the building camera and the x-ray stand on the drawn ground (js/shell/camera.js).
-  state.terrain?.setEnabled(state.view3d);
+  state.terrain?.setEnabled(state.view3d && state.budget.terrain);
   const code = $('province').value, u = unit();
   const pm = state.provinceLayers?.update({rows: provinceScopeRows(), selectedCode: code, visible: true, metric: state.metric}) || null;
   state.provinceModel = pm;
@@ -1505,6 +1507,8 @@ function installSpatialLayers() {
     tileUrl: t => (state.tileTemplate ? state.tileTemplate.replace('{z}', t.z).replace('{x}', t.x).replace('{y}', t.y) : ''),
     // CityMETER Building V4 inside CityMETER units (js/shell/building-units.js); credited in the attribution while drawn.
     cmTileUrl, cmAttribution: CM_ATTRIBUTION,
+    // A phone shapes the focus buildings round the camera only (js/shell/maplibre-guard.js#mapBudget).
+    budget: state.budget.level === 'full' ? null : state.budget,
     onResult: result => {
       state.massingReadFor = state.massingFor; // a result is always the latest request's (stale ones are dropped)
       const status = $('map-status');
@@ -1533,8 +1537,8 @@ function installSpatialLayers() {
       renderLegend();
       state.labels?.layout();
       onGroundChange();
-    }, onLoaded: onGroundChange, site: () => (twoPoint() ? focusTarget()?.anchor || null : null)});
-    state.terrain.setEnabled(state.view3d);
+    }, onLoaded: onGroundChange, site: () => (twoPoint() ? focusTarget()?.anchor || null : null), pool: state.budget.terrainPool});
+    state.terrain.setEnabled(state.view3d && state.budget.terrain);
   } catch (e) { state.terrain = null; console.warn('Terrain unavailable', e); }
   state.siteLabels = installFactoryLabels(map, $('map'), {
     onSelect: r => selectFactory(r.id, {fly: false, showPopup: true, fromPin: true}),
@@ -1551,9 +1555,12 @@ function installSpatialLayers() {
   updateSpatialLayers();
   if (!state.initialCameraDone) {
     state.initialCameraDone = true;
+    // A map started again after a lost context returns to where the reader was (a building view is framed anew).
+    const resume = state.resumeView; state.resumeView = null;
     const r = state.panel.mode === 'factory' ? rowById(state.panel.id) : null;
     // A deep link to a registration with a point opens on its building (a 90 m box until the tiles arrive).
     if (twoPoint()) frameFocus({instant: true});
+    else if (resume) state.map.jumpTo(resume);
     else if (r && (r.area || r.province)) fitRecord(r.area ? areaById(r.area) : provinceRecord(r.province), {maxZoom: 15, instant: true});
     else if (state.panel.mode === 'estate' && fitEstate({instant: true})) { /* the estate and its 3 km reach */ }
     else fitMap({instant: true});
@@ -1647,7 +1654,9 @@ function initMap() {
   if (!window.maplibregl) throw new Error('Map library is unavailable');
   try {
     state.mapTheme = theme();
-    state.map = new maplibregl.Map({container: 'map', center: BANGKOK.center, zoom: BANGKOK.zoom, pitch: 0, maxPitch: 85, attributionControl: {compact: true}, locale: MAP_LOCALE, style: buildMapStyle(state.mapTheme)});
+    // What this device's map may hold (a phone: a lighter canvas, fewer cached tiles, focus buildings round the camera).
+    state.budget = mapBudget();
+    state.map = new maplibregl.Map({container: 'map', pixelRatio: budgetPixelRatio(state.budget), maxTileCacheZoomLevels: state.budget.cacheZoomLevels, center: BANGKOK.center, zoom: BANGKOK.zoom, pitch: 0, maxPitch: 85, attributionControl: {compact: true}, locale: MAP_LOCALE, style: buildMapStyle(state.mapTheme)});
     state.map.addControl(new maplibregl.NavigationControl({showCompass: true, visualizePitch: true}), 'top-right');
     state.attribObserver = trackAttribution(state.map);
     state.legendObserver ||= trackLegend();
@@ -1666,14 +1675,73 @@ function initMap() {
     state.map.on('mousemove', onMapMove);
     // A camera move started by the user (drag, pinch, wheel, keys): a building found later never moves the camera again.
     state.map.on('movestart', e => { if (e.originalEvent) state.userCamera = true; });
-    state.map.on('error', e => console.warn('Map resource', e.error?.message || e));
-    fetch(TILEJSON_URL).then(r => r.json()).then(j => { state.tileTemplate = j.tiles?.[0] || ''; if (state.loaded) updateSpatialLayers(); }).catch(e => console.warn('TileJSON', e));
+    // tiltWhenNear: any new move calls the pending tilt off; a pitch gesture makes the pitch the reader's.
+    state.map.on('movestart', () => clearTimeout(state.tiltTimer));
+    state.map.on('pitchstart', e => { if (e.originalEvent) state.readerPitch = true; });
+    state.map.on('moveend', tiltWhenNear);
+    for (const type of ['wheel', 'touchend', 'pointerup', 'dblclick']) state.map.getCanvasContainer().addEventListener(type, () => { state.readerMovedAt = Date.now(); }, {passive: true});
+    state.map.on('error', e => { watchBasemap.error(e); console.warn('Map resource', e.error?.message || e); });
+    state.map.on('sourcedata', watchBasemap.data);
+    // A lost WebGL context leaves an empty map: start a new one in the same place (js/shell/maplibre-guard.js#watchContext).
+    state.contextWatch = watchContext(state.map, () => restartMap('context-lost'));
+    $('map').dataset.budget = state.budget.level;
+    fetch(TILEJSON_URL).then(r => r.json()).then(j => { state.tileTemplate = j.tiles?.[0] || ''; if (state.loaded) updateSpatialLayers(); }).catch(e => { partial('basemap'); console.warn('TileJSON', e); });
   } catch (e) {
-    state.loaded = false; state.initialCameraDone = false;
-    for (const cleanup of [() => state.attribObserver?.disconnect(), () => state.labels?.dispose(), () => state.provinceLabels?.dispose(), disposeSpatial, () => state.map?.remove()]) { try { cleanup(); } catch (err) { console.warn('Map cleanup', err); } }
-    state.map = null; state.labels = null; state.provinceLabels = null; state.provinceModel = null;
+    dropMap();
     throw e;
   }
+}
+
+/** Take the map down (a failed start, a lost context): observers, labels, layers, then the map itself. */
+function dropMap() {
+  state.loaded = false; state.initialCameraDone = false;
+  for (const cleanup of [() => state.contextWatch?.(), () => state.attribObserver?.disconnect(), () => state.labels?.dispose(), () => state.provinceLabels?.dispose(), disposeSpatial, () => state.map?.remove()]) { try { cleanup(); } catch (err) { console.warn('Map cleanup', err); } }
+  state.map = null; state.labels = null; state.provinceLabels = null; state.provinceModel = null; state.contextWatch = null; state.attribObserver = null;
+  watchBasemap.reset();
+}
+
+/**
+ * The basemap's own tiles (roads, water, the buildings of both tiers): when they fail and none has arrived, the page
+ * says so (`basemap` in PARTIAL) instead of showing pins on an empty ground; the first tile that arrives takes it back.
+ */
+const watchBasemap = {
+  errors: 0, loaded: false, told: false,
+  reset() { this.errors = 0; this.loaded = false; },
+  error: e => {
+    const w = watchBasemap;
+    if (w.loaded || e?.sourceId !== 'openmaptiles') return;
+    if (++w.errors >= 3 && !w.told) { w.told = true; partial('basemap'); trouble('basemap-tiles'); }
+  },
+  data: e => {
+    const w = watchBasemap;
+    if (w.loaded || e?.sourceId !== 'openmaptiles' || !e.tile || e.tile.state !== 'loaded') return;
+    w.loaded = true;
+    if (w.told) { w.told = false; window.dispatchEvent(new CustomEvent('citymeter:partial', {detail: {id: 'basemap', resolved: true}})); }
+  },
+};
+/** Tell the launch script the map was in trouble (it keeps the last few for a report and turns the tab lean). */
+function trouble(kind, note = '') { window.dispatchEvent(new CustomEvent('citymeter:map-trouble', {detail: {kind, note}})); }
+
+/**
+ * A new map in place of one that lost its context (a phone under memory pressure): the launch script marks the tab
+ * lean first, so the new map starts with the lighter budget; the camera returns to where it was. Twice at most — a
+ * third loss shows the map's own failure card with its button.
+ */
+function restartMap(reason) {
+  if (!state.map) return;
+  const view = {center: state.map.getCenter(), zoom: state.map.getZoom(), pitch: state.map.getPitch(), bearing: state.map.getBearing()};
+  state.mapRestarts = (state.mapRestarts || 0) + 1;
+  trouble(reason, `restart ${state.mapRestarts}`);
+  dropMap();
+  if (state.mapRestarts > 2) {
+    const el = $('map-failure');
+    el.hidden = false;
+    el.innerHTML = '<p>แผนที่หยุดแสดงผล ข้อมูล ตาราง และกราฟยังใช้งานได้</p><button type="button" class="btn">เปิดแผนที่อีกครั้ง</button>';
+    el.querySelector('button').onclick = event => { event.target.disabled = true; state.mapRestarts = 0; startMap(); };
+    return;
+  }
+  state.resumeView = view;
+  startMap();
 }
 
 async function startMap() {
@@ -1700,8 +1768,37 @@ function ensure3d() {
   return true;
 }
 
+/**
+ * A phone's plan view turns 3D where the buildings are (owner 2026-11-11 20:38: “ลอง pan แผนที่ในภูเก็ตอาคาร 3d ไม่แสดงเลย”).
+ * Under the open sheet an area or a station is framed flat; the reader who then zoomed to building level saw the
+ * buildings from straight above with the 3D button on. Once the map has rested 220 ms after the reader's own move (a
+ * move of the page's own that follows a newly opened subject does not count), at
+ * the zoom where the focus buildings are drawn (the map budget's, 14 without one), a flat camera takes the 3D preset,
+ * as the 3D button does; a tilt the reader's next gesture leaves nearly flat is finished after that gesture. Never
+ * against the reader: a pitch set by hand (readerPitch) stands until another subject is opened or the 3D button is
+ * pressed.
+ */
+const TILT_ZOOM = 14, FLAT_PITCH = 20;
+function tiltWhenNear(e) {
+  clearTimeout(state.tiltTimer);
+  if (e?.originalEvent) state.readerMovedAt = Date.now();
+  // A wheel zoom and a fling end on a move of the map's own, after the reader's hand has left: the reader's last touch
+  // of the map (readerMoved) counts for 2.5 s.
+  if (state.readerPitch || Date.now() - (state.readerMovedAt || 0) > 2500) return;
+  state.tiltTimer = setTimeout(() => {
+    const map = state.map;
+    if (!map || state.readerPitch || !state.view3d || !mobilePortrait() || twoPoint() || map.isMoving()) return;
+    if (map.getZoom() < (state.budget?.focusZoom || TILT_ZOOM)) return;
+    // flat, or left nearly flat by a gesture that cut a camera move short; a building's own frame (twoPoint) is not touched
+    if (map.getPitch() >= FLAT_PITCH) return;
+    applyPreset(map, cameraPreset(), {animate: animate(), duration: 600});
+    state.lastPreset = cameraPreset();
+  }, 220);
+}
+
 function toggle3d() {
   state.view3d = !state.view3d;
+  state.readerPitch = false;
   $('toggle-3d').setAttribute('aria-pressed', String(state.view3d));
   renderLegend();
   updateSpatialLayers();
@@ -1714,6 +1811,46 @@ function toggle3d() {
 }
 
 /* ---------- mobile sheet ---------- */
+/**
+ * How tall the phone sheet stands (0.7.0, owner 2026-11-11 20:38: “เหลือพื้นที่ให้ดูแผนที่น้อยมาก”): 'peek' for a stay, a
+ * building, a station or an area — the card's head alone, so the map keeps most of the screen — 'half' for the
+ * overview (56 %, as before) and 'full' when the reader opens it. styles.css reads #panel[data-sheet]; the building
+ * camera frames again in the strip the sheet leaves (watchFreeBox).
+ */
+const restSheet = () => (state.panel.mode === 'overview' ? 'half' : 'peek');
+function setSheet(next) {
+  const panel = $('panel'), grip = $('sheet-grip');
+  if (!grip || panel.dataset.sheet === next) return;
+  const full = next === 'full', words = full ? 'ย่อแผ่นข้อมูล' : 'ขยายแผ่นข้อมูล';
+  panel.dataset.sheet = next;
+  grip.setAttribute('aria-expanded', String(full));
+  grip.title = words;
+  const label = grip.querySelector('.sr-only');
+  if (label) label.textContent = words;
+  if (!full) panel.scrollTop = 0;
+}
+const toggleSheet = () => setSheet($('panel').dataset.sheet === 'full' ? restSheet() : 'full');
+/** A swipe on the sheet's bar: up opens the sheet whole, down brings it back to its resting height, down again closes it. */
+function installSheetSwipe() {
+  const bar = $('sheet-bar'), grip = $('sheet-grip');
+  if (!bar || !grip) return;
+  let startY = null, pointer = null, swipedAt = 0;
+  bar.addEventListener('pointerdown', e => { if (!e.target.closest('#sheet-back, #close-mobile-panel')) { startY = e.clientY; pointer = e.pointerId; } });
+  const end = e => {
+    if (startY === null || e.pointerId !== pointer) return;
+    const dy = e.clientY - startY;
+    startY = null;
+    if (Math.abs(dy) < 28) return; // a tap: the grip's own click
+    swipedAt = Date.now();
+    if (dy < 0) setSheet('full');
+    else if ($('panel').dataset.sheet === 'full') setSheet(restSheet());
+    else closeMobilePanel();
+  };
+  window.addEventListener('pointerup', end);
+  window.addEventListener('pointercancel', () => { startY = null; });
+  // The click a browser sends after a swipe that ended on the grip is not a second command.
+  grip.addEventListener('click', () => { if (Date.now() - swipedAt > 350) toggleSheet(); });
+}
 /**
  * Open the phone sheet. A building being looked at is framed again in the strip above it (`frame: false` when the
  * caller frames right after, so the camera moves once).
@@ -1871,6 +2008,8 @@ function wireEvents() {
   $('toggle-neighborhoods').onclick = () => { state.showAreas = !state.showAreas; $('toggle-neighborhoods').setAttribute('aria-pressed', String(state.showAreas)); updateSpatialLayers(); };
   $('mobile-panel').onclick = () => { $('panel').classList.contains('is-open') ? closeMobilePanel() : openMobilePanel(); };
   $('close-mobile-panel').onclick = closeMobilePanel;
+  $('sheet-back').onclick = goBack;
+  installSheetSwipe();
   document.querySelector('.skip').onclick = () => { openMobilePanel(); $('dataset-title').focus(); };
   $('toggle-insights').onclick = () => openInsights($('insight-content').hidden);
   if (typeof ResizeObserver === 'function') new ResizeObserver(syncBottomPanel).observe($('insights')); else window.addEventListener('resize', syncBottomPanel);
@@ -1891,12 +2030,31 @@ function wireEvents() {
  */
 async function loadSites() {
   const json = await fetchJSON(`data/factory-sites.json${RELEASE ? `?v=${RELEASE}` : ''}`, {timeout: 60000})
-    .catch(e => { console.warn('Factory sites unavailable', e); return null; });
+    .catch(e => { partial('data/factory-sites.json'); console.warn('Factory sites unavailable', e); return null; });
   state.sites = attachSites(decodeSites(json), state.rowById);
   if (!state.sites || state.panel.mode !== 'factory' || !rowById(state.panel.id)?.site) return;
   siteOf.id = null;
   renderPanel();
   if (state.loaded) updateSpatialLayers();
+}
+
+/**
+ * A part of the data that did not load is said on the page (citymeter-shell 0.6.0, js/shell/launch.js
+ * `citymeter:partial`): what is missing and what that does to the result on screen, with a reload that keeps the
+ * address. The words live here, by file: [Thai name, Thai effect, English name, English effect].
+ */
+const PARTIAL = {
+  'data/provinces.geojson': ['กรอบจังหวัด', 'แผนที่ไม่แสดงขอบจังหวัด', 'Province outlines', 'The map shows no province outlines'],
+  'frames': ['เส้นขอบเขต/อำเภอ', 'บางจังหวัดไม่แสดงเส้นขอบเขต/อำเภอบนแผนที่', 'District outlines', 'Some provinces show no district outlines on the map'],
+  'units': ['รูปอาคารของ CityMETER', 'อาคารบางจังหวัดแสดงจากแผนที่ฐานแทนชุดอาคารของ CityMETER', 'CityMETER building shapes', 'Buildings in some provinces come from the basemap instead of the CityMETER set'],
+  'basemap': ['แผนที่ฐาน', 'ถนน แหล่งน้ำ และอาคารพื้นหลังอาจไม่แสดง ข้อมูลในแผงและตารางยังใช้ได้', 'Basemap', 'Roads, water and background buildings may be missing; the panel and the table still work'],
+  'data/estate-context.json': ['บริบทนิคมอุตสาหกรรม', 'ไม่แสดงขอบและข้อมูลของนิคมอุตสาหกรรม', 'Industrial-estate context', 'Estate outlines and estate facts are not shown'],
+  'data/factory-sites.json': ['พื้นที่โรงงาน', 'หน้าโรงงานแสดงเฉพาะอาคารใกล้หมุด ไม่แสดงทั้งพื้นที่โรงงาน', 'Factory sites', 'A factory page shows the building at its pin only, not the whole site'],
+};
+function partial(key) {
+  const words = PARTIAL[key];
+  if (!words || typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('citymeter:partial', {detail: {id: key, label: words[0], effect: words[1], labelEn: words[2], effectEn: words[3]}}));
 }
 
 async function init() {
@@ -1905,9 +2063,9 @@ async function init() {
       // Every registration of the registry (~1.9 MB over the wire, gzip): a slow phone link still gets there.
       fetchJSON('data/factories.json', {timeout: 90000}),
       fetchJSON('data/area-index.json', {timeout: 30000}),
-      fetchJSON('data/provinces.geojson', {timeout: 30000}).catch(e => { console.warn('Province frames unavailable', e); return null; }),
+      fetchJSON('data/provinces.geojson', {timeout: 30000}).catch(e => { partial('data/provinces.geojson'); console.warn('Province frames unavailable', e); return null; }),
       // CityMETER Industrial Estate context (outlines, around sets, directory name matches): the page works without it.
-      fetchJSON(`data/estate-context.json${RELEASE ? `?v=${RELEASE}` : ''}`, {timeout: 30000}).catch(e => { console.warn('Estate context unavailable', e); return null; }),
+      fetchJSON(`data/estate-context.json${RELEASE ? `?v=${RELEASE}` : ''}`, {timeout: 30000}).catch(e => { partial('data/estate-context.json'); console.warn('Estate context unavailable', e); return null; }),
     ]);
     if (!Array.isArray(indexJSON?.provinces) || !indexJSON.provinces.length || !Array.isArray(indexJSON?.areas?.id)) {
       const e = new Error('Invalid area index'); e.resource = 'data/area-index.json'; e.phase = 'data-schema'; throw e;
@@ -1922,10 +2080,10 @@ async function init() {
     state.estates = decodeEstateContext(estatesJSON);
     $('legend-estate').hidden = !state.estates?.outlines.features.length;
     state.frames = createFrameStore({index: state.index, fetchJSON, version: RELEASE, onLoad: onFramesLoaded,
-      onError: (code, e) => { console.warn('Province outlines unavailable', code, e); $('map-status').dataset.framesError = code; }});
+      onError: (code, e) => { partial('frames'); console.warn('Province outlines unavailable', code, e); $('map-status').dataset.framesError = code; }});
     // Buildings per area (owner 2026-11-01, point 3): which อปท./เขต draw CityMETER Building V4 (js/shell/building-units.js).
     state.buildingUnits = createBuildingUnitStore({fetchJSON, version: RELEASE, onLoad: () => { if (state.loaded) updateSpatialLayers(); },
-      onError: (code, e) => { console.warn('Building units unavailable', code, e); if (state.loaded) updateSpatialLayers(); }});
+      onError: (code, e) => { partial('units'); console.warn('Building units unavailable', code, e); if (state.loaded) updateSpatialLayers(); }});
     state.buildingUnits.loadIndex();
 
     refreshOptionCounts();
