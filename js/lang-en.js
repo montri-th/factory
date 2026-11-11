@@ -53,6 +53,11 @@ export default {
     'ข้อมูล': 'Data',
     'เปิดแผงข้อมูลและตัวกรอง': 'Open the data panel and filters',
     'กลับไปแผนที่': 'Back to the map',
+    'กลับไปหน้าก่อน': 'Back to the previous view',
+    'ขยายแผ่นข้อมูล': 'Open the sheet',
+    'ย่อแผ่นข้อมูล': 'Make the sheet shorter',
+    'แผนที่หยุดแสดงผล ข้อมูล ตาราง และกราฟยังใช้งานได้': 'The map stopped drawing. The data, the table and the charts still work.',
+    'เปิดแผนที่อีกครั้ง': 'Start the map again',
     'กลับ': 'Back',
     // Scope (the heading and every provenance line, AGENTS.md: scope is part of the name)
     'ทะเบียนโรงงานทุกขนาด': 'Factory registrations of every size',

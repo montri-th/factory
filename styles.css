@@ -65,6 +65,8 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 .text-link { font-size: 12px; }
 /* Phone portrait only (see the media query): วิธีใช้ and the product statement at the top of the sheet. */
 .sheet-links { display: none; }
+/* The phone sheet's bar (back · grip · close) exists only in the phone-portrait sheet (see the media query). */
+.sheet-bar { display: none; }
 .theme-control select { font-size: 12px; border: 0; background: transparent; min-height: 44px; width: 80px; padding: 8px 4px; }
 
 .workspace { height: calc(100dvh - 48px); position: relative; }
@@ -518,10 +520,30 @@ td small { display: block; color: var(--text-metadata); font-size: 12px; margin-
   .crumbs.is-collapsible:not(.is-expanded) .crumb-ellipsis { display: inline-flex; }
   .crumbs.is-collapsible:not(.is-expanded) .crumb-ellipsis::before { content: none; padding: 0; }
   .map-aha .btn { min-height: 36px; font-size: 12px; padding: 4px 12px; }
-  .panel { position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-height: 56dvh; border-left: 0; border-top: 1px solid var(--border-default); border-radius: var(--radius-md) var(--radius-md) 0 0; transform: translateY(100%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s; z-index: 12; padding-bottom: env(safe-area-inset-bottom); }
-  .panel.is-open { transform: none; visibility: visible; transition: transform .2s ease; }
-  .panel-top { position: static; padding: 6px 14px 8px; }
-  .panel button.mobile-close { position: sticky; top: 0; z-index: 3; display: flex; width: calc(100% - 28px); margin: 8px 14px 0; justify-content: center; border-radius: var(--radius-sm); min-height: 40px; font-size: 13px; background: var(--surface-card); }
+  /* The sheet (0.7.0, owner 2026-11-11 20:38: “เหลือพื้นที่ให้ดูแผนที่น้อยมาก info panel กินพื้นที่หน้าจอไปหมด แถมใน panel
+     ก็จัดวางข้อมูลโล่งๆ”): a stay, a building, a station or an area opens short (data-sheet="peek": its name, key facts
+     and actions, nothing else), the grip or a swipe up opens the rest (full, 88 % of the screen), a swipe down closes;
+     the overview opens at 56 % as before (half). Measured on Hotel at 393 × 659 with a stay open (โฮเทล โคลเวอร์ ป่าตอง):
+     free map below the toolbar 194 px → 297 px. */
+  .panel { position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-height: 56dvh; border-left: 0; border-top: 1px solid var(--border-default); border-radius: var(--radius-md) var(--radius-md) 0 0; transform: translateY(100%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s, max-height .2s ease; z-index: 12; padding-bottom: env(safe-area-inset-bottom); }
+  .panel.is-open { transform: none; visibility: visible; transition: transform .2s ease, max-height .2s ease; }
+  .panel[data-sheet="peek"] { max-height: 56dvh; }
+  .panel[data-sheet="full"] { max-height: 88dvh; }
+  .sheet-bar { position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: minmax(44px, max-content) minmax(0, 1fr) minmax(44px, max-content); grid-template-areas: "back grip close"; align-items: center; column-gap: 4px; padding: 2px 8px 0; background: var(--surface-card); border-radius: var(--radius-md) var(--radius-md) 0 0; touch-action: none; }
+  .sheet-bar .sheet-back { grid-area: back; justify-self: start; min-height: 36px; padding: 4px 12px 4px 10px; font-size: 12px; }
+  .sheet-bar .sheet-back[hidden] { display: none; }
+  .sheet-grip { grid-area: grip; min-height: 44px; padding: 0; border: 0; border-radius: var(--radius-sm); background: none; display: flex; align-items: center; justify-content: center; }
+  .sheet-grip::before { content: ""; width: 40px; height: 4px; border-radius: 2px; background: var(--border-emphasis); }
+  .sheet-grip:hover { background: none; }
+  .panel button.mobile-close { grid-area: close; justify-self: end; display: inline-flex; width: 44px; min-height: 44px; padding: 0; border: 0; background: none; }
+  .panel button.mobile-close:hover { background: var(--surface-alt); }
+  .panel-top { position: static; padding: 0 14px 8px; }
+  /* The sheet of a stay, building, station or area: no help links (they stay in the overview's sheet) and no second
+     back button; short, it shows the card's head alone. */
+  .panel:not([data-mode="overview"]) .sheet-links, .panel:not([data-mode="overview"]) .detail-head .back { display: none; }
+  .panel[data-sheet="peek"] .panel-top, .panel[data-sheet="peek"] .panel-view > :not(.detail-head),
+  .panel[data-sheet="peek"] .detail-head .source-details, .panel[data-sheet="peek"] .detail-head .detail-actions .source-link { display: none; }
+  .panel[data-sheet="peek"] { overflow-y: auto; }
   .map-toolbar button#mobile-panel { order: -1; }
   .dataset-heading h1 { font-size: 20px; }
   .dataset-heading .intro, .dataset-heading .scope-line { display: none; }
@@ -529,7 +551,8 @@ td small { display: block; color: var(--text-metadata); font-size: 12px; margin-
      dataset heading and the search, which return with the overview; the heading stays for screen readers. */
   .panel:not([data-mode="overview"]) .dataset-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .panel:not([data-mode="overview"]) .filters { display: none; }
-  .panel-view { padding: 12px 14px 20px; gap: 16px; }
+  .panel-view { padding: 2px 14px 16px; gap: 14px; }
+  .panel[data-mode="overview"] .panel-view { padding-top: 12px; }
   .insights { max-height: 56%; height: 340px; padding: 0 10px 8px; }
   .insights.is-collapsed { height: 48px; }
   .insight-heading { gap: 6px; min-height: 47px; }
@@ -769,3 +792,28 @@ td.num, th.num { text-align: right; }
 .detail-actions a.btn { border: 1px solid var(--border-default); border-radius: 999px; min-height: 40px; padding: 8px 16px; text-decoration: none; color: var(--text-primary); background: var(--surface-raised); }
 .detail-actions a.btn.primary { color: var(--surface-canvas); background: var(--text-primary); border-color: var(--text-primary); }
 .detail-actions a.btn.primary:hover { background: var(--text-secondary); border-color: var(--text-secondary); }
+
+/* The phone card (0.7.0, owner 2026-11-11 20:38: “ใน panel ก็จัดวางข้อมูลโล่งๆ ควรจะจัดได้ดีกว่านี้มาก”): after every
+   base rule of the card, so these win. The head reads as one block — mark and name, the facts, the actions in one row
+   — and the short sheet shows whole rows only. */
+@media (max-width: 760px) and (orientation: portrait) {
+  .detail-head { gap: 4px; }
+  .detail-head h2 { font-size: 20px; line-height: 1.3; }
+  .detail-head .subtle { font-size: 13px; }
+  .identity { gap: 10px; margin-top: 0; }
+  .identity-cue, .identity-pic { width: 40px; height: 40px; flex-basis: 40px; }
+  .identity-cue { border-radius: 10px; }
+  .identity-cue .cue-shape { width: 20px; height: 20px; }
+  .identity-pic { font-size: 36px; }
+  .branch-name { font-size: 13px; margin-top: 0; }
+  .fact-chips { margin-top: 8px; }
+  .rank-line { margin-top: 2px; }
+  .detail-head .metrics.compact { margin-top: 8px; padding: 8px 0; }
+  /* One row where the three fit (a stay); a longer label (“Street View ใกล้สถานี”) takes a row of its own. */
+  .ask-bar { margin-top: 10px; }
+  .ask-link { flex: 1 1 auto; justify-content: center; white-space: nowrap; padding: 4px 10px 4px 8px; }
+  .detail-actions { margin-top: 8px; }
+  /* Short: an area keeps its two own actions (the list, the comparison); the outside links wait in the open sheet,
+     as do a stay's chain logo (its brand is named in the facts) and the lines under the facts. */
+  .panel[data-sheet="peek"][data-mode="area"] .ask-bar, .panel[data-sheet="peek"] .identity-logo, .panel[data-sheet="peek"] .detail-head > .fact-line { display: none; }
+}

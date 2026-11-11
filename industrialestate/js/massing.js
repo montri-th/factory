@@ -252,7 +252,7 @@ export function outerRings(feature) {
  * feature as a whole — one OpenFreeMap feature can carry many buildings — so its polygons outside the focus come back
  * as `context` features, unshaped, to be drawn like the city tier.
  */
-export function shapeTile(tile, layer, {regions = [], hosts = [], radiusM, offsetM, segments = 3, zones = []} = {}) {
+export function shapeTile(tile, layer, {regions = [], hosts = [], radiusM, offsetM, segments = 3, zones = [], near = null} = {}) {
   const extent = layer.extent || 4096;
   const mpu = metresPerTileUnit(tile, extent);
   const r = radiusM / mpu, d = offsetM / mpu;
@@ -260,6 +260,9 @@ export function shapeTile(tile, layer, {regions = [], hosts = [], radiusM, offse
   const toTile = ring => ring.map(([lon, lat]) => lonLatToTileUnits(lon, lat, tile, extent));
   const toLonLat = ring => ring.map(([px, py]) => tileToLonLat(px, py, tile, extent));
   const regionRings = regions.map(toTile), hostRings = hosts.map(toTile);
+  // `near` (a lon/lat ring round the camera, a lean budget): only the focus buildings that meet it are shaped.
+  const nearUnits = Array.isArray(near) && near.length >= 4 ? toTile(near) : null;
+  const inFocus = outer => (!nearUnits || ringsIntersect(outer, nearUnits)) && regionRings.some(region => ringsIntersect(outer, region));
   const zoneRings = zonesInTile(zones, tile, extent);
   const features = [], footprints = [], hiddenIds = new Set(), context = [], partOutlines = [];
   let kept = 0, dropped = 0, replaced = 0, ordinal = 0, outlineOrdinal = OUTLINE_ORDINAL;
@@ -285,7 +288,7 @@ export function shapeTile(tile, layer, {regions = [], hosts = [], radiusM, offse
         if (!ring || !isClockwise(ring)) continue;
         const id = focusFeatureId(tile, outlineOrdinal++);
         const outer = clipRingToBox(ring, box);
-        if (!outer || !regionRings.some(region => ringsIntersect(outer, region))) continue;
+        if (!outer || !inFocus(outer)) continue;
         footprints.push({id, osmId: f.id ?? null, outer: toLonLat(outer), holes: [], height: Number(f.properties.render_height) || 0, base: 0, tile: {x: tile.x, y: tile.y, z: tile.z}, outline: true});
         if (zoneOutlines.length && inZones(interiorOf(ring), zoneRings)) partOutlines.push(toLonLat(outer));
       }
@@ -308,7 +311,7 @@ export function shapeTile(tile, layer, {regions = [], hosts = [], radiusM, offse
       const id = focusFeatureId(tile, ordinal++); // counted before the focus/host/zone filters: stable per building
       const outer = clipRingToBox(poly.outer, box);
       if (!outer) continue;
-      let place = regionRings.some(region => ringsIntersect(outer, region)) ? 'focus' : 'outside';
+      let place = inFocus(outer) ? 'focus' : 'outside';
       if (place === 'focus' && hostRings.some(host => ringsIntersect(outer, host))) place = 'host';
       else if (place === 'focus' && zoneRings.length) {
         const at = interiorOf(poly.outer);
@@ -352,7 +355,7 @@ export function shapeTile(tile, layer, {regions = [], hosts = [], radiusM, offse
  * `height_m`, the dataset's model estimate (cmHeight). Footprints carry `source: 'cm'` and are whole (never cut by
  * a tile edge). Returns {features, footprints, kept, away, shared, inParts}.
  */
-export function shapeCmTile(tile, layer, {regions = [], radiusM, offsetM, segments = 3, slot = 0, skipRings = [], seen = new Set()} = {}) {
+export function shapeCmTile(tile, layer, {regions = [], radiusM, offsetM, segments = 3, slot = 0, skipRings = [], seen = new Set(), near = null} = {}) {
   const features = [], footprints = [];
   let kept = 0, away = 0, shared = 0, inParts = 0, ordinal = 0;
   if (!layer?.features?.length) return {features, footprints, kept, away, shared, inParts};
@@ -362,6 +365,7 @@ export function shapeCmTile(tile, layer, {regions = [], radiusM, offsetM, segmen
   const toTile = ring => ring.map(([lon, lat]) => lonLatToTileUnits(lon, lat, tile, extent));
   const toLonLat = ring => ring.map(([px, py]) => tileToLonLat(px, py, tile, extent));
   const regionRings = regions.map(toTile);
+  const nearUnits = Array.isArray(near) && near.length >= 4 ? toTile(near) : null;
   const tb = tileBox(tile), skip = skipRings.filter(ring => boxesMeet(ringBox(ring), tb)).map(toTile);
   for (const f of layer.features) {
     if (f.type !== 3) continue;
@@ -381,6 +385,7 @@ export function shapeCmTile(tile, layer, {regions = [], radiusM, offsetM, segmen
       const key = `${height}|${outer.length}|${outer[0][0].toFixed(7)},${outer[0][1].toFixed(7)}|${outer[1][0].toFixed(7)},${outer[1][1].toFixed(7)}`;
       if (seen.has(key)) { shared++; continue; }
       seen.add(key);
+      if (nearUnits && !ringsIntersect(poly.outer, nearUnits)) continue;
       if (!regionRings.some(region => ringsIntersect(poly.outer, region))) continue;
       if (skip.some(o => pointInRing(at, o))) { inParts++; continue; }
       const shapedOuter = roundRing(offsetRing(poly.outer, d, 1), r, segments, {encloseOffset: d});
@@ -424,6 +429,23 @@ export function tilesForRegions(regions, z = TILE_ZOOM, max = MAX_TILES, center 
   return {tiles: tiles.slice(0, max), truncated: tiles.length > max, total: tiles.length};
 }
 
+/**
+ * A lean budget's part of a wide focus (js/shell/maplibre-guard.js#mapBudget; owner 2026-11-11 20:38, a phone that
+ * went blank): the focus buildings within `radiusM` of the camera, as a ring round the centre of the camera's cell —
+ * cells of radiusM / 3, so the same ring comes back until the camera has moved a third of the radius. null when the
+ * regions are no wider than the ring would be (a stay's or a station's own square is always shaped whole).
+ */
+export function nearRing(regions, center, radiusM, sides = 16) {
+  if (!(radiusM > 0) || !regions.length || !Array.isArray(center) || !center.every(Number.isFinite)) return null;
+  const [w, s, e, n] = bboxOfRings(regions);
+  const ky = 110574, kx = 111320 * Math.cos((((s + n) / 2) * Math.PI) / 180);
+  if (Math.max((e - w) * kx, (n - s) * ky) <= radiusM * 2.5) return null;
+  const cell = radiusM / 3, cx = Math.round((center[0] * kx) / cell), cy = Math.round((center[1] * ky) / cell);
+  const lon = (cx * cell) / kx, lat = (cy * cell) / ky, ring = [];
+  for (let i = 0; i <= sides; i++) { const a = (i % sides) * 2 * Math.PI / sides; ring.push([lon + (Math.cos(a) * radiusM) / kx, lat + (Math.sin(a) * radiusM) / ky]); }
+  return {ring, key: `${cx},${cy}`, center: [lon, lat]};
+}
+
 /** A turn for input and frames between tiles of one update (Phase 0, 2026-11-11): resolves in a new task. */
 const SLICE_MS = 12;
 const now = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -434,7 +456,11 @@ const breathe = () => new Promise(resolve => setTimeout(resolve, 0));
  * (OpenMapTiles schema). `tileUrl(tile)` returns the URL of one tile; the app
  * reads it from the same TileJSON MapLibre uses.
  */
-export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors, tileUrl, cmTileUrl = null, cmAttribution = '', fetchImpl = (...a) => fetch(...a), onResult = null} = {}) {
+export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors, tileUrl, cmTileUrl = null, cmAttribution = '', fetchImpl = (...a) => fetch(...a), onResult = null, budget = null} = {}) {
+  // A lean budget (a phone, or a page that was stopped): {tiles, cmRequests, radiusM, focusZoom}; null = everything, as before.
+  const lean = budget && budget.radiusM > 0 ? budget : null;
+  const maxTiles = budget?.tiles > 0 ? Math.min(MAX_TILES, budget.tiles) : MAX_TILES;
+  const maxCm = budget?.cmRequests > 0 ? Math.min(MAX_CM_REQUESTS, budget.cmRequests) : MAX_CM_REQUESTS;
   const palette = {quiet: '#ECEBE5', focus: '#E6E3DA', ground: '#EEF1EE', venue: '#347DA8', ...colors};
   const cityColor = () => ['interpolate', ['linear'], ['coalesce', ['feature-state', 'fade'], 1], 0, palette.quiet, 1, palette.ground];
   // Context features carry their fade as a property (written at shaping time and when the anchors change).
@@ -554,7 +580,7 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     })();
     cmCache.set(request.key, task);
     task.catch(() => cmCache.delete(request.key));
-    if (cmCache.size > 64) cmCache.delete(cmCache.keys().next().value);
+    if (cmCache.size > (lean ? 16 : 64)) cmCache.delete(cmCache.keys().next().value);
     return task;
   }
   async function loadTile(tile) {
@@ -568,7 +594,7 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     })();
     cache.set(key, task);
     task.catch(() => cache.delete(key));
-    if (cache.size > 24) cache.delete(cache.keys().next().value);
+    if (cache.size > (lean ? 8 : 24)) cache.delete(cache.keys().next().value);
     return task;
   }
 
@@ -595,17 +621,22 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     for (const id of [FOCUS_LAYER, OCCLUDER_LAYER]) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', enabled ? 'visible' : 'none');
     const bucket = Math.floor(zoom);
     const camera = center || (typeof map.getCenter === 'function' ? map.getCenter().toArray() : null);
-    const {tiles, truncated} = tilesForRegions(regions, TILE_ZOOM, MAX_TILES, camera);
+    // A lean budget shapes a wide focus round the camera only, and not below its zoom (the city tier draws there).
+    const near = lean ? nearRing(regions, camera, lean.radiusM) : null;
+    const waiting = Boolean(near) && bucket < (lean.focusZoom || 0);
+    const {tiles, truncated} = tilesForRegions(near ? [near.ring] : regions, TILE_ZOOM, maxTiles, near ? near.center : camera);
     const ready = typeof tileUrl === 'function' && tiles.length > 0 && tiles.every(t => Boolean(tileUrl(t)));
-    const plan = typeof cmTileUrl === 'function' ? planCmRequests(tiles, zones, {center: camera}) : {requests: [], zonesByTile: new Map(), truncated: false};
+    const plan = typeof cmTileUrl === 'function' && !waiting ? planCmRequests(tiles, zones, {center: camera, max: maxCm}) : {requests: [], zonesByTile: new Map(), truncated: false};
     const ringKey = rings => `${rings.length}:${rings.map(r => r.length + ':' + r[0]?.join(',')).join('|')}`;
-    const key = `${enabled}|${ready}|${bucket}|${city}|${ringKey(regions)}|${ringKey(hosts)}|${tiles.map(t => `${t.x}/${t.y}`).join(',')}|${plan.requests.map(q => q.key).join(',')}`;
+    const key = `${enabled}|${ready}|${bucket}|${city}|${ringKey(regions)}|${ringKey(hosts)}|${tiles.map(t => `${t.x}/${t.y}`).join(',')}|${plan.requests.map(q => q.key).join(',')}|${near ? (waiting ? 'wait' : near.key) : ''}`;
     if (key === lastKey) return {features: 0, tiles: 0, cached: true};
-    lastKey = key; lastBucket = bucket; lastTruncated = truncated;
-    if (!enabled || !regions.length || !ready) {
+    // Following the camera (onRetile) also when the focus is shaped round it.
+    lastKey = key; lastBucket = bucket; lastTruncated = truncated || Boolean(near);
+    if (!enabled || !regions.length || !ready || waiting) {
+      token++; // an update still shaping for the previous state is not applied
       map.getSource(FOCUS_SOURCE)?.setData({type: 'FeatureCollection', features: []}); setHidden([]); setContext([]); setCredit(false);
       currentFeatures = []; setFootprints([]); setOccluders([]); setFocusMinZoom(CITY_MIN_ZOOM);
-      const empty = {features: 0, tiles: 0, ready};
+      const empty = {features: 0, tiles: 0, ready, waiting};
       if (typeof onResult === 'function') { try { onResult(empty); } catch (e) { console.warn('Massing onResult', e); } }
       return empty;
     }
@@ -642,7 +673,7 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     for (let i = 0; i < layers.length; i++) {
       const layer = layers[i];
       if (!layer) continue;
-      const shaped = shapeTile(tiles[i], layer, {regions, hosts, radiusM, offsetM, zones: zonesOfTile(tiles[i])});
+      const shaped = shapeTile(tiles[i], layer, {regions, hosts, radiusM, offsetM, zones: zonesOfTile(tiles[i]), near: near?.ring || null});
       features.push(...shaped.features); footprints.push(...shaped.footprints); context.push(...shaped.context); partOutlines.push(...shaped.partOutlines);
       shaped.hiddenIds.forEach(id => hidden.add(id)); kept += shaped.kept; dropped += shaped.dropped; replaced += shaped.replaced;
       if (now() - sliceStart > SLICE_MS) {
@@ -661,7 +692,7 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     plan.requests.forEach((q, i) => {
       const k = `${q.tile.z}/${q.tile.x}/${q.tile.y}`;
       if (!cmLayers[i] || failed.get(k)?.has(q.zone.id)) return;
-      const shaped = shapeCmTile(q.tile, cmLayers[i], {regions, radiusM, offsetM, slot: q.slot, skipRings: partOutlines, seen});
+      const shaped = shapeCmTile(q.tile, cmLayers[i], {regions, radiusM, offsetM, slot: q.slot, skipRings: partOutlines, seen, near: near?.ring || null});
       features.push(...shaped.features); footprints.push(...shaped.footprints);
       cm.kept += shaped.kept; cm.away += shaped.away; cm.shared += shaped.shared; cm.inParts += shaped.inParts;
     });
@@ -672,9 +703,9 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     setHidden(hidden);
     setContext(context);
     setCredit(cm.kept > 0);
-    setFocusMinZoom(city && !truncated ? FOCUS_MIN_ZOOM : CITY_MIN_ZOOM);
+    setFocusMinZoom(city && !truncated && !near ? FOCUS_MIN_ZOOM : CITY_MIN_ZOOM);
     updateOcclusion();
-    const result = {features: kept + cm.kept, osm: kept, droppedForHosts: dropped, replaced, context: context.length, cm, tiles: tiles.length, truncated, minZoom: focusMinZoom, radiusM, offsetM, occluders: occluderIds.length, version};
+    const result = {features: kept + cm.kept, osm: kept, droppedForHosts: dropped, replaced, context: context.length, cm, tiles: tiles.length, truncated, near: Boolean(near), minZoom: focusMinZoom, radiusM, offsetM, occluders: occluderIds.length, version};
     // Every applied result (including zoom-triggered rebuilds) reaches the host app through onResult,
     // so a caller whose own update was superseded still sees the figures that are on screen.
     if (typeof onResult === 'function') { try { onResult(result); } catch (e) { console.warn('Massing onResult', e); } }

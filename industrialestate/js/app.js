@@ -26,7 +26,7 @@ import {buildMapStyle, basemapPalette, TILEJSON_URL, MASSING_BEFORE} from './she
 import {installMassing, outerRings, GEOJSON_MAXZOOM} from './massing.js';
 import {createBuildingUnitStore, cmTileUrl, CM_ATTRIBUTION} from './shell/building-units.js';
 import {applyPreset, fitPitched, presetFor} from './shell/camera.js';
-import {guardRetainedTiles, guardElevationFreeze} from './shell/maplibre-guard.js';
+import {guardRetainedTiles, guardElevationFreeze, mapBudget, budgetPixelRatio, reloadOnContextLoss} from './shell/maplibre-guard.js';
 import {buildBreadcrumb, renderBreadcrumb} from './shell/breadcrumb.js';
 import {rampLegendHTML} from './scales.js';
 import {cueImage, seriesOf} from './cues.js';
@@ -424,7 +424,7 @@ function installSpatialLayers() {
     beforeId: MASSING_BEFORE,
     colors: {quiet: palette.massingQuiet, focus: palette.massingFocus, ground: palette.ground, venue: cssVar('--map-active-layer') || undefined},
     tileUrl: t => (state.tileTemplate ? state.tileTemplate.replace('{z}', t.z).replace('{x}', t.x).replace('{y}', t.y) : ''),
-    cmTileUrl, cmAttribution: CM_ATTRIBUTION,
+    cmTileUrl, cmAttribution: CM_ATTRIBUTION, budget: mapBudget().level === 'full' ? null : mapBudget(),
     onResult: result => { $('map-status').dataset.massing = `${result.features || 0}`; },
   });
   map.addSource(AROUND_SRC, {type: 'geojson', data: aroundCollection(), maxzoom: GEOJSON_MAXZOOM});
@@ -533,7 +533,7 @@ const MAP_LOCALE = EN
 
 function initMap() {
   state.mapTheme = theme();
-  state.map = new maplibregl.Map({container: 'map', center: [101.1, 13.1], zoom: 8, pitch: 0, maxPitch: 85, attributionControl: {compact: true}, locale: MAP_LOCALE, style: buildMapStyle(state.mapTheme)});
+  state.map = new maplibregl.Map({container: 'map', pixelRatio: budgetPixelRatio(mapBudget()), maxTileCacheZoomLevels: mapBudget().cacheZoomLevels, center: [101.1, 13.1], zoom: 8, pitch: 0, maxPitch: 85, attributionControl: {compact: true}, locale: MAP_LOCALE, style: buildMapStyle(state.mapTheme)});
   state.map.addControl(new maplibregl.NavigationControl({showCompass: true, visualizePitch: true}), 'top-right');
   state.labels = installEstateLabels(state.map, $('map'), {onSelect: id => selectEstate(id, {fromMap: true}), name: nameOf, num, reservedBottom: () => ($('insights')?.getBoundingClientRect().height || 0) + 12});
   state.map.on('style.load', installSpatialLayers);
@@ -541,6 +541,8 @@ function initMap() {
   state.map.on('mousemove', onMapMove);
   state.map.on('moveend', () => { if (state.loaded) updateMassing(); });
   state.map.on('error', e => console.warn('Map resource', e.error?.message || e));
+    // A lost WebGL context (a phone under memory pressure): say so and reload once, lean (js/shell/maplibre-guard.js).
+    reloadOnContextLoss(state.map);
   fetch(TILEJSON_URL).then(r => r.json()).then(j => { state.tileTemplate = j.tiles?.[0] || ''; if (state.loaded) updateMassing(); }).catch(e => { partial('basemap'); console.warn('TileJSON', e); });
 }
 
