@@ -214,7 +214,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 /* Ranking list (panel) */
 .rank-list { list-style: none; padding: 0; display: grid; gap: 4px; }
-.rank-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) 72px 36px; align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 6px 8px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; text-align: left; white-space: normal; }
+.rank-row { display: grid; grid-template-columns: 22px minmax(0, 1fr) 72px minmax(64px, max-content); align-items: center; gap: 8px; width: 100%; min-height: 44px; padding: 6px 8px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; text-align: left; white-space: normal; }
 .rank-row:hover { background: var(--surface-alt); }
 .rank-row[aria-pressed="true"], .rank-row.is-selected { background: var(--surface-alt); border-color: var(--border-default); }
 .rank-index { font-size: 12px; color: var(--text-metadata); }
@@ -253,7 +253,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 /* Mix bars */
 .mix-list { list-style: none; padding: 0; display: grid; gap: 6px; }
-.mix-list li { display: grid; grid-template-columns: minmax(0, 168px) minmax(0, 1fr) 48px; align-items: center; gap: 8px; font-size: 12px; }
+.mix-list li { display: grid; grid-template-columns: minmax(0, 168px) minmax(0, 1fr) minmax(56px, max-content); align-items: center; gap: 8px; font-size: 12px; }
 .mix-label { display: flex; align-items: center; gap: 6px; min-width: 0; line-height: 1.3; overflow-wrap: anywhere; }
 .mix-track { height: 10px; background: var(--surface-soft); border-radius: 3px; overflow: hidden; border: 1px solid var(--border-hairline); }
 .mix-fill { display: block; height: 100%; background: var(--pin-fill, var(--series-9-fill)); }
@@ -528,7 +528,9 @@ td small { display: block; color: var(--text-metadata); font-size: 12px; margin-
   .panel { position: fixed; top: auto; left: 0; right: 0; bottom: 0; width: 100%; max-height: 56dvh; border-left: 0; border-top: 1px solid var(--border-default); border-radius: var(--radius-md) var(--radius-md) 0 0; transform: translateY(100%); visibility: hidden; transition: transform .2s ease, visibility 0s linear .2s, max-height .2s ease; z-index: 12; padding-bottom: env(safe-area-inset-bottom); }
   .panel.is-open { transform: none; visibility: visible; transition: transform .2s ease, max-height .2s ease; }
   .panel[data-sheet="peek"] { max-height: 56dvh; }
-  .panel[data-sheet="full"] { max-height: 88dvh; }
+  /* Open, the sheet stops under the map's toolbar (top bar 48 + toolbar 48 + 8): at 88 % of a short screen it cut the
+     toolbar's buttons in half. */
+  .panel[data-sheet="full"] { max-height: min(88dvh, calc(100dvh - 104px)); }
   .sheet-bar { position: sticky; top: 0; z-index: 3; display: grid; grid-template-columns: minmax(44px, max-content) minmax(0, 1fr) minmax(44px, max-content); grid-template-areas: "back grip close"; align-items: center; column-gap: 4px; padding: 2px 8px 0; background: var(--surface-card); border-radius: var(--radius-md) var(--radius-md) 0 0; touch-action: none; }
   .sheet-bar .sheet-back { grid-area: back; justify-self: start; min-height: 36px; padding: 4px 12px 4px 10px; font-size: 12px; }
   .sheet-bar .sheet-back[hidden] { display: none; }
@@ -564,7 +566,7 @@ td small { display: block; color: var(--text-metadata); font-size: 12px; margin-
   .neighborhood-label, .province-label { max-width: 184px; font-size: 11px; }
   .bar-row { grid-template-columns: 16px minmax(70px, 110px) minmax(0, 1fr) 70px; gap: 6px; }
   .bar-row.is-share { grid-template-columns: minmax(70px, 120px) minmax(0, 1fr) 64px; }
-  .mix-list li { grid-template-columns: minmax(0, 132px) minmax(0, 1fr) 40px; }
+  .mix-list li { grid-template-columns: minmax(0, 132px) minmax(0, 1fr) minmax(56px, max-content); }
   .quality-bar { grid-template-columns: minmax(0, 1fr) 64px; }
   .quality-bar .mix-track { grid-column: 1 / -1; grid-row: 2; }
   .map-failure { inset: 25% 12px; }
@@ -691,7 +693,7 @@ button.fact-chip:hover { background: var(--surface-alt); }
 .metric-switch button:focus-visible { outline: 2px solid var(--interaction-focus-ring); outline-offset: 2px; }
 /* Group bars are buttons (filter to that group); the row keeps the mix grid. */
 .mix-list li:has(> .mix-row) { display: block; }
-.mix-row { display: grid; grid-template-columns: minmax(0, 168px) minmax(0, 1fr) 48px; align-items: center; gap: 8px; width: calc(100% + 8px); min-height: 32px; margin: 0 -4px; padding: 2px 4px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; color: inherit; font-size: 12px; text-align: left; white-space: normal; }
+.mix-row { display: grid; grid-template-columns: minmax(0, 168px) minmax(0, 1fr) minmax(56px, max-content); align-items: center; gap: 8px; width: calc(100% + 8px); min-height: 32px; margin: 0 -4px; padding: 2px 4px; border: 1px solid transparent; border-radius: var(--radius-sm); background: transparent; color: inherit; font-size: 12px; text-align: left; white-space: normal; }
 .mix-row:hover { background: var(--surface-alt); }
 /* Ordinal size bands, functional classes and official industry groups are not categories of the map: one neutral
    foundation fill (the family cue sits beside a group). */
@@ -709,7 +711,8 @@ button.fact-chip:hover { background: var(--surface-alt); }
 .compset .row-meta { flex-wrap: wrap; }
 td.num, th.num { text-align: right; }
 @media (max-width: 760px) and (orientation: portrait) {
-  .mix-row { grid-template-columns: minmax(0, 132px) minmax(0, 1fr) 40px; }
+  .mix-row { grid-template-columns: minmax(0, 132px) minmax(0, 1fr) minmax(56px, max-content); }
+  .rank-row { grid-template-columns: 22px minmax(0, 1fr) 44px minmax(64px, max-content); }
   .metric-switch button { min-height: 36px; }
 }
 
@@ -770,11 +773,11 @@ td.num, th.num { text-align: right; }
 .estate-links .estate-link { grid-area: auto; }
 .estate-name .link-button { text-align: left; font: inherit; }
 .registry-list .mix-label, .industry-list .mix-label { white-space: normal; }
-.industry-list li { grid-template-columns: minmax(0, 190px) minmax(0, 1fr) 56px; }
+.industry-list li { grid-template-columns: minmax(0, 190px) minmax(0, 1fr) minmax(56px, max-content); }
 .aha-industry .rail-compare li { grid-template-columns: minmax(0, 120px) minmax(0, 1fr) 44px; }
 .aha-secondary .cue-shape { width: 10px; height: 10px; flex-basis: 10px; margin: 0 3px 0 0; vertical-align: -1px; }
 @media (max-width: 760px) and (orientation: portrait) {
-  .industry-list li { grid-template-columns: minmax(0, 150px) minmax(0, 1fr) 48px; }
+  .industry-list li { grid-template-columns: minmax(0, 150px) minmax(0, 1fr) minmax(56px, max-content); }
 }
 
 /* ---------- CityMETER Industrial Estate in Factory (release 0.6.0) ----------
@@ -816,4 +819,18 @@ td.num, th.num { text-align: right; }
   /* Short: an area keeps its two own actions (the list, the comparison); the outside links wait in the open sheet,
      as do a stay's chain logo (its brand is named in the facts) and the lines under the facts. */
   .panel[data-sheet="peek"][data-mode="area"] .ask-bar, .panel[data-sheet="peek"] .identity-logo, .panel[data-sheet="peek"] .detail-head > .fact-line { display: none; }
+  /* The overview's sheet opens on the place, the search and the finding. The top bar names the product and the
+     dataset, so the heading stays for screen readers alone, and the two links share the breadcrumb's row. Measured on
+     Hotel at 393 × 659, where the sheet is 369 px: the finding's figure ended 374 px under the sheet's top (416 px
+     with a province chosen) — cut by the fold, or under it; now 279 px (321 px). */
+  .panel[data-mode="overview"] .panel-top { display: grid; grid-template-columns: minmax(0, 1fr) auto; align-items: baseline; column-gap: 12px; }
+  .panel[data-mode="overview"] .panel-top > * { grid-column: 1 / -1; min-width: 0; }
+  .panel[data-mode="overview"] .panel-top > .crumbs-nav { grid-column: 1; grid-row: 1; margin: 0; }
+  .panel[data-mode="overview"] .panel-top > .sheet-links { grid-column: 2; grid-row: 1; margin: 0; gap: 14px; }
+  .panel .dataset-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  .panel[data-mode="overview"] .filters { margin-top: 4px; }
+  /* A card's figures: each as wide as it needs, sharing the row (four equal columns pushed “40,620” into its
+     neighbour's mark). */
+  .metrics.compact { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+  .metrics.compact > .metric { flex: 1 1 auto; }
 }
