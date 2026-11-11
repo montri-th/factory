@@ -465,3 +465,27 @@ test('language: a pattern can translate a longer piece with its separators — �
   ]});
   assert.equal(translate('ผลิตทดสอบ: 3 จาก 10 หน่วยทดสอบ · 5 หน่วยทดสอบ'), 'Test making: 3 of 10 test units · 5 test units');
 });
+
+test('the launch script and the loader pin one map library with the same integrity values (shell 0.6.0)', async () => {
+  const launch = readFileSync(new URL('launch.js', SHELL), 'utf8');
+  const loader = await import('../js/shell/vendors.js');
+  const pinned = launch.match(/const MAP_LIBRARY=\{version:'([^']+)',script:'([^']+)',style:'([^']+)'\}/);
+  assert.ok(pinned, 'launch.js names the pinned map library');
+  assert.equal(pinned[1], loader.MAP_VERSION);
+  assert.equal(pinned[2], loader.MAP_INTEGRITY);
+  assert.equal(pinned[3], loader.MAP_CSS_INTEGRITY);
+  for (const value of [loader.MAP_INTEGRITY, loader.MAP_CSS_INTEGRITY]) assert.match(value, /^sha384-[A-Za-z0-9+/]{64}$/);
+  assert.equal(loader.MAP_URL, `https://unpkg.com/maplibre-gl@${loader.MAP_VERSION}/dist/maplibre-gl.js`);
+});
+
+test('the launch script keeps the app contract: ready, load-error, progress, partial and map-ready (shell 0.6.0)', () => {
+  const launch = readFileSync(new URL('launch.js', SHELL), 'utf8');
+  for (const name of ['citymeter:ready', 'citymeter:load-error', 'citymeter:progress', 'citymeter:partial', 'citymeter:map-ready']) {
+    assert.ok(launch.includes(`addEventListener('${name}'`), `launch.js listens for ${name}`);
+  }
+  // The notice is built from text nodes only: a label from a data file can never become markup.
+  assert.ok(!/innerHTML|insertAdjacentHTML|document\.write/.test(launch));
+  const css = readFileSync(new URL('../navigation.css', import.meta.url), 'utf8');
+  for (const rule of ['.data-notice', '.data-notice-toggle', '.data-notice-body', '.map-loading']) assert.ok(css.includes(rule + ' {'), `navigation.css styles ${rule}`);
+  assert.ok(!/\.data-notice[^{]*\{[^}]*border-left/.test(css), 'no rail on the notice');
+});

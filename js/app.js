@@ -1667,7 +1667,7 @@ function initMap() {
     // A camera move started by the user (drag, pinch, wheel, keys): a building found later never moves the camera again.
     state.map.on('movestart', e => { if (e.originalEvent) state.userCamera = true; });
     state.map.on('error', e => console.warn('Map resource', e.error?.message || e));
-    fetch(TILEJSON_URL).then(r => r.json()).then(j => { state.tileTemplate = j.tiles?.[0] || ''; if (state.loaded) updateSpatialLayers(); }).catch(e => console.warn('TileJSON', e));
+    fetch(TILEJSON_URL).then(r => r.json()).then(j => { state.tileTemplate = j.tiles?.[0] || ''; if (state.loaded) updateSpatialLayers(); }).catch(e => { partial('basemap'); console.warn('TileJSON', e); });
   } catch (e) {
     state.loaded = false; state.initialCameraDone = false;
     for (const cleanup of [() => state.attribObserver?.disconnect(), () => state.labels?.dispose(), () => state.provinceLabels?.dispose(), disposeSpatial, () => state.map?.remove()]) { try { cleanup(); } catch (err) { console.warn('Map cleanup', err); } }
@@ -1891,12 +1891,31 @@ function wireEvents() {
  */
 async function loadSites() {
   const json = await fetchJSON(`data/factory-sites.json${RELEASE ? `?v=${RELEASE}` : ''}`, {timeout: 60000})
-    .catch(e => { console.warn('Factory sites unavailable', e); return null; });
+    .catch(e => { partial('data/factory-sites.json'); console.warn('Factory sites unavailable', e); return null; });
   state.sites = attachSites(decodeSites(json), state.rowById);
   if (!state.sites || state.panel.mode !== 'factory' || !rowById(state.panel.id)?.site) return;
   siteOf.id = null;
   renderPanel();
   if (state.loaded) updateSpatialLayers();
+}
+
+/**
+ * A part of the data that did not load is said on the page (citymeter-shell 0.6.0, js/shell/launch.js
+ * `citymeter:partial`): what is missing and what that does to the result on screen, with a reload that keeps the
+ * address. The words live here, by file: [Thai name, Thai effect, English name, English effect].
+ */
+const PARTIAL = {
+  'data/provinces.geojson': ['กรอบจังหวัด', 'แผนที่ไม่แสดงขอบจังหวัด', 'Province outlines', 'The map shows no province outlines'],
+  'frames': ['เส้นขอบเขต/อำเภอ', 'บางจังหวัดไม่แสดงเส้นขอบเขต/อำเภอบนแผนที่', 'District outlines', 'Some provinces show no district outlines on the map'],
+  'units': ['รูปอาคารของ CityMETER', 'อาคารบางจังหวัดแสดงจากแผนที่ฐานแทนชุดอาคารของ CityMETER', 'CityMETER building shapes', 'Buildings in some provinces come from the basemap instead of the CityMETER set'],
+  'basemap': ['แผนที่ฐาน', 'ถนน แหล่งน้ำ และอาคารพื้นหลังอาจไม่แสดง ข้อมูลในแผงและตารางยังใช้ได้', 'Basemap', 'Roads, water and background buildings may be missing; the panel and the table still work'],
+  'data/estate-context.json': ['บริบทนิคมอุตสาหกรรม', 'ไม่แสดงขอบและข้อมูลของนิคมอุตสาหกรรม', 'Industrial-estate context', 'Estate outlines and estate facts are not shown'],
+  'data/factory-sites.json': ['พื้นที่โรงงาน', 'หน้าโรงงานแสดงเฉพาะอาคารใกล้หมุด ไม่แสดงทั้งพื้นที่โรงงาน', 'Factory sites', 'A factory page shows the building at its pin only, not the whole site'],
+};
+function partial(key) {
+  const words = PARTIAL[key];
+  if (!words || typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('citymeter:partial', {detail: {id: key, label: words[0], effect: words[1], labelEn: words[2], effectEn: words[3]}}));
 }
 
 async function init() {
@@ -1905,9 +1924,9 @@ async function init() {
       // Every registration of the registry (~1.9 MB over the wire, gzip): a slow phone link still gets there.
       fetchJSON('data/factories.json', {timeout: 90000}),
       fetchJSON('data/area-index.json', {timeout: 30000}),
-      fetchJSON('data/provinces.geojson', {timeout: 30000}).catch(e => { console.warn('Province frames unavailable', e); return null; }),
+      fetchJSON('data/provinces.geojson', {timeout: 30000}).catch(e => { partial('data/provinces.geojson'); console.warn('Province frames unavailable', e); return null; }),
       // CityMETER Industrial Estate context (outlines, around sets, directory name matches): the page works without it.
-      fetchJSON(`data/estate-context.json${RELEASE ? `?v=${RELEASE}` : ''}`, {timeout: 30000}).catch(e => { console.warn('Estate context unavailable', e); return null; }),
+      fetchJSON(`data/estate-context.json${RELEASE ? `?v=${RELEASE}` : ''}`, {timeout: 30000}).catch(e => { partial('data/estate-context.json'); console.warn('Estate context unavailable', e); return null; }),
     ]);
     if (!Array.isArray(indexJSON?.provinces) || !indexJSON.provinces.length || !Array.isArray(indexJSON?.areas?.id)) {
       const e = new Error('Invalid area index'); e.resource = 'data/area-index.json'; e.phase = 'data-schema'; throw e;
@@ -1922,10 +1941,10 @@ async function init() {
     state.estates = decodeEstateContext(estatesJSON);
     $('legend-estate').hidden = !state.estates?.outlines.features.length;
     state.frames = createFrameStore({index: state.index, fetchJSON, version: RELEASE, onLoad: onFramesLoaded,
-      onError: (code, e) => { console.warn('Province outlines unavailable', code, e); $('map-status').dataset.framesError = code; }});
+      onError: (code, e) => { partial('frames'); console.warn('Province outlines unavailable', code, e); $('map-status').dataset.framesError = code; }});
     // Buildings per area (owner 2026-11-01, point 3): which อปท./เขต draw CityMETER Building V4 (js/shell/building-units.js).
     state.buildingUnits = createBuildingUnitStore({fetchJSON, version: RELEASE, onLoad: () => { if (state.loaded) updateSpatialLayers(); },
-      onError: (code, e) => { console.warn('Building units unavailable', code, e); if (state.loaded) updateSpatialLayers(); }});
+      onError: (code, e) => { partial('units'); console.warn('Building units unavailable', code, e); if (state.loaded) updateSpatialLayers(); }});
     state.buildingUnits.loadIndex();
 
     refreshOptionCounts();

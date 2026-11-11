@@ -196,7 +196,7 @@ async function loadDirectory() {
     for (const rows of Object.values(d.estates || {})) for (const r of rows) if (r[1]) names.add(r[1]);
     keepNames(names);
     refreshDirectory();
-  }).catch(e => { console.warn('Directory unavailable', e); loadDirectory.promise = null; const box = $('directory-box'); if (box) box.innerHTML = `<p class="hint">${T('โหลดรายชื่อไม่สำเร็จ', 'The listings did not load')}</p>`; });
+  }).catch(e => { partial('data/directory.json'); console.warn('Directory unavailable', e); loadDirectory.promise = null; const box = $('directory-box'); if (box) box.innerHTML = `<p class="hint">${T('โหลดรายชื่อไม่สำเร็จ', 'The listings did not load')}</p>`; });
   return loadDirectory.promise;
 }
 
@@ -207,7 +207,7 @@ async function loadAround() {
     keepNames(new Set(d.rows.map(r => r[1]).filter(Boolean)));
     if (state.panel.mode === 'estate') { const scroll = $('panel').scrollTop; renderPanel(); $('panel').scrollTop = scroll; }
     updateAroundLayer();
-  }).catch(e => { console.warn('Around set unavailable', e); loadAround.promise = null; });
+  }).catch(e => { partial('data/around.json'); console.warn('Around set unavailable', e); loadAround.promise = null; });
   return loadAround.promise;
 }
 
@@ -541,7 +541,7 @@ function initMap() {
   state.map.on('mousemove', onMapMove);
   state.map.on('moveend', () => { if (state.loaded) updateMassing(); });
   state.map.on('error', e => console.warn('Map resource', e.error?.message || e));
-  fetch(TILEJSON_URL).then(r => r.json()).then(j => { state.tileTemplate = j.tiles?.[0] || ''; if (state.loaded) updateMassing(); }).catch(e => console.warn('TileJSON', e));
+  fetch(TILEJSON_URL).then(r => r.json()).then(j => { state.tileTemplate = j.tiles?.[0] || ''; if (state.loaded) updateMassing(); }).catch(e => { partial('basemap'); console.warn('TileJSON', e); });
 }
 
 async function startMap() {
@@ -689,13 +689,31 @@ function wireEvents() {
   matchMedia('(max-width: 760px) and (orientation: portrait)').addEventListener?.('change', () => { if (!mobilePortrait()) $('panel').classList.remove('is-open'); renderPanel(); });
 }
 
+/**
+ * A part of the data that did not load is said on the page (citymeter-shell 0.6.0, js/shell/launch.js
+ * `citymeter:partial`): what is missing and what that does to the result on screen, with a reload that keeps the
+ * address. The words live here, by file: [Thai name, Thai effect, English name, English effect].
+ */
+const PARTIAL = {
+  'data/provinces.geojson': ['กรอบจังหวัด', 'แผนที่ไม่แสดงขอบจังหวัด', 'Province outlines', 'The map shows no province outlines'],
+  'units': ['รูปอาคารของ CityMETER', 'อาคารบางจังหวัดแสดงจากแผนที่ฐานแทนชุดอาคารของ CityMETER', 'CityMETER building shapes', 'Buildings in some provinces come from the basemap instead of the CityMETER set'],
+  'basemap': ['แผนที่ฐาน', 'ถนน แหล่งน้ำ และอาคารพื้นหลังอาจไม่แสดง ข้อมูลในแผงและตารางยังใช้ได้', 'Basemap', 'Roads, water and background buildings may be missing; the panel and the table still work'],
+  'data/directory.json': ['รายชื่อโรงงานในนิคม', 'ไม่แสดงรายชื่อโรงงานของนิคม', 'Factory directory', 'An estate\'s factory list is not shown'],
+  'data/around.json': ['สิ่งที่อยู่รอบนิคม', 'ไม่แสดงสิ่งที่อยู่รอบนิคม', 'Around the estate', 'What lies around an estate is not shown'],
+};
+function partial(key) {
+  const words = PARTIAL[key];
+  if (!words || typeof window === 'undefined') return;
+  window.dispatchEvent(new CustomEvent('citymeter:partial', {detail: {id: key, label: words[0], effect: words[1], labelEn: words[2], effectEn: words[3]}}));
+}
+
 async function init() {
   try {
     const [estatesJSON, indexJSON, boundariesJSON, provincesJSON] = await Promise.all([
       fetchJSON(`data/estates.json?v=${RELEASE}`, {timeout: 30000}),
       fetchJSON(`data/area-index.json?v=${RELEASE}`, {timeout: 30000}),
       fetchJSON(`data/boundaries.geojson?v=${RELEASE}`, {timeout: 30000}),
-      fetchJSON(`data/provinces.geojson?v=${RELEASE}`, {timeout: 30000}).catch(e => { console.warn('Province outlines unavailable', e); return {type: 'FeatureCollection', features: []}; }),
+      fetchJSON(`data/provinces.geojson?v=${RELEASE}`, {timeout: 30000}).catch(e => { partial('data/provinces.geojson'); console.warn('Province outlines unavailable', e); return {type: 'FeatureCollection', features: []}; }),
     ]);
     if (!Array.isArray(estatesJSON?.estates) || !Array.isArray(indexJSON?.provinces) || boundariesJSON?.type !== 'FeatureCollection') {
       const e = new Error('Invalid data'); e.phase = 'data-schema'; throw e;
@@ -706,7 +724,7 @@ async function init() {
     state.provincesGeo = provincesJSON;
     registerDataNames({index: indexJSON, data: state.data});
     state.buildingUnits = createBuildingUnitStore({fetchJSON, version: RELEASE, onLoad: () => { if (state.loaded) updateMassing(); },
-      onError: (code, e) => { console.warn('Building units unavailable', code, e); if (state.loaded) updateMassing(); }});
+      onError: (code, e) => { partial('units'); console.warn('Building units unavailable', code, e); if (state.loaded) updateMassing(); }});
     state.buildingUnits.loadIndex();
     refreshOptions();
     restoreFromURL();
