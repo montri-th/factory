@@ -426,7 +426,7 @@ function renderPanel(summary = summarize(state.rows)) {
   const key = `${mode}:${id}:${$('province').value}:${$('group').value}`;
   $('sheet-back').hidden = state.panel.mode === 'overview';
   // A new subject opens the phone sheet at its resting height (short for an item or an area).
-  if (key !== renderPanel.lastKey) { $('panel').scrollTop = 0; setSheet(restSheet()); }
+  if (key !== renderPanel.lastKey) { $('panel').scrollTop = 0; setSheet(restSheet()); state.readerPitch = false; state.tiltTo = null; }
   renderPanel.lastKey = key;
 }
 
@@ -1675,6 +1675,10 @@ function initMap() {
     state.map.on('mousemove', onMapMove);
     // A camera move started by the user (drag, pinch, wheel, keys): a building found later never moves the camera again.
     state.map.on('movestart', e => { if (e.originalEvent) state.userCamera = true; });
+    // tiltWhenNear: any new move calls the pending tilt off; a pitch gesture makes the pitch the reader's.
+    state.map.on('movestart', () => clearTimeout(state.tiltTimer));
+    state.map.on('pitchstart', e => { if (e.originalEvent) { state.readerPitch = true; state.tiltTo = null; } });
+    state.map.on('moveend', tiltWhenNear);
     state.map.on('error', e => { watchBasemap.error(e); console.warn('Map resource', e.error?.message || e); });
     state.map.on('sourcedata', watchBasemap.data);
     // A lost WebGL context leaves an empty map: start a new one in the same place (js/shell/maplibre-guard.js#watchContext).
@@ -1763,8 +1767,32 @@ function ensure3d() {
   return true;
 }
 
+/**
+ * A phone's plan view turns 3D where the buildings are (owner 2026-11-11 20:38: “ลอง pan แผนที่ในภูเก็ตอาคาร 3d ไม่แสดงเลย”).
+ * Under the open sheet an area or a station is framed flat; the reader who then zoomed to building level saw the
+ * buildings from straight above with the 3D button on. Once the map has rested 220 ms after the reader's own move, at
+ * the zoom where the focus buildings are drawn (the map budget's, 14 without one), a flat camera takes the 3D preset,
+ * as the 3D button does; a tilt the reader's next gesture cut short is finished after that gesture. Never against the
+ * reader: a pitch set by hand (readerPitch) stands until another subject is opened or the 3D button is pressed.
+ */
+const TILT_ZOOM = 14;
+function tiltWhenNear(e) {
+  clearTimeout(state.tiltTimer);
+  if (!e?.originalEvent || state.readerPitch) return;
+  state.tiltTimer = setTimeout(() => {
+    const map = state.map;
+    if (!map || state.readerPitch || !state.view3d || !mobilePortrait() || map.isMoving()) return;
+    if (map.getZoom() < (state.budget?.focusZoom || TILT_ZOOM)) return;
+    const pitch = map.getPitch();
+    if (!(pitch < 1 || (state.tiltTo != null && pitch < state.tiltTo - 1))) { state.tiltTo = null; return; }
+    state.tiltTo = applyPreset(map, cameraPreset(), {animate: animate(), duration: 600}).pitch;
+    state.lastPreset = cameraPreset();
+  }, 220);
+}
+
 function toggle3d() {
   state.view3d = !state.view3d;
+  state.readerPitch = false; state.tiltTo = null;
   $('toggle-3d').setAttribute('aria-pressed', String(state.view3d));
   renderLegend();
   updateSpatialLayers();

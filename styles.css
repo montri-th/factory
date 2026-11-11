@@ -829,8 +829,10 @@ td.num, th.num { text-align: right; }
   .panel[data-mode="overview"] .panel-top > .sheet-links { grid-column: 2; grid-row: 1; margin: 0; gap: 14px; }
   .panel .dataset-heading { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
   .panel[data-mode="overview"] .filters { margin-top: 4px; }
-  /* A card's figures: each as wide as it needs, sharing the row (four equal columns pushed “40,620” into its
-     neighbour's mark). */
-  .metrics.compact { display: flex; flex-wrap: wrap; gap: 8px 14px; }
+  /* A card's figures share one row (four equal columns pushed “40,620” into its neighbour's mark). Up to three:
+     each as wide as it needs. Four: each takes what its number needs and the rest is shared, so a long label
+     (“ของกรุงเทพมหานคร”) breaks onto two lines before a figure drops to a row of its own — that row cost 51 px of map. */
+  .metrics.compact { display: flex; flex-wrap: wrap; gap: 8px 6px; }
   .metrics.compact > .metric { flex: 1 1 auto; }
+  .metrics.compact:has(> .metric:nth-child(4)) > .metric { flex: 1 1 0; min-width: min-content; }
 }
