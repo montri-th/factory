@@ -330,7 +330,7 @@ input[type="search"]::-webkit-search-cancel-button { -webkit-appearance: none; }
 
 /* Neighborhood labels */
 .area-labels { position: absolute; inset: 0; z-index: 2; pointer-events: none; overflow: hidden; }
-.neighborhood-label, .province-label { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; display: inline-flex; align-items: center; gap: 7px; min-height: 0; padding: 4px 5px 4px 10px; font: 700 12px/1.3 var(--font-display); letter-spacing: 0; color: var(--area-label-ink); background: var(--area-label-bg); border: 1px solid var(--area-label-border); border-radius: 6px; max-width: 200px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0, 0, 0, .18); }
+.neighborhood-label, .province-label { position: absolute; transform: translate(-50%, -50%); pointer-events: auto; display: inline-flex; align-items: center; gap: 7px; min-height: 0; padding: 4px 5px 4px 10px; font: 700 12px/1.3 var(--font-display); letter-spacing: 0; color: var(--area-label-ink); background: var(--area-label-bg); border: 1px solid var(--area-label-border); border-radius: 6px; max-width: 204px; white-space: nowrap; box-shadow: 0 1px 2px rgba(0, 0, 0, .18); }
 .neighborhood-label::before, .province-label::before { content: ""; width: 8px; height: 8px; flex: 0 0 8px; border: 1.5px solid var(--area-label-ink); border-radius: 2px; opacity: .85; }
 .neighborhood-label .label-name, .province-label .label-name { overflow: hidden; text-overflow: ellipsis; }
 .neighborhood-label .label-count, .province-label .label-count { font: 400 11px/1.3 var(--font-mono); flex: 0 0 auto; min-width: 22px; padding: 1px 6px; border-radius: 4px; background: var(--area-label-ink); color: var(--area-label-bg); text-align: center; }
@@ -563,7 +563,7 @@ td small { display: block; color: var(--text-metadata); font-size: 12px; margin-
   .insight-heading button { padding: 5px 9px; }
   .results { padding: 8px 10px; max-height: min(75%, calc(100% - var(--bottom-panel-height) - 8px)); }
   .results-heading h2 { font-size: 14px; }
-  .neighborhood-label, .province-label { max-width: 184px; font-size: 11px; }
+  .neighborhood-label, .province-label { max-width: 196px; font-size: 12px; }
   .bar-row { grid-template-columns: 16px minmax(70px, 110px) minmax(0, 1fr) 70px; gap: 6px; }
   .bar-row.is-share { grid-template-columns: minmax(70px, 120px) minmax(0, 1fr) 64px; }
   .mix-list li { grid-template-columns: minmax(0, 132px) minmax(0, 1fr) minmax(56px, max-content); }
@@ -834,5 +834,8 @@ td.num, th.num { text-align: right; }
      (“ของกรุงเทพมหานคร”) breaks onto two lines before a figure drops to a row of its own — that row cost 51 px of map. */
   .metrics.compact { display: flex; flex-wrap: wrap; gap: 8px 6px; }
   .metrics.compact > .metric { flex: 1 1 auto; }
-  .metrics.compact:has(> .metric:nth-child(4)) > .metric { flex: 1 1 0; min-width: min-content; }
+  /* Four figures share the row by what each has to say (2026-11-12): a long label takes the room a short one leaves
+     and no figure moves to a second row. Equal quarters broke Office's rent label into five lines once the labels
+     took the caption size (0.75rem, LDS type scale; navigation.css). */
+  .metrics.compact:has(> .metric:nth-child(4)) { display: grid; grid-template-columns: repeat(4, minmax(min-content, auto)); justify-content: space-between; }
 }
