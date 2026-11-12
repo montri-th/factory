@@ -661,7 +661,9 @@ function openFound(entry) {
   const way = (field, id) => state.finder.makeWay(field, id);
   const words = () => state.finder.filter(entry.name);
   if (entry.kind === 'province') selectProvince(entry.id);
-  else if (entry.kind === 'estate') selectEstate(entry.id);
+  // An estate chosen by name always opens: the filters it does not pass — its province too — are lifted first, so
+  // the map goes to it (selectEstate draws).
+  else if (entry.kind === 'estate') { const e = estateById(entry.id); if (e) state.finder.makeWayFor(v => filterEstates([e], v).length); selectEstate(entry.id); }
   // A type has no action of its own: its select takes the value and says so, as a reader's choice would.
   else if (entry.kind === 'type') { if (offered('type', entry.id)) { way('type', entry.id); $('type').value = entry.id; $('type').dispatchEvent(new Event('change', {bubbles: true})); } else words(); }
   else if (entry.kind === 'developer') words();
