@@ -294,6 +294,7 @@ export default {
     // Filters
     'ค้นหาโรงงาน ประเภท อุตสาหกรรม หรือพื้นที่': 'Search factories, types, industries or areas',
     'ค้นหาโรงงาน ประเภท หรือพื้นที่': 'Search factories, types or areas',
+    'ลองชื่อโรงงาน เลขทะเบียน นิคม อุตสาหกรรม เขต/อำเภอ หรือจังหวัด': 'Try the name of a factory, a registration number, an industrial estate, an industry, a district or a province',
     'ค้นหาชื่อโรงงาน ผู้ประกอบการ ประเภท อุตสาหกรรม เขต/อำเภอ จังหวัด หรือเลขทะเบียน': 'Search factory names, operators, types, industries, districts, provinces or registration numbers',
     'ตัวกรอง': 'Filters',
     'ตัวกรองที่ใช้อยู่': 'Active filters',
@@ -395,6 +396,8 @@ export default {
   },
   // Words whose English depends on where they stand (a tile label under its number).
   contexts: [
+    // The line under a name in the search list (js/find.js#searchNote): one entry, so the singular.
+    ['.find-where', {'อุตสาหกรรม': 'Industry', 'หน้าที่ของโรงงาน': 'Factory function', 'จังหวัด': 'Province'}],
     ['.metric > span:not([class])', {
       'ทะเบียน': count('registration', 'registrations'),
       'ทะเบียน ในโฟกัส': count('registration in focus', 'registrations in focus'),
