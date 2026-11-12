@@ -33,6 +33,9 @@ import {cueImage, seriesOf} from './cues.js';
 import {installEstateLabels} from './labels.js';
 import {createCodec, createNavigator} from './shell/url.js';
 import {pageTitle} from './shell/title.js';
+import {createIndex} from './shell/fuzzy.js';
+import {installSearch} from './shell/search.js';
+import {SEARCH_KINDS, SEARCH_HEADS, SEARCH_HINT, searchEntries, searchNote} from './find.js';
 import {DEMOS, demoUrl} from './shell/datasets.js';
 
 const $ = id => document.getElementById(id);
@@ -123,6 +126,7 @@ function update({fit = false} = {}) {
   updateSpatialLayers();
   if (fit && state.loaded) fitMap();
   saveURL();
+  state.finder?.sync();
   document.title = pageTitle(titlePage());
 }
 
@@ -148,6 +152,9 @@ function renderPanel() {
   const meta = state.data.meta;
   const view = $('panel-view');
   const mode = state.panel.mode;
+  // The stylesheet reads the mode: on a phone the heading and the search stand with the overview only. Without it
+  // the phone sheet showed no search and no filter in any view (release 1.1.0 and before).
+  $('panel').dataset.mode = mode;
   const back = state.history.length ? `<button type="button" class="back-button" data-action="back">${T('กลับ', 'Back')}</button>` : '';
   if (mode === 'estate') {
     const e = estateById(state.panel.id);
@@ -640,6 +647,45 @@ function restoreFromHistory() {
   update({fit: true});
 }
 
+/**
+ * The search box (1.2.0; owner 2026-11-12 12:05, VERBATIM: “ศึกษาแนวคิดเรื่อง Fuzzy search แล้ว implement กับ demo web
+ * ให้ได้ user benefit สูงสุดตาม user intent ในขณะนั้น และตาม product statement”). A name typed is listed with what it is
+ * and where (js/shell/search.js, names from js/find.js) and opens what answers the product statement's question for
+ * it: a province its estates, an estate its page, a type its filter. A developer has no filter of its own: its name
+ * becomes the words of the text filter. The map and the panel no longer change while the reader is still typing.
+ */
+function openFound(entry) {
+  // A filter chosen by name is shown for the whole page: the filters that would leave it no estate are lifted first
+  // (js/shell/search.js#makeWay). A developer has no filter of its own: its name is the words of the text filter.
+  const offered = (field, id) => [...$(field).options].some(o => o.value === id);
+  const way = (field, id) => state.finder.makeWay(field, id);
+  const words = () => state.finder.filter(entry.name);
+  if (entry.kind === 'province') selectProvince(entry.id);
+  else if (entry.kind === 'estate') selectEstate(entry.id);
+  // A type has no action of its own: its select takes the value and says so, as a reader's choice would.
+  else if (entry.kind === 'type') { if (offered('type', entry.id)) { way('type', entry.id); $('type').value = entry.id; $('type').dispatchEvent(new Event('change', {bubbles: true})); } else words(); }
+  else if (entry.kind === 'developer') words();
+}
+function installFinder() {
+  try {
+    state.finder = installSearch({
+      input: $('search'),
+      index: createIndex({kinds: SEARCH_KINDS, heads: SEARCH_HEADS}),
+      entries: () => searchEntries({data: state.data, index: state.index}),
+      note: entry => searchNote(entry, {data: state.data, index: state.index}),
+      // What the reader is looking at comes first among equal names.
+      scope: () => ({province: $('province').value || estateById(state.panel.mode === 'estate' ? state.panel.id : '')?.province || ''}),
+      rows: text => filterEstates(state.data.estates, {...values(), search: text}).length,
+      unit: 'แห่ง',
+      hint: SEARCH_HINT,
+      pick: openFound,
+      // The filters that may be lifted for a filter or words chosen from the list — never the province (a province
+      // without it is a reading of that province).
+      filters: {fields: ['type', 'outline', 'listed'], values, count: v => filterEstates(state.data.estates, v).length},
+    });
+  } catch (e) { state.finder = null; console.warn('Search list unavailable', e); }
+}
+
 function wireEvents() {
   let timer;
   for (const f of FIELDS) $(f).addEventListener(f === 'search' ? 'input' : 'change', () => {
@@ -649,7 +695,8 @@ function wireEvents() {
       if (f === 'province') state.panel = $('province').value ? {mode: 'province', id: $('province').value} : overviewPanel();
       else if (state.panel.mode === 'estate') state.panel = $('province').value ? {mode: 'province', id: $('province').value} : overviewPanel();
       update({fit: true});
-    }, f === 'search' ? 400 : 0);
+      // With the list, the words arrive whole (Enter or the list's last row); without it the box filters as it is typed in.
+    }, f === 'search' && !state.finder ? 400 : 0);
   });
   $('filters').addEventListener('reset', () => setTimeout(resetToOverview, 0));
   for (const id of ['panel-view', 'filter-chips', 'map-aha', 'crumbs', 'chart', 'result-rows']) $(id).addEventListener('click', onPanelAction);
@@ -734,6 +781,7 @@ async function init() {
     try { $('theme').value = localStorage.getItem(THEME_KEY) || 'auto'; } catch {}
     applyTheme();
     wireEvents();
+    installFinder();
     update();
     if (state.panel.mode !== 'overview') openMobilePanel();
     window.dispatchEvent(new CustomEvent('citymeter:ready'));
@@ -745,6 +793,6 @@ async function init() {
 }
 
 // Developer hook for live checks in a browser console (not an API; may change without notice).
-window.__citymeter = {state, get map() { return state.map; }, update, fitMap, selectEstate, selectProvince, updateSpatialLayers};
+window.__citymeter = {state, get map() { return state.map; }, get finder() { return state.finder; }, update, fitMap, selectEstate, selectProvince, updateSpatialLayers};
 
 init();
