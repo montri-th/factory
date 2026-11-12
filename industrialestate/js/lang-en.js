@@ -51,6 +51,7 @@ export default {
     'Product statement': 'Product statement',
     'เส้นทางพื้นที่: ประเทศไทย › จังหวัด': 'Area path: Thailand › province',
     'ค้นหานิคม ผู้พัฒนา หรือจังหวัด': 'Search estates, developers or provinces',
+    'ลองชื่อนิคม ผู้พัฒนา ประเภท หรือจังหวัด': 'Try the name of an estate, a developer, a type or a province',
     'ตัวกรอง': 'Filters',
     'ประเภท': 'Type',
     'ทุกประเภท': 'All types',
@@ -96,6 +97,10 @@ export default {
     'เปรียบเทียบจำนวนรายการของแต่ละจังหวัด': 'Compare the records of each province',
     'เปรียบเทียบผู้พัฒนาและเครือ': 'Compare developers and networks',
   },
+  contexts: [
+    // The line under a name in the search list (js/find.js#searchNote): one entry, so the singular.
+    ['.find-where', {'จังหวัด': 'Province', 'ประเภท': 'Type', 'ผู้พัฒนา': 'Developer'}],
+  ],
   patterns: [
     [/^รายชื่อ ([\d,]+)$/, 'List $1'],
   ],
