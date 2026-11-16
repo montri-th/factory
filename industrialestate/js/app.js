@@ -29,7 +29,7 @@ import {applyPreset, fitPitched, presetFor} from './shell/camera.js';
 import {guardRetainedTiles, guardElevationFreeze, mapBudget, budgetPixelRatio, reloadOnContextLoss} from './shell/maplibre-guard.js';
 import {buildBreadcrumb, renderBreadcrumb} from './shell/breadcrumb.js';
 import {rampLegendHTML} from './scales.js';
-import {cueImage, seriesOf} from './cues.js';
+import {cueImage, cueMarkup, seriesOf} from './cues.js';
 import {installEstateLabels} from './labels.js';
 import {createCodec, createNavigator} from './shell/url.js';
 import {pageTitle} from './shell/title.js';
@@ -286,6 +286,10 @@ function renderLegend() {
   const hatch = r?.noData ? `<span class="legend-nodata-item" title="${esc(T('ไม่มีรายชื่อในทำเนียบรอบนี้ ไม่ได้แปลว่าไม่มีโรงงาน', 'No listing in this directory snapshot, which does not mean no factory'))}"><i class="legend-hatch" aria-hidden="true"></i>${T('ไม่มีในทำเนียบ', 'not listed')}</span>` : '';
   $('legend-steps').innerHTML = steps + hatch;
   $('legend-around').hidden = !(state.panel.mode === 'estate' && estateById(state.panel.id)?.outline && state.showAround);
+  // Factory 0.9.0: the open circle in the neutral ink = no DIW industry group (never an industry); named only when drawn.
+  const unstated = !$('legend-around').hidden && Boolean(state.around) && aroundRows(state.around, state.panel.id).some(r => FAMILY_IDS[r.family] === 'unstated');
+  $('legend-unstated').hidden = !unstated;
+  if (unstated && !$('legend-unstated-cue').innerHTML) $('legend-unstated-cue').innerHTML = cueMarkup(seriesOf('unstated'));
 }
 
 function drawChart() {
@@ -375,7 +379,7 @@ function aroundCollection() {
   if (!e?.outline || !state.around || !state.showAround) return {type: 'FeatureCollection', features: []};
   return {type: 'FeatureCollection', features: aroundRows(state.around, e.id).map((r, i) => ({
     type: 'Feature', id: i, geometry: {type: 'Point', coordinates: [r.lon, r.lat]},
-    properties: {fid: r.fid, name: r.name, workers: r.workers ?? -1, family: r.family ?? 9, series: seriesOf(FAMILY_IDS[r.family] || 'other'), size: aroundRadius(r.workers) / 8},
+    properties: {fid: r.fid, name: r.name, workers: r.workers ?? -1, moi: r.moi ? 1 : 0, family: r.family ?? 9, series: seriesOf(FAMILY_IDS[r.family] || 'other'), size: aroundRadius(r.workers) / 8},
   }))};
 }
 
@@ -405,9 +409,11 @@ function installSpatialLayers() {
   const selected = cssVar('--map-selected-stroke', '#176B82');
   const noData = cssVar('--data-no-data', '#D5DAD6'), emphasis = cssVar('--data-zero-outline', '#7D877F');
   if (!map.hasImage(HATCH)) map.addImage(HATCH, hatchImage(noData, emphasis));
-  for (let s = 1; s <= 10; s++) {
+  // Series 1–10 and the neutral “not stated” slot 11 (Factory 0.9.0: no series hue for a registration without a group).
+  for (let s = 1; s <= 11; s++) {
     const name = `cue-${s}`;
-    if (!map.hasImage(name)) map.addImage(name, cueImage(s, {size: 16, pixelRatio: 2, fill: cssVar(`--series-${s}-fill`, '#8AA4AA'), stroke: cssVar('--map-marker-stroke', '#182327')}), {pixelRatio: 2});
+    const fill = s === 11 ? cssVar('--state-neutral-content', '#5F635A') : cssVar(`--series-${s}-fill`, '#8AA4AA');
+    if (!map.hasImage(name)) map.addImage(name, cueImage(s, {size: 16, pixelRatio: 2, fill, stroke: cssVar('--map-marker-stroke', '#182327')}), {pixelRatio: 2});
   }
   const before = map.getLayer('waterway') ? 'waterway' : undefined;
   map.addSource(PROVINCE_SRC, {type: 'geojson', data: state.provincesGeo, maxzoom: GEOJSON_MAXZOOM, promoteId: 'id'});
@@ -502,7 +508,9 @@ function openAroundPopup(f) {
   const families = state.around?.meta || {};
   const fam = EN ? families.familiesEn?.[p.family] : families.families?.[p.family];
   const workers = p.workers >= 0 ? T(`${num(p.workers)} คน`, `${num(p.workers)} workers`) : T('ไม่มีตัวเลขคนงาน', 'no worker figure');
-  const html = `<div class="around-pop"><strong>${esc(p.name || T('ทะเบียนโรงงาน', 'Factory registration'))}</strong><span>${esc(fam || '')} · ${esc(workers)}</span><a href="${esc(factoryRowHref(p.fid))}">${T('เปิดใน CityMETER Factory', 'Open in CityMETER Factory')}</a></div>`;
+  // A MOI figure (Factory 0.9.0: where DIW has none) carries its source, as in Factory.
+  const src = p.workers >= 0 && Number(p.moi) === 1 ? ` <span class="src-tag" title="${esc(T('ตัวเลขคนงานจาก อก.', 'Worker figure from MOI'))}">${T('อก.', 'MOI')}</span>` : '';
+  const html = `<div class="around-pop"><strong>${esc(p.name || T('ทะเบียนโรงงาน', 'Factory registration'))}</strong><span>${esc(fam || '')} · ${esc(workers)}${src}</span><a href="${esc(factoryRowHref(p.fid))}">${T('เปิดใน CityMETER Factory', 'Open in CityMETER Factory')}</a></div>`;
   state.popup = new maplibregl.Popup({closeButton: true, maxWidth: '280px', offset: 10}).setLngLat(f.geometry.coordinates).setHTML(html).addTo(state.map);
 }
 

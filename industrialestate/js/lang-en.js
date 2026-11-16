@@ -28,6 +28,8 @@ export default {
     'คำอธิบายแผนที่': 'Map legend',
     'นิคม · รายชื่อในทำเนียบ กนอ.': 'Estates · IEAT directory listings',
     'ทะเบียนโรงงานใน CityMETER Factory ที่มีพิกัด ห่างขอบเขตไม่เกิน 3 กม. · สีตามอุตสาหกรรม · ขนาดตามคนงาน': 'CityMETER Factory registrations with a point within 3 km of the outline · colour by industry · size by workers',
+    'ทะเบียนที่ไม่มีกลุ่มอุตสาหกรรม กรอ. · สีกลาง ไม่นับเป็นอุตสาหกรรม': 'Registrations without a DIW industry group · neutral ink, not counted as an industry',
+    'ไม่ระบุกลุ่ม': 'Not stated',
     'อาคาร 3 มิติ: เข้ม = ในนิคมที่เปิด · จาง = ทั่วเมือง': '3D buildings: dark = in the open estate · pale = city-wide',
     'อาคาร': 'Buildings',
     'ขอบเขตจาก OpenStreetMap (ภาพรวมวิจัย ไม่ใช่ขอบเขตตามกฎหมาย)': 'Outline from OpenStreetMap (a research view, not a legal boundary)',

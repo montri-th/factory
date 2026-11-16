@@ -177,3 +177,27 @@ test('page: noindex, Thai and English, one cache tag on every entry and module, 
   assert.equal(sha256(readFileSync(join(DIR, 'navigation.css'))), sha256(readFileSync(join(ROOT, 'navigation.css'))), 'navigation.css');
   for (const f of ['DATA_METHOD.md', 'PRODUCT_STATEMENT.md', 'AGENTS.md', 'README.md', 'llms.txt', 'design-intent.json', 'site.webmanifest']) assert.ok(existsSync(join(DIR, f)), f);
 });
+
+test('around-estate workers (1.2.0, Factory 0.9.0): DIW first, MOI only where DIW has none — split under the total; “not stated” never a ranked family', () => {
+  const {meta, estates} = model();
+  const around = json('data/around.json');
+  const fac = readJSON('data/factories.json');
+  const ws = new Map(fac.cols.key.map((k, i) => [k, fac.cols.ws[i]]));
+  const unstated = around.meta.families.indexOf('ไม่ระบุกลุ่มอุตสาหกรรม');
+  assert.equal(unstated, around.meta.families.length - 1);
+  for (const e of estates.filter(x => x.around)) {
+    const rows = aroundRows(around, e.id);
+    const moi = rows.filter(r => r.moi);
+    assert.ok(rows.every(r => r.moi === (ws.get(r.fid) === 1)), `${e.id}: the MOI flag is Factory's`);
+    assert.equal(e.around.moi || 0, moi.length, e.id);
+    assert.equal(e.around.moiWorkers || 0, moi.reduce((s, r) => s + r.workers, 0), e.id);
+    assert.equal((e.around.unstated || [0, 0])[1], rows.filter(r => r.family === unstated).length, e.id);
+    assert.ok(!e.around.families.some(f => f[0] === unstated), `${e.id}: not stated is never a ranked family`);
+  }
+  const esb = estates.find(x => x.id === 'EST-IEAT-2706');
+  assert.deepEqual([esb.around.n, esb.around.workers, esb.around.moi, esb.around.moiWorkers, esb.around.unstated], [156, 38529, 148, 38241, [38241, 148]]);
+  const families = {th: around.meta.families, en: around.meta.familiesEn};
+  const html = renderEstate({estate: esb, meta, base: '', families, factoryHref: '', factoryRowHref: () => '', directoryState: ''});
+  assert.ok(text(html).includes('กรอ. 288 คน · อก. เติม 38,241 คน (148 ทะเบียน)'), 'the two sources apart under the total');
+  assert.ok(text(html).includes('ผลิตภัณฑ์อโลหะ 7 ไม่ระบุกลุ่มอุตสาหกรรม 38,241') && html.includes('<li class="is-unstated">'), 'not stated after the ranked families, set apart');
+});
