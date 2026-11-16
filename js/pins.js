@@ -47,9 +47,9 @@ const contextPaint = () => {
 const ICON = series => `factory-cue-${series}`;
 const ICON_PX = 16;
 
-/** Register (or refresh) the ten cue icons in the current theme colours. */
+/** Register (or refresh) the cue icons in the current theme colours: the ten series and the neutral “not stated” slot 11. */
 function installCueIcons(map) {
-  const fills = seriesColors(10), stroke = cssVar('--map-marker-stroke', '#182327');
+  const fills = [...seriesColors(10), cssVar('--state-neutral-content', '#5F635A')], stroke = cssVar('--map-marker-stroke', '#182327');
   fills.forEach((fill, i) => {
     const id = ICON(i + 1), image = cueImage(i + 1, {size: ICON_PX, pixelRatio: 2, fill, stroke});
     if (map.hasImage(id)) map.updateImage(id, image);

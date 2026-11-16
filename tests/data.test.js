@@ -22,9 +22,21 @@ test('factories.json decodes to every FID of 02_FACTORIES, nothing dropped, FIDs
   for (const v of Object.values(raw.meta.inputs)) assert.match(v.sha256, /^[a-f0-9]{64}$/);
 });
 
-test('measure contract: workers are the DIW-reported figures (null when the source has none, never 0 or estimated); registrations count once', () => {
+test('measure contract: workers are the DIW figure first, the MOI figure only where DIW has none (0.9.0); null when neither has one, never 0 or estimated; registrations count once', () => {
   const {raw, data} = load();
   const c = raw.meta.counts;
+  // Release 0.9.0 (owner 2026-11-16; master 28_PRODUCT_BENEFITS “คงยอด DIW เดิม และเติม MOI เฉพาะ FID ที่ DIW ว่าง”).
+  const src = s => data.rows.filter(r => r.ws === s);
+  for (const s of ['diw', 'moi']) {
+    assert.equal(src(s).length, c.workerSources[s].rows, s);
+    assert.equal(src(s).reduce((t, r) => t + r.workers, 0), c.workerSources[s].workers, s);
+    assert.equal(src(s).filter(r => r.workers === 0).length, c.workerSources[s].zero, s);
+  }
+  assert.deepEqual([c.workerSources.diw.rows, c.workerSources.diw.workers, c.workerSources.moi.rows, c.workerSources.moi.workers],
+    [71124, 3755632, 2923, 631627], 'the DIW figures of 0.8.2 unchanged; MOI fills the 2,923 FIDs without one');
+  assert.ok(data.rows.every(r => (r.workers === null) === (r.ws === null)), 'every figure names its source');
+  assert.ok(src('diw').every(r => r.wOn === '') && src('moi').every(r => /^\d{4}-\d{2}-\d{2}$/.test(r.wOn)), 'MOI figures carry the row update date');
+  assert.deepEqual(data.workerSources.map(s => s.id), ['diw', 'moi']);
   assert.equal(SCOPE.threshold, raw.meta.scope.threshold);
   assert.ok(data.rows.every(r => r.workers === null || (Number.isInteger(r.workers) && r.workers >= 0)), 'a figure is a whole number ≥ 0, or null');
   const figured = data.rows.filter(r => r.workers !== null);
@@ -51,15 +63,16 @@ test('measure contract: workers are the DIW-reported figures (null when the sour
   assert.equal(c.estateContext.unknown_estate_context, c.basis.MOI_operating_only, 'MOI-only registrations: estate context unknown');
 });
 
-test('the 95+ lens = the FIDs of 18_WORKERS_P90: every registration at or above the P90 of the figures (PERCENTILE.INC 0.9 = 95)', () => {
+test('the 95+ lens: 95 = the P90 of the DIW figures (PERCENTILE.INC 0.9; the FIDs of 18_WORKERS_P90), a fixed threshold that MOI-filled figures meet too', () => {
   const {raw, data} = load();
   const c = raw.meta.counts;
-  const v = data.rows.map(r => r.workers).filter(w => w !== null).sort((a, b) => a - b);
-  const h = (v.length - 1) * 0.9, lo = Math.floor(h);
-  assert.equal(v[lo] + (h - lo) * (v[Math.min(lo + 1, v.length - 1)] - v[lo]), SCOPE.threshold);
+  const p90 = v => { v = [...v].sort((a, b) => a - b); const h = (v.length - 1) * 0.9, lo = Math.floor(h); return v[lo] + (h - lo) * (v[Math.min(lo + 1, v.length - 1)] - v[lo]); };
+  assert.equal(p90(data.rows.filter(r => r.ws === 'diw').map(r => r.workers)), SCOPE.threshold, 'the P90 of the DIW figures');
   const lens = data.rows.filter(r => r.p90);
   assert.equal(lens.length, c.p90);
-  assert.equal(c.p90Parity.workers, c.p90, 'every figure of 18_WORKERS_P90 equals the DIW export');
+  assert.equal(lens.filter(r => r.ws === 'diw').length, c.p90Diw);
+  assert.equal(c.p90Parity.workers, c.p90Diw, 'every figure of 18_WORKERS_P90 equals the DIW export');
+  assert.deepEqual([c.p90Diw, c.p90, c.p90Workers], [7175, 8727, 3008749], 'DIW 7,175 as in 0.8.2; with the MOI fills 8,727');
   assert.ok(lens.every(r => r.workers >= SCOPE.threshold) && data.rows.filter(r => !r.p90).every(r => r.workers === null || r.workers < SCOPE.threshold));
   assert.equal(lens.reduce((s, r) => s + r.workers, 0), c.p90Workers);
   assert.equal(data.rows.filter(r => r.tie).length, c.ties, 'every tie at the threshold is in the lens');
@@ -117,9 +130,14 @@ test('privacy: no natural person’s name is published; such a registration read
     assert.ok(raw.meta.excludedFields.includes(k), k);
 });
 
-test('industry: every registration has its official DIW group and one of ten families; the family filter partitions the rows', () => {
+test('industry: every registration has its official DIW group (or none stated) and one of eleven families; the family filter partitions the rows', () => {
   const {data} = load();
-  assert.equal(data.families.length, 10);
+  assert.equal(data.families.length, 11);
+  // Release 0.9.0: a registration without a DIW group is the family `unstated`, never “การผลิตอื่น ๆ” (master: “แยกกลุ่มไม่ระบุ”).
+  assert.equal(data.families.at(-1).id, 'unstated');
+  const unstated = data.rows.filter(r => r.groupId === 'unstated');
+  assert.ok(unstated.length && unstated.every(r => r.industry.raw === ''), 'the not-stated family holds exactly the rows without a group');
+  assert.ok(data.rows.filter(r => r.groupId === 'other').every(r => r.industry.raw === 'การผลิตอื่นๆ'));
   assert.ok(data.rows.every(r => r.industry && r.family && r.industry.familyRec === r.family && data.families[r.group] === r.family));
   assert.equal(data.families.reduce((s, f) => s + filterRows(data.rows, {group: f.id}).length, 0), data.rows.length);
   assert.equal(data.classes.reduce((s, c) => s + filterRows(data.rows, {cls: c.id}).length, 0), data.rows.length);

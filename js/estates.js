@@ -57,7 +57,8 @@ export function buildEstateProfile(ctx, id, {scopeIds, rowById, families = [], m
   const rows = ids.map(k => rowById(k)).filter(r => r && (!scopeIds || scopeIds.has(r.id))).sort(listOrder);
   const workers = rows.reduce((s, r) => s + (r.workers || 0), 0);
   return {estate, km: ctx.km, outline: Boolean(estate.outline && ctx.outlineById.has(id)), all: ids.length, rows, count: rows.length, workers,
-    figured: rows.filter(r => r.workers != null).length, value: metric === 'count' ? rows.length : workers, ...mixOf(rows, families),
+    figured: rows.filter(r => r.workers != null).length, value: metric === 'count' ? rows.length : workers,
+    moi: rows.filter(r => r.ws === 'moi').length, moiWorkers: rows.reduce((s, r) => s + (r.ws === 'moi' ? r.workers : 0), 0), ...mixOf(rows, families),
     sizes: sizeMixOf(rows), lens: lensOf(rows), osmOn: ctx.meta.osmSnapshotOn || ''};
 }
 

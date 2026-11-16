@@ -11,12 +11,17 @@
  * of the LDS registry, except that the mixed “การผลิตอื่น ๆ” family takes the grey-teal dash (series 9) and plant
  * products take the plus (series 10). A family is a fixed grouping of the official DIW industry groups; the group
  * itself stays on every row.
+ *
+ * Since release 0.9.0 the registrations without a DIW industry group are the family `unstated` (research master
+ * 28_PRODUCT_BENEFITS: “แยกกลุ่มไม่ระบุ”). It is not an industry, so it takes no series colour: slot 11, outside the LDS
+ * series, is the neutral state ink (`--state-neutral-content`) and an open circle of the full circle's size (the
+ * symbol area still carries the workers).
  */
-export const CUES = Object.freeze(['circle', 'square', 'triangle', 'diamond', 'cross', 'star', 'hexagon', 'ring', 'dash', 'plus']);
+export const CUES = Object.freeze(['circle', 'square', 'triangle', 'diamond', 'cross', 'star', 'hexagon', 'ring', 'dash', 'plus', 'open']);
 
-/** family id → series number (1–10). */
+/** family id → series number (1–10; 11 = the neutral “not stated” slot). */
 export const GROUP_SERIES = Object.freeze({
-  food: 1, electrical: 2, vehicle: 3, textile: 4, metal: 5, polymer: 6, wood: 7, mineral: 8, other: 9, plant: 10,
+  food: 1, electrical: 2, vehicle: 3, textile: 4, metal: 5, polymer: 6, wood: 7, mineral: 8, other: 9, plant: 10, unstated: 11,
 });
 export const seriesOf = groupId => GROUP_SERIES[groupId] || 9;
 export const cueOf = series => CUES[(series || 9) - 1];
@@ -33,6 +38,7 @@ export const CUE_PATHS = Object.freeze({
   ring: 'M6 1.2a4.8 4.8 0 1 1 0 9.6a4.8 4.8 0 1 1 0-9.6zM6 3.7a2.3 2.3 0 1 0 0 4.6a2.3 2.3 0 1 0 0-4.6z',
   dash: 'M0.8 4.4h10.4v3.2H0.8z',
   plus: 'M4.6 1h2.8v3.6H11v2.8H7.4V11H4.6V7.4H1V4.6h3.6z',
+  open: 'M6 1.2a4.8 4.8 0 1 1 0 9.6a4.8 4.8 0 1 1 0-9.6zM6 2.6a3.4 3.4 0 1 0 0 6.8a3.4 3.4 0 1 0 0-6.8z',
 });
 
 /** Inline SVG cue for HTML (legend swatches, list bullets, pins). Decorative: the text label carries the meaning. */

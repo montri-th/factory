@@ -9,12 +9,13 @@ everything from the data at run time, so these are fixtures, not constants.
 หน้าจอไม่มีคำเตือน (กติกาเดียวกับ CityMETER: Hotel ที่เจ้าของกำหนด 1 พ.ย. 2569: “ไม่มี caveats เลย”) ทุกบรรทัดที่มาท้ายหน้ามีลิงก์ “วิธีนับ” มาที่นี่ ขอบเขตของตัวเลขอยู่ตรงนี้ที่เดียว
 
 - **ขอบเขตชุดข้อมูล** = ทะเบียนโรงงานหลักทุกขนาดของชีตวิจัย (74,047 เลขทะเบียนโรงงาน 14 หลัก, FID): ทะเบียนในข้อมูลเปิดของกรมโรงงานอุตสาหกรรม จำพวก 2 และ 3 (71,126) ซึ่งครอบคลุมโรงงานนอกนิคมอุตสาหกรรมของ กนอ. และทะเบียนที่กระทรวงอุตสาหกรรมระบุดำเนินการแต่ไม่อยู่ในชุดของ กรอ. (2,921) — โรงงานในนิคมอุตสาหกรรมขึ้นทะเบียนกับ กนอ. และไม่อยู่ในชุดนี้ ยอดของอำเภอที่มีนิคมอุตสาหกรรมของ กนอ. จึงต่ำกว่าคนงานโรงงานทั้งหมดของอำเภอนั้น
-- **คน** = จำนวนคนงานรวมที่ระบุในข้อมูลเปิดของ กรอ. (`คนงานรวม` ของไฟล์จำพวก 2 และ 3) รวมต่อพื้นที่ มีตัวเลข 71,124 ทะเบียน (391 ทะเบียนระบุ 0 คน ตามแหล่ง) อีก 2,923 ทะเบียนไม่มีตัวเลข (2 ทะเบียนช่องว่างในไฟล์ กรอ. และ 2,921 ทะเบียนที่มีเฉพาะใน อก.) — ไม่ถูกนับเป็น 0 และไม่ถูกประมาณแทน ข้อมูลเปิดไม่บอกวันที่ของตัวเลขนี้ จึงไม่ใช่การจ้างงานปัจจุบัน ตลาดแรงงาน หรือจำนวนคนที่อาศัยในพื้นที่
+- **คน** = จำนวนคนงานรวมตามทะเบียน รวมต่อพื้นที่ ใช้ตัวเลขของ กรอ. ก่อน (`คนงานรวม` ของไฟล์จำพวก 2 และ 3 ข้อมูล ณ 1 ต.ค. 2569) 71,124 ทะเบียน 3,755,632 คน (391 ทะเบียนระบุ 0 คน ตามแหล่ง) แล้วเติมด้วย `TOTAL_WORKER` ของ “ข้อมูลโรงงานอุตสาหกรรม” ของ อก. (GD Catalog `ops_13_01` อ่าน 16 พ.ย. 2569) **เฉพาะ** 2,923 ทะเบียนที่ กรอ. ไม่มีตัวเลข (2 ทะเบียนช่องว่างในไฟล์ กรอ. และ 2,921 ทะเบียนที่มีเฉพาะใน อก.) รวม 631,627 คน (47 ทะเบียนระบุ 0 คน) — ไม่แทนตัวเลข กรอ. ที่มีอยู่แล้ว (12 ทะเบียนที่สองแหล่งต่างกันใช้ของ กรอ.) รวมทั้งชุด 4,387,259 คน ทุกทะเบียนมีตัวเลข (รุ่น 0.9.0) ทั้งสองแหล่งไม่บอกวันที่นับคนงาน (วันที่ของ อก. คือวันปรับปรุงแถว `LAST_UPDATE` ไม่ใช่วันนับ) จึงไม่ใช่การจ้างงานปัจจุบัน ตลาดแรงงาน หรือจำนวนคนที่อาศัยในพื้นที่
+- **แยกแหล่ง** = ตัวเลขรายทะเบียนที่มาจาก อก. มีป้าย “อก.” และวันปรับปรุงแถวใน “ที่มาและพิกัด” ยอดของพื้นที่ที่มีตัวเลข อก. มีบรรทัด “กรอ. … คน · อก. เติม … คน (… ทะเบียน)” ใต้ตัวเลข (กฎของชีตวิจัย `28_PRODUCT_BENEFITS`: “คงยอด DIW เดิม และเติม MOI เฉพาะ FID ที่ DIW ว่าง”) ยอดต่อพื้นที่ตรงกับตารางสรุปของชุดวิจัย 16 พ.ย. 2569 (`area-summary.csv` = แท็บ `27_ICTC_AREA`) ทั้ง 917 กลุ่มจังหวัด·อำเภอตามชื่อในทะเบียน: จำนวนทะเบียน คนงาน กรอ. คนงานและจำนวนทะเบียนที่ อก. เติม
 - **ไม่มีตัวเลขคนงาน** = ทะเบียนที่แหล่งไม่มีตัวเลขคนงาน แสดงเป็นคำนี้ หรือ “—” ในตาราง ในแผนที่ เขตหรือจังหวัดที่ทุกทะเบียนในตัวกรองไม่มีตัวเลขคนงานเป็นลายเส้นทแยง (ไม่มีข้อมูล) ไม่ใช่ 0
-- **คนงาน 95 คนขึ้นไป** = เกณฑ์ P90 ของชีตวิจัย: เปอร์เซ็นไทล์ที่ 90 (PERCENTILE.INC 0.9) ของ 71,124 ตัวเลขคนงาน = 95 คน → 7,175 ทะเบียน (ตรงกับแท็บ `18_WORKERS_P90` ทุกทะเบียน รวมทะเบียนที่มีคนงานเท่าเกณฑ์พอดี 122 ทะเบียน) มีคนงานรวมกัน 2,435,798 คน หรือ 65% ของคนงานทั้งหมดในชุด เป็นตัวเลือกหนึ่งในตัวกรองขนาด
+- **คนงาน 95 คนขึ้นไป** = เกณฑ์คงที่ 95 คน ที่มาจาก P90 ของชีตวิจัย: เปอร์เซ็นไทล์ที่ 90 (PERCENTILE.INC 0.9) ของ 71,124 ตัวเลขคนงานของ กรอ. = 95 คน → 7,175 ทะเบียนของ กรอ. (ตรงกับแท็บ `18_WORKERS_P90` ทุกทะเบียน) ตั้งแต่รุ่น 0.9.0 ทะเบียนที่ อก. เติมตัวเลขและมี 95 คนขึ้นไปเข้าเลนส์นี้ด้วย รวม 8,727 ทะเบียน 3,008,749 คน (69% ของคนงานทั้งหมดในชุด ตรงกับ `27_ICTC_AREA`) เกณฑ์ยังเป็น 95 ไม่คำนวณ P90 ใหม่จากสองแหล่ง เป็นตัวเลือกหนึ่งในตัวกรองขนาด
 - **ทะเบียน (โรงงาน)** = หนึ่งเลขทะเบียน ไม่ใช่หนึ่งโรงงานจริงหรือหนึ่งบริษัท บริษัทหนึ่งมีได้หลายทะเบียน (ต่างโรงงาน ต่างกระบวนการ) และ 3,328 ทะเบียนมีชื่อและที่อยู่ตรงกับทะเบียนอื่น (`dup`) ซึ่งอาจเป็นไซต์เดียวกัน
 - **สัดส่วนของจังหวัด** = คน (หรือทะเบียน) ในพื้นที่ ÷ ทั้งจังหวัดในตัวกรอง
-- **อุตสาหกรรม** = กลุ่มอุตสาหกรรมทางการของ กรอ. ตามรหัสประเภทโรงงาน (`official_industry_group_raw`) — 21 กลุ่ม และ 3,114 ทะเบียนที่ไม่ระบุกลุ่ม — จัดเป็น 10 หมวดเพื่อใช้สีและรูปทรงบนแผนที่ (ตาราง `FAMILIES` ใน `scripts/build-data.py`) หมวดเป็นการจัดกลุ่มเพื่อการแสดงผล ชื่อกลุ่มของ กรอ. อยู่ในทุกแผงและกราฟ “กลุ่ม กรอ.”
+- **อุตสาหกรรม** = กลุ่มอุตสาหกรรมทางการของ กรอ. ตามรหัสประเภทโรงงาน (`official_industry_group_raw`) — 21 กลุ่ม และ 3,114 ทะเบียนที่ไม่ระบุกลุ่ม — จัดเป็น 10 หมวดเพื่อใช้สีและรูปทรงบนแผนที่ (ตาราง `FAMILIES` ใน `scripts/build-data.py`) หมวดเป็นการจัดกลุ่มเพื่อการแสดงผล ชื่อกลุ่มของ กรอ. อยู่ในทุกแผงและกราฟ “กลุ่ม กรอ.” ตั้งแต่รุ่น 0.9.0 ทะเบียนที่ไม่ระบุกลุ่ม (2,921 ทะเบียนที่มีเฉพาะใน อก. และ 193 ทะเบียนของ กรอ.) แยกเป็น “ไม่ระบุกลุ่มอุตสาหกรรม” สีกลาง วงกลมโปร่ง อยู่ท้ายรายการ ไม่จัดอันดับเป็นอุตสาหกรรมหลัก (กฎของชีตวิจัย: “แยกกลุ่มไม่ระบุ”) — ก่อนหน้านี้อยู่ในหมวด “การผลิตอื่น ๆ” ส่วนแบ่งอุตสาหกรรมทุกบรรทัดยังหารด้วยยอดทั้งหมดของโฟกัส
 - **หน้าที่ (ผลิต · บริการ · อื่น ๆ · รอตรวจหน้าที่)** = การจัดประเภทของชีตวิจัยจากประเภทโรงงานด้วยกฎ (functional-factory-classification v2, 4 พ.ย. 2569) ไม่ได้ตรวจทีละทะเบียนโดยคน
 - **สถานะ อก.** = สถานะในข้อมูลที่ตั้งประกอบกิจการโรงงานของกระทรวงอุตสาหกรรม (GD Catalog) ณ วันที่ในแผง (“ไม่พบใน อก.” = ไม่พบเลขทะเบียนนี้ในข้อมูลชุดนั้น) ไม่ใช่การตรวจภาคสนามว่าโรงงานยังเปิดหรือปิด
 - **จุด** = พิกัดจากแหล่งที่ชีตตรวจว่าอยู่ในกรอบประเทศไทย (`within_TH_bbox_unverified`) ไม่ใช่ตำแหน่งโรงงานที่ยืนยันแล้ว มี 15,654 ทะเบียน แหล่งไม่มีพิกัดสำหรับทะเบียนส่วนใหญ่ (55,772 ทะเบียน) จุดที่อยู่นอกอำเภอของทะเบียนเอง (718 ทะเบียน) ไม่แสดง (“ไม่แสดงพิกัด”) และทะเบียนอยู่ในอำเภอตามทะเบียนเสมอ ทุกทะเบียนนับในยอดของพื้นที่ แม้ไม่มีจุด
@@ -33,6 +34,7 @@ everything from the data at run time, so these are fixtures, not constants.
 | `02_FACTORIES` of “CityMETER Factory Thailand — Factory, Operator & Company Research Master 2026-11-04” (Google Sheets, registry id `research.TH.factory`; columns listed in `scripts/build-data.py`) | the rows of this product: the 74,047 core FIDs with name, operator label, district, subdistrict, functional class, DIW class, type code, MOI status and its date, core basis, duplicate flag, estate context, source point and its screen | derived fields only (`data/factories.json`); the sheet and its export are never committed |
 | `คนงานรวม` of the DIW class 2 and class 3 open-data exports (`factype2.csv`, `factype3.csv`, [diw-dataset.diw.go.th](https://diw-dataset.diw.go.th/th/dataset/factype3), resource updated 2026-10-01) | the worker figure of each DIW-listed FID; both files read 2026-11-05 with the SHA-256 the research master registers (`99_SOURCE_FILES`) | the figure only (fid · workers); every other field of the exports stays out |
 | `18_WORKERS_P90` (gid 2026110418, same sheet) | the 7,175 FIDs at or above the P90 of the worker figures | a parity check: every figure equals the DIW export, and the tab is exactly the FIDs with 95+ workers |
+| `26_ICTC_METRICS` (same sheet; the ICTC enrichment checked 2026-11-16) | `TOTAL_WORKER` of the MOI “ข้อมูลโรงงานอุตสาหกรรม” complete CSV ([industry.gdcatalog.go.th ops_13_01](https://industry.gdcatalog.go.th/dataset/ops_13_01)) for the 30,921 exact core-FID matches, with capital, permitted horsepower and the row update date | release 0.9.0: the worker figure and its row date, only for the 2,923 FIDs without a DIW figure; capital (currency unconfirmed) and horsepower (outliers unreviewed) are not published |
 | `02_TYPES` (same sheet, `02_FACTORIES` grouped by type code) | DIW type definition and official industry group per type code | code, definition and group |
 | `99_SOURCE_FILES` (same sheet) | the source register: DIW class 2/3 exports (resource updated 2026-10-01), MOI location and permit exports (row updates through 2026-11-03), all checked 2026-11-04 | public https pages only |
 | `01_ESTATES` of “CityMETER Industrial Estates — นิคม สวน และเขตอุตสาหกรรม 106 รายการ — Research Master 2026-10-25” | names, type, province and the official page of 106 industrial areas | the list only |
@@ -47,21 +49,30 @@ SHA-256 of every input file read is in `meta.inputs` (the files themselves stay 
 
 One row = one FID of `02_FACTORIES`. Its worker figure is `คนงานรวม` of its DIW export row; the build stops if a FID of the
 exports is missing from the registry, if a DIW-listed FID has no export row, if a figure differs from `18_WORKERS_P90`, if the
-P90 of the figures is not 95, or if `18_WORKERS_P90` is not exactly the FIDs with 95+ workers. Nothing is merged, split, moved
+P90 of the DIW figures is not 95, or if `18_WORKERS_P90` is not exactly the DIW FIDs with 95+ workers. Since release 0.9.0 a
+FID without a DIW figure takes its MOI `TOTAL_WORKER` from `26_ICTC_METRICS` (`ws` 1 in `data/factories.json`, the row update
+date in `wOn`); the build stops if the tab lists a FID twice or a figure is not a whole number. Nothing is merged, split, moved
 or re-labelled. The page ranks the registrations by workers and builds the short label names itself (`js/model.js`).
+
+Release 0.9.0 rebuilt from fresh exports of the live sheet (16 Nov 2026). With the 0.8.2 method (no MOI input) the rebuild
+equals the published 0.8.2 `data/factories.json` in every row, column and count: the core registry is unchanged. The DIW
+figures came from `workers-comparison-all-core.csv` of the research package of 16 Nov 2026 (`DIW_workers`), checked equal to
+0.8.2's figures for all 74,047 FIDs (`meta.inputs.DIW_workers.via`). Display names keep one space between words (the sheet
+holds some double and non-breaking spaces), as the 0.8.2 inputs did.
 
 | Measure | Unit | Definition | LDS family |
 |---|---|---|---|
-| `workers` (default) | คน | Σ `workers` of the registrations with a figure (3,755,632 in all; median 15, max 13,200) | `count` (a total, no denominator) |
+| `workers` (default) | คน | Σ `workers` of the registrations with a figure: DIW first, MOI only where DIW has none (4,387,259 in all = DIW 3,755,632 + MOI 631,627) | `count` (a total, no denominator) |
 | `count` | ทะเบียน | number of FIDs | `count` |
 
 Both measures are totals: no per-km² or per-resident ratio is drawn, so no density family applies. A registration without a
 figure (`workers = null`, 2,923) adds nothing to a worker total and is never estimated; where every registration of a district
 or province in the selection lacks a figure, its worker total is EVID-05 no data (the hatch), never a measured 0.
 
-Worker bands (ทะเบียน): 0–9 คน 23,462 · 10–49 33,178 · 50–94 7,309 · 95–199 3,998 · 200–499 2,216 · 500–999 585 ·
-1,000–1,999 244 · 2,000–4,999 108 · 5,000+ 24 · ไม่มีตัวเลขคนงาน 2,923. The size filter offers “คนงาน 95 คนขึ้นไป” (`p90`,
-7,175), every band and “ไม่มีตัวเลขคนงาน” (`none`); the band ids `w1`…`w6` keep their release 0.1.0 meaning.
+Worker bands (ทะเบียน, release 0.9.0): 0–9 คน 23,609 · 10–49 33,857 · 50–94 7,854 · 95–199 4,600 · 200–499 2,839 ·
+500–999 821 · 1,000–1,999 327 · 2,000–4,999 115 · 5,000+ 25 · ไม่มีตัวเลขคนงาน 0. The size filter offers “คนงาน 95 คนขึ้นไป”
+(`p90`, 8,727), every band and “ไม่มีตัวเลขคนงาน” (`none`, empty since every registration has a figure); the band ids
+`w1`…`w6` keep their release 0.1.0 meaning.
 
 ## 3. District membership (build time, never re-assigned on screen)
 
@@ -106,8 +117,14 @@ registrations without a published point may lie in the same areas; the rule only
 
 - **Type → group → family:** `factory_type_code_raw` → `official_industry_group_raw` (one group per code) → one of ten
   families (`FAMILIES`): food · electrical · vehicle (vehicles and machinery, which in the DIW grouping includes electronic
-  computing devices such as type 06900) · textile · metal · polymer · wood · mineral · plant · other (incl. the 3,114 rows
-  with no group). The family binds to an LDS categorical series and its shape cue by id (`js/cues.js#GROUP_SERIES`).
+  computing devices such as type 06900) · textile · metal · polymer · wood · mineral · plant · other · and, since release
+  0.9.0, `unstated` for the 3,114 rows with no group (until 0.8.2 they sat in `other`; they had no worker figure then, so only
+  the registration count saw them — the MOI fills made them 641,727 workers). The family binds to an LDS categorical series
+  and its shape cue by id (`js/cues.js#GROUP_SERIES`); `unstated` is no category: slot 11 outside the LDS series, the
+  neutral state ink `--state-neutral-content` and an open circle of the full circle's size (the symbol area still carries
+  the workers). It closes every family and group list, set apart, and never takes a rank in the first Aha (the research
+  master's rule for industry shares, `28_PRODUCT_BENEFITS`: “คนงานของแต่ละกลุ่ม / คนงานทุกกลุ่มที่มีตัวเลข…; แยกกลุ่มไม่ระบุ”;
+  its CLASS fill of 2,906 empty cells is review data and is not used).
 - **Function:** `functional_class` of `02_FACTORIES` (manufacturing 54,229 · review 7,729 · other 6,967 · service 5,122).
   All classes stay in the legal-factory scope.
 - **DIW class (จำพวก):** 3 for 67,778 rows, 2 for 3,348; the 2,921 MOI-only registrations have no DIW class.
@@ -131,8 +148,11 @@ registrations without a published point may lie in the same areas; the rule only
   up to three of its districts with the most of it (never cutting a tie; never every district that holds the measure); their
   share of the province's whole total; the industry families of those rows with each share (numerator and denominator in
   the title and accessible text); the district with the most of the measure outside that province and its first family.
-  Snapshot: 72 % of the workers of Samut Prakan (330,987 of 457,353) are in Bang Phli, Mueang Samut Prakan and Phra Pradaeng;
-  with the 95+ lens the same three อำเภอ hold 74 % (220,980 of 299,796), as in release 0.1.0.
+  Snapshot (release 0.9.0): 75 % of the workers of Samut Prakan (400,991 of 537,271; DIW 323,654 + MOI 77,337) are in
+  Mueang Samut Prakan, Bang Phli and Bang Sao Thong; the families vehicles 16 % · plastics/rubber 13 % · textiles 11 %, then
+  “not stated” 19 % set apart; with the 95+ lens 76 % (281,941 of 370,538). The DIW figures alone still read as releases
+  0.1.0–0.8.2: 72 % (330,987 of 457,353) in Bang Phli, Mueang Samut Prakan and Phra Pradaeng; with the 95+ lens 74 %
+  (220,980 of 299,796).
 - **Ranks and charts:** districts ranked over `scopeRows` (filters before any area selection); the matrix of district ×
   family with equal cells; the official DIW groups ranked by the measure.
 - **Nearby set** (`js/profile-model.js#nearbyOf`): same family, workers ½–2× (any size without a figure), straight line
@@ -148,7 +168,13 @@ Addresses, raw MOI operator names (ONAME), the 2025 operator label, operator con
 researcher notes and human review fields, evidence and conflict flags, source record ids, logo files and URLs, points outside
 the screen or outside the registration's own district, names and points of natural-person operators, private Drive or Sheet
 URLs, and every field of the DIW exports except the FID and `คนงานรวม` (`meta.excludedFields`). Estate boundaries are not
-published. Operator labels (`operator_display_observed`) are shown only where they differ from the registration's name
+published. Of `26_ICTC_METRICS` only `TOTAL_WORKER` and its row date are used, for the FIDs without a DIW figure: MOI
+capital (currency not confirmed in the source dictionary), permitted horsepower (outliers unreviewed; not production or use),
+floor and building areas, the status-difference queue `29_ICTC_STATUS_REVIEW` and the monthly status aggregates (calendar and
+stock/event meaning unconfirmed) are not published. MOI `TOTAL_WORKER` differs from the sum of its sex/skill components in
+2,758 of the 2,923 filled rows; the research master keeps the total and derives no sex or skill figure, and so does the page.
+60 of the filled FIDs share an exact name and address with another FID (the `dup` flag, counted once each as before). The
+P90 of all 74,047 figures would be 110; the lens keeps 95. Operator labels (`operator_display_observed`) are shown only where they differ from the registration's name
 beyond spacing and legal-form words (3,405 rows).
 
 ## 9. Research follow-ups (reported, not patched in `data/`)

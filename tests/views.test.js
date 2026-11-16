@@ -9,6 +9,8 @@ import {buildChartModel, areaMatrix, industryRanking} from '../js/chart-model.js
 import {buildBreadcrumb, renderBreadcrumb, breadcrumbText, productionHref} from '../js/breadcrumb.js';
 import {CUES, CUE_PATHS, GROUP_SERIES, cueMarkup, seriesOf} from '../js/cues.js';
 import {contextActions} from '../js/ask.js';
+import {registerDictionary, translate} from '../js/shell/i18n.js';
+import FACTORY_EN from '../js/lang-en.js';
 
 const text = html => html.replace(/<[^>]+>/g, ' ').replace(/&amp;/g, '&').replace(/&#39;/g, "'").replace(/&quot;/g, '"').replace(/\s+/g, ' ');
 const ctxFor = (data, index, metric = 'workers', filtered = false) => ({meta: data.meta, unit: unitWords(metric), index, sources: data.sources, filtered});
@@ -42,7 +44,7 @@ test('every panel view ends with one provenance line — dataset · source · da
       for (const k of ['dataset', 'source', 'date', 'boundary']) assert.equal((html.match(new RegExp(`data-prov="${k}"`, 'g')) || []).length, 1, `${name}: ${k}`);
       assert.ok(t.includes('ชุดข้อมูล CityMETER Factory · ทะเบียนโรงงาน'), `${name}: dataset and its scope`);
       assert.ok(/แหล่ง\s*จาก ทะเบียน กรอ\. นอกนิคมอุตสาหกรรม · อก\./.test(t), `${name}: source`);
-      assert.ok(t.includes('ตรวจ 4 พ.ย. 2569'), `${name}: date`);
+      assert.ok(t.includes('ตรวจ 16 พ.ย. 2569'), `${name}: date (release 0.9.0: the MOI worker data read 16 Nov 2026)`);
       assert.ok(/ขอบเขต \S/.test(t), `${name}: boundary`);
       assert.ok(html.includes('<span class="prov-part prov-method"><a href="DATA_METHOD.md"'), `${name}: the method link`);
       assert.equal((html.match(/class="hint panel-foot provenance"/g) || []).length, 1, `${name}: exactly one provenance line`);
@@ -56,12 +58,19 @@ test('every panel view ends with one provenance line — dataset · source · da
 
 test('first screen (workers): the Aha with numerator and denominator, the industries of the focus as bars with both bases, the outside finding', () => {
   const o = text(views().overview);
-  assert.ok(o.includes('72% ของคนงานโรงงานในสมุทรปราการ อยู่ใน 3 อำเภอนี้'), o.slice(0, 300));
-  assert.ok(o.includes('บางพลี · เมืองสมุทรปราการ · พระประแดง') && o.includes('330,987 จาก 457,353 คน'), 'the share of the province’s whole total');
-  assert.ok(o.includes('อุตสาหกรรมหลัก ยานพาหนะ 18% ยานพาหนะและเครื่องจักร: 57,959 จาก 330,987 คน ใน 3 อำเภอนี้'), 'each share with its numerator and denominator in the accessible text');
-  assert.ok(o.includes('อันดับ 1 นอกสมุทรปราการ: อำเภอเมืองสมุทรสาคร สมุทรสาคร 264,666 คน · มากกว่าทุกอำเภอของสมุทรปราการ · อาหาร 42%'));
-  assert.ok(o.includes('0–9 คน 23,462 10–49 คน 33,178 50–94 คน 7,309 95–199 คน 3,998') && o.includes('5,000 คนขึ้นไป 24 ไม่มีตัวเลขคนงาน 2,923'), 'size bands in registrations, the registrations without a figure last');
-  assert.ok(o.includes('คนงาน 95 คนขึ้นไป 7,175 ทะเบียน · 65% ของคนงาน (คนงาน 95 คนขึ้นไป 7,175 จาก 74,047 ทะเบียน · 2,435,798 จาก 3,755,632 คน ในประเทศไทย)'), 'the 95+ lens: numerators and denominators');
+  // Release 0.9.0: DIW figures first, MOI fills the FIDs without one; the sources stay apart under the totals.
+  assert.ok(o.includes('75% ของคนงานโรงงานในสมุทรปราการ อยู่ใน 3 อำเภอนี้'), o.slice(0, 300));
+  assert.ok(o.includes('เมืองสมุทรปราการ · บางพลี · บางเสาธง') && o.includes('400,991 จาก 537,271 คน'), 'the share of the province’s whole total');
+  assert.ok(o.includes('อุตสาหกรรมหลัก ยานพาหนะ 16% ยานพาหนะและเครื่องจักร: 63,659 จาก 400,991 คน ใน 3 อำเภอนี้'), 'each share with its numerator and denominator in the accessible text');
+  assert.ok(o.includes('สิ่งทอ 11% สิ่งทอ เครื่องแต่งกาย หนัง: 44,128 จาก 400,991 คน ใน 3 อำเภอนี้ ไม่ระบุกลุ่ม 19% ไม่ระบุกลุ่มอุตสาหกรรม: 77,337 จาก 400,991 คน ใน 3 อำเภอนี้'),
+    'the registrations without a DIW group follow the ranked industries, against the same base (master: “แยกกลุ่มไม่ระบุ”)');
+  assert.ok(views().overview.includes('class="mix-list rail-compare rail-unstated"'), 'set apart from the ranked industries');
+  assert.ok(o.includes('กรอ. 323,654 คน · อก. เติม 77,337 คน (398 ทะเบียน)'), 'the focus total split by source');
+  assert.ok(o.includes('อันดับ 1 นอกสมุทรปราการ: อำเภอเมืองสมุทรสาคร สมุทรสาคร 289,471 คน · มากกว่าทุกอำเภอของสมุทรปราการ · อาหาร 38%'));
+  assert.ok(o.includes('0–9 คน 23,609 10–49 คน 33,857 50–94 คน 7,854 95–199 คน 4,600') && o.includes('5,000 คนขึ้นไป 25'), 'size bands in registrations');
+  assert.ok(!o.includes('ไม่มีตัวเลขคนงาน'), 'every registration has a figure: no empty band is drawn');
+  assert.ok(o.includes('คนงาน 95 คนขึ้นไป 8,727 ทะเบียน · 69% ของคนงาน (คนงาน 95 คนขึ้นไป 8,727 จาก 74,047 ทะเบียน · 3,008,749 จาก 4,387,259 คน ในประเทศไทย)'), 'the 95+ lens: numerators and denominators');
+  assert.ok(/ผลิตภัณฑ์จากพืช 94,950 ไม่ระบุกลุ่มอุตสาหกรรม 641,727 กลุ่มอุตสาหกรรม กรอ\./.test(o), 'not stated closes the family list, never ranked');
   assert.ok(o.includes('หน้าที่ของโรงงาน ทะเบียน ผลิต 54,229 บริการ 5,122 อื่น ๆ 6,967 รอตรวจหน้าที่ 7,729'), 'registrations by function, from the same rows');
   assert.ok(o.includes('นิคม สวน เขตอุตสาหกรรม 106 แห่ง · 21 จังหวัด นิคมอุตสาหกรรม 84 สวนอุตสาหกรรม 16 เขตอุตสาหกรรม 6'));
   const c = text(views('count').overview);
@@ -75,17 +84,24 @@ test('first screen (workers): the Aha with numerator and denominator, the indust
 test('district and factory panels: ranks, shares, the 95+ lens, the nearby set and the source details', () => {
   const v = views();
   const a = text(v.area);
-  assert.ok(a.includes('อำเภอบางพลี') && a.includes('อันดับ 3 จาก 915 ทั่วประเทศ · 1 จาก 6 ในสมุทรปราการ'), a.slice(0, 240));
-  assert.ok(a.includes('28% ของสมุทรปราการ 130,258 จาก 457,353 คนของสมุทรปราการ'), 'the share tile carries numerator and denominator');
+  assert.ok(a.includes('อำเภอบางพลี') && a.includes('อันดับ 6 จาก 915 ทั่วประเทศ · 2 จาก 6 ในสมุทรปราการ'), a.slice(0, 240));
+  assert.ok(a.includes('24% ของสมุทรปราการ 130,258 จาก 537,271 คนของสมุทรปราการ'), 'the share tile carries numerator and denominator');
+  assert.ok(!a.includes('อก. เติม'), 'no MOI-filled figure in บางพลี: no source split');
   assert.ok(a.includes('287 ทะเบียน 95+ คน คนงาน 95 คนขึ้นไป 287 จาก 2,114 ทะเบียน · 79,620 จาก 130,258 คน ในอำเภอบางพลี'), 'the 95+ tile with both bases');
   assert.ok(v.area.includes('ทะเบียน 95+\u00A0คน'), 'the tile label never splits 95+ from คน');
   assert.ok(a.includes('คนงาน 95 คนขึ้นไป 287 ทะเบียน · 61% ของคนงาน'), 'the 95+ share of the district’s workers');
   assert.ok(a.includes('1,000 คนขึ้นไป 7 ทะเบียน') && a.includes('ดูทั้งหมด 2,114 ทะเบียน'));
   const f = text(v.factory);
-  assert.ok(f.includes('บริษัท ซีเกทเทคโนโลยี (ประเทศไทย) จำกัด') && f.includes('6,486 คน · 5,000+') && f.includes('อันดับ 12 จาก 71,124'), f.slice(0, 300));
+  assert.ok(f.includes('บริษัท ซีเกทเทคโนโลยี (ประเทศไทย) จำกัด') && f.includes('6,486 คน · 5,000+') && f.includes('อันดับ 13 จาก 74,047'), f.slice(0, 300));
+  assert.ok(f.includes('คนงาน กรอ. · ข้อมูล ณ 1 ต.ค. 2569') && !v.factory.includes('class="src-tag"'), 'a DIW figure names its source and period');
   assert.ok(f.includes('อำเภอเมืองสมุทรปราการ · สมุทรปราการ') && f.includes('จำพวก 3') && f.includes('อก. ระบุดำเนินการ'));
   assert.ok(f.includes('ประเภท 06900') && f.includes('สถานะ อก. ดำเนินการ · 3 พ.ย. 2569') && f.includes('พิกัด 13.62418, 100.63312 จุดจากแหล่ง'));
-  assert.ok(f.includes('ในอำเภอเมืองสมุทรปราการอีก 1,986 ทะเบียน · 117,656 คน'));
+  assert.ok(f.includes('ในอำเภอเมืองสมุทรปราการอีก 1,986 ทะเบียน · 175,840 คน'));
+  // A MOI-filled figure (Daikin, 72110400125365: only in the MOI list): the อก. tag and the row update date, never a count date.
+  const {data, index} = load();
+  const dk = renderFactory(buildFactoryDetail(data.rows.find(r => r.id === '72110400125365'), {scopeRows: data.rows, allRows: data.rows, index, families: data.families}), ctxFor(data, index));
+  assert.ok(text(dk).includes('2,759 คน · 2,000+ อก.') && dk.includes('class="src-tag"'), text(dk).slice(0, 200));
+  assert.ok(text(dk).includes('คนงาน อก. · ข้อมูลโรงงานอุตสาหกรรม · ปรับปรุงแถว 21 ก.ค. 2569'));
   assert.ok(f.includes('ทะเบียนจำพวก 3') && v.factory.includes('href="https://diw-dataset.diw.go.th/th/dataset/factype3"'), 'the public DIW dataset page of its class');
   assert.ok(f.includes('โรงงานใกล้เคียง 0 ทะเบียน') && f.includes('3,243–12,972 คน') && f.includes('≤ 3 กม.'), 'the nearby rule as chips');
   assert.ok(f.includes('โรงงานทุกอุตสาหกรรมรอบ 3 กม. 110 ทะเบียน · 8,459 คน'));
@@ -129,15 +145,18 @@ test('missing stays missing: no point says so; an empty district is a measured 0
   assert.ok(t.includes('ไม่มีพิกัด') && !t.includes('โรงงานใกล้เคียง'), 'no point: no nearby set (the chip says why)');
   const u = unplacedOf(data.rows);
   assert.deepEqual([u.noArea, u.noProvince], [2, 0], 'two registrations name no district of their province');
-  // No worker figure: said in words, never 0; the nearby set drops the size rule.
-  const noFigure = data.rows.find(r => r.workers === null && hasPoint(r) && !r.person);
+  // No worker figure: said in words, never 0; the nearby set drops the size rule. Since release 0.9.0 every registration
+  // has a figure, so a registration with its figure taken away stands in.
+  const blank = r => ({...r, workers: null, ws: null, wOn: '', size: 'none', p90: false, rank: null});
+  const noFigure = blank(data.rows.find(r => hasPoint(r) && !r.person && r.ws === 'diw'));
   const n = text(renderFactory(buildFactoryDetail(noFigure, {scopeRows: data.rows, allRows: data.rows, index, families: data.families}), ctx));
   assert.ok(n.includes('ไม่มีตัวเลขคนงาน') && !/\b0 คน\b/.test(n.slice(0, n.indexOf('โรงงานใกล้เคียง'))), n.slice(0, 200));
   assert.ok(n.includes('ทุกขนาด ≤ 3 กม.'), 'nearby: same family within 3 km, any size');
-  const noneRows = filterRows(data.rows, {size: 'none'});
+  assert.equal(filterRows(data.rows, {size: 'none'}).length, 0);
+  const noneRows = data.rows.filter(r => r.province === 'SPK').map(blank);
   const ins = summarizeAreaInsight(noneRows, index, {families: data.families});
   const nv = text(renderOverview({insight: ins, summary: summarize(noneRows), overview: buildOverview(noneRows, index, {families: data.families, ...contextOf(data)}), focusMode: 'auto', ctx}));
-  assert.ok(nv.includes('2,923 ทะเบียน · ไมมีตัวเลขคนงาน'.replace('ไมมี', 'ไม่มี')) && nv.includes('นับเป็นทะเบียน') && nv.includes('— คน'), 'workers unknown: the Aha offers the registrations instead');
+  assert.ok(nv.includes('7,171 ทะเบียน · ไมมีตัวเลขคนงาน'.replace('ไมมี', 'ไม่มี')) && nv.includes('นับเป็นทะเบียน') && nv.includes('— คน'), 'workers unknown: the Aha offers the registrations instead');
   const empty = buildAreaProfile([], '1039', index, data.families, contextOf(data));
   assert.equal(empty.coverageState, 'measured_zero');
   const e = text(renderArea(empty, () => '#000', ctx));
@@ -149,7 +168,7 @@ test('charts: districts by the measure, district × industry matrix with equal c
   const m = buildChartModel(data.rows, index, data.families);
   assert.equal(m.areas.length, 20);
   assert.equal(m.totalAreas, 915);
-  assert.equal(m.unplacedValue, 7, 'the workers of the two registrations placed only at province level');
+  assert.equal(m.unplacedValue, 85, 'the workers of the two registrations placed only at province level (7 from DIW, 78 from MOI)');
   for (let i = 1; i < m.areas.length; i++) assert.ok(m.areas[i - 1].value >= m.areas[i].value);
   const mx = areaMatrix(m);
   assert.equal(mx.cells.length, 12 * data.families.length);
@@ -177,9 +196,10 @@ test('breadcrumb follows production: ประเทศไทย › จัง�
 
 test('industry families bind to LDS series by stable id with the series shape cue', () => {
   const {data} = load();
-  assert.deepEqual(CUES, ['circle', 'square', 'triangle', 'diamond', 'cross', 'star', 'hexagon', 'ring', 'dash', 'plus']);
-  assert.deepEqual(GROUP_SERIES, {food: 1, electrical: 2, vehicle: 3, textile: 4, metal: 5, polymer: 6, wood: 7, mineral: 8, other: 9, plant: 10});
-  assert.equal(new Set(Object.values(GROUP_SERIES)).size, 10, 'one series per family');
+  assert.deepEqual(CUES, ['circle', 'square', 'triangle', 'diamond', 'cross', 'star', 'hexagon', 'ring', 'dash', 'plus', 'open']);
+  assert.deepEqual(GROUP_SERIES, {food: 1, electrical: 2, vehicle: 3, textile: 4, metal: 5, polymer: 6, wood: 7, mineral: 8, other: 9, plant: 10, unstated: 11});
+  assert.equal(new Set(Object.values(GROUP_SERIES)).size, 11, 'one series per family; 11 = the neutral “not stated” slot');
+  assert.match(cueMarkup(11), /class="cue-shape category-11".*data-cue="open"/);
   for (const g of data.families) assert.equal(g.series, seriesOf(g.id));
   for (const name of CUES) assert.ok(CUE_PATHS[name].startsWith('M'));
   assert.match(cueMarkup(2), /class="cue-shape category-2".*data-cue="square".*aria-hidden="true"/);
@@ -225,4 +245,15 @@ test('shares print whole percentages; a non-zero part never prints as 0%', () =>
   assert.equal(pct(0, 10), '0%');
   assert.equal(pct(3, 0), '—');
   assert.ok(text(provenance({meta: {checkedOn: '2026-11-04', context: {estates: {checkedOn: '2026-10-26'}}}, unit: unitWords('workers')}, 'x', {estates: true})).includes('ทะเบียนนิคมและสวนอุตสาหกรรม (งานวิจัย 26 ต.ค. 2569)'));
+});
+
+test('worker sources in English (release 0.9.0): the split line, the อก. tag, the row update date, “not stated”', () => {
+  registerDictionary(FACTORY_EN);
+  assert.equal(translate('กรอ. 323,654 คน'), 'DIW 323,654 workers');
+  assert.equal(translate('อก. เติม 77,337 คน (398 ทะเบียน)'), 'MOI fills 77,337 workers (398 registrations)');
+  assert.equal(translate('ตัวเลขคนงานจาก อก.'), 'Worker figure from MOI');
+  assert.equal(translate('ไม่ระบุกลุ่ม'), 'Not stated');
+  assert.equal(translate('ไม่ระบุกลุ่มอุตสาหกรรม'), 'Industry group not stated');
+  assert.match(translate('อก. · ข้อมูลโรงงานอุตสาหกรรม · ปรับปรุงแถว 21 ก.ค. 2569') || '', /^MOI · .+ · row updated .*2026$/);
+  assert.match(translate('กรอ. · ข้อมูล ณ 1 ต.ค. 2569') || '', /^DIW · data as of .*2026$/);
 });

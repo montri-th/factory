@@ -3,7 +3,7 @@
 
   python3 -I scripts/build-data.py --csv <dir of tab CSV exports> --workers <DIW worker figures CSV> \
       --estates <dir of estate-master CSVs> --index data/area-index.json --frames data/frames --out data/factories.json \
-      [--report data/build-report.json]
+      [--moi-workers <26_ICTC_METRICS.csv>] [--workers-via <file the DIW figures were taken from>] [--report data/build-report.json]
 
 Inputs (internal, never committed):
   --csv      CSV exports of tabs of “CityMETER Factory Thailand — Factory, Operator & Company Research Master 2026-11-04”
@@ -23,6 +23,15 @@ Inputs (internal, never committed):
   --workers  fid · workers · class of the DIW class 2 and class 3 open-data exports (column คนงานรวม of factype2.csv and
              factype3.csv, diw-dataset.diw.go.th; both files read 2026-11-05 with SHA-256 equal to 99_SOURCE_FILES), derived
              with no other field. The build stops when a figure differs from 18_WORKERS_P90.
+  --moi-workers  26_ICTC_METRICS.csv (tab gid 2026111626, 16 Nov 2026: fid · workers_source · capital_source_unit_unconfirmed ·
+             horsepower_permitted_source · source_last_update — TOTAL_WORKER, capital and permitted horsepower of the MOI
+             “ข้อมูลโรงงานอุตสาหกรรม” complete CSV (industry.gdcatalog.go.th ops_13_01) for the 30,921 exact core-FID matches).
+             Only workers_source and source_last_update are read, and only for a FID without a DIW figure (owner's research
+             rule 28_PRODUCT_BENEFITS: “คงยอด DIW เดิม และเติม MOI เฉพาะ FID ที่ DIW ว่าง”). Capital (currency unconfirmed) and
+             permitted horsepower (outliers unreviewed) are not published.
+  --workers-via  the file the --workers figures were taken from when not read straight from the DIW exports (recorded in
+             meta.inputs with its SHA-256; release 0.9.0: workers-comparison-all-core.csv of the ICTC research package
+             2026-11-16, DIW_workers, equal to release 0.8.2's DIW figures for every FID)
   --estates  CSV exports of “CityMETER Industrial Estates — นิคม สวน และเขตอุตสาหกรรม 106 รายการ — Research Master 2026-10-25”:
              01_ESTATES.csv (names, type, province, IEAT page). NO geometry is read: the master has no selected boundary
              (19_MAP_EXPORT selected 0, rights not cleared), so this product publishes the list only.
@@ -35,8 +44,11 @@ Nothing is merged, split, moved or re-labelled.
 
 WORKERS = คนงานรวม of the registration's DIW class 2/3 export row (resource metadata updated 2026-10-01; the observation
 date of the figure is not exported): 71,124 FIDs have a figure (391 of them 0, as the source records it); 2 DIW FIDs have a
-blank figure and the 2,921 MOI-only FIDs have no DIW row — no figure (null), never 0 and never estimated. The P90 of the
-figures (PERCENTILE.INC 0.9) is 95 workers; every FID of 18_WORKERS_P90 has exactly its figure here (checked).
+blank figure and the 2,921 MOI-only FIDs have no DIW row. The P90 of the DIW figures (PERCENTILE.INC 0.9) is 95 workers;
+every FID of 18_WORKERS_P90 has exactly its figure here (checked). With --moi-workers (release 0.9.0), a FID without a DIW
+figure takes the MOI TOTAL_WORKER of 26_ICTC_METRICS (`ws` = 1, its row update date in `wOn` — a source row date, not
+when the workers were counted); DIW figures are never replaced. The 95 threshold stays fixed (never a new P90); a filled
+figure at or above it joins the 95+ lens. A FID with neither stays null, never 0 and never estimated.
 
 DISTRICT (ADMIN METHODS, the first that applies)
   name      the registration's own district label (02_FACTORIES.district: DIW2026 first, otherwise MOI) is a production
@@ -55,7 +67,8 @@ NAMES = factory_name (the sheet's selected display name); operator_display_obser
 A name written as a natural person (นาย, นาง, นางสาว, Mr …) is withheld for privacy (`person` = 1) together with its point.
 
 INDUSTRY = factory_type_code_raw → official_industry_group_raw (02_FACTORIES; one group per code) → one of ten industry
-families for the map's category cue (FAMILIES, a fixed presentation table; the official DIW group stays on every row).
+families for the map's category cue (FAMILIES, a fixed presentation table; the official DIW group stays on every row). A
+registration without a group is the family `unstated` (neutral, never counted as an industry).
 
 Not copied (meta.excludedFields): addresses, operator raw fields (MOI ONAME, the 2025 label), operator context ids, legal or
 parent fields, researcher notes, human review fields, evidence and conflict flags, raw coordinates outside the screen, source
@@ -70,6 +83,7 @@ OPS_TAB = '02_FACTORIES_ops'
 WORKERS_INPUT = 'DIW_workers'
 TYPE_TAB = '02_TYPES'
 SOURCE_TAB = '99_SOURCE_FILES'
+MOI_WORKERS_TAB = '26_ICTC_METRICS'
 ESTATE_TAB = '01_ESTATES'
 
 # Functional classes of 02_FACTORIES (functional-factory-classification-v2-2026-11-04; all stay in the legal-factory scope).
@@ -98,7 +112,11 @@ FAMILIES = [
       'ผลิตกระดาษและผลิตภัณฑ์กระดาษ', 'การพิมพ์ การเย็บเล่ม ทำปกหรือการทำแม่พิมพ์']),
     ('mineral', 'ผลิตภัณฑ์อโลหะ', 'Non-metallic mineral products', ['ผลิตภัณฑ์อโลหะ']),
     ('plant', 'ผลิตภัณฑ์จากพืช', 'Plant products', ['ผลิตภัณฑ์จากพืช']),
-    ('other', 'การผลิตอื่น ๆ', 'Other manufacturing', ['การผลิตอื่นๆ', '']),
+    ('other', 'การผลิตอื่น ๆ', 'Other manufacturing', ['การผลิตอื่นๆ']),
+    # Release 0.9.0: a registration without a DIW industry group is its own bucket, never “other manufacturing” — the
+    # research master's rule for industry shares (28_PRODUCT_BENEFITS: “แยกกลุ่มไม่ระบุ”). Until 0.8.2 these rows sat in
+    # 'other'; they had no worker figure then, so only the registration count saw them.
+    ('unstated', 'ไม่ระบุกลุ่มอุตสาหกรรม', 'Industry group not stated', ['']),
 ]
 GROUP_FAMILY = {g: i for i, f in enumerate(FAMILIES) for g in f[3]}
 
@@ -126,13 +144,15 @@ SOURCES = [  # the public pages of the sources this product reads (99_SOURCE_FIL
     ('DIW_factype3', 'ทะเบียนโรงงานจำพวก 3 ของกรมโรงงานอุตสาหกรรม (DIW Open Data)'),
     ('MOI_location', 'ที่ตั้งประกอบกิจการโรงงาน — กระทรวงอุตสาหกรรม (GD Catalog)'),
     ('MOI_permit', 'การอนุญาตประกอบกิจการโรงงาน — กระทรวงอุตสาหกรรม (GD Catalog)'),
+    ('ICTC_FACTORY_DATA_20261116', 'ข้อมูลโรงงานอุตสาหกรรม — กระทรวงอุตสาหกรรม (GD Catalog)'),
 ]
 EXCLUDED = ['address', 'operator_name_moi_raw', 'historical_operator_name_2025', 'operator_context_id', 'operator_context_basis',
             'legal_operator_id', 'immediate_parent', 'ultimate_parent', 'human_review_status', 'human_decision', 'human_notes',
             'evidence_conflict_flags', 'status_evidence_conflict_flags', 'source_ids', 'record_id', 'logo_use_id', 'logo_url',
             'workers_CDF_at_or_below', 'raw coordinates of rows whose coordinate_quality is not within_TH_bbox_unverified',
             'names and points of natural-person operators', 'internal Drive / Sheet URLs',
-            'every DIW export field except fid and คนงานรวม (addresses, capital, horsepower, permit year, activity)']
+            'every DIW export field except fid and คนงานรวม (addresses, capital, horsepower, permit year, activity)',
+            'MOI capital_source_unit_unconfirmed (currency unconfirmed) and horsepower_permitted_source (outliers unreviewed) of 26_ICTC_METRICS']
 
 
 def sha256_file(path):
@@ -237,6 +257,8 @@ def main():
     ap.add_argument('--frames', required=True)
     ap.add_argument('--out', required=True)
     ap.add_argument('--report', default='')
+    ap.add_argument('--moi-workers', default='')
+    ap.add_argument('--workers-via', default='')
     ap.add_argument('--built-on', default=datetime.date.today().isoformat())
     a = ap.parse_args()
 
@@ -253,6 +275,24 @@ def main():
     estates_raw = read_csv(paths[ESTATE_TAB])
     inputs[WORKERS_INPUT]['derivedFrom'] = [{'source': sid, 'sha256': source_rows.get(sid, {}).get('sha256', ''), 'field': 'คนงานรวม'}
                                             for sid in ('DIW_factype2', 'DIW_factype3')]
+    if a.workers_via:
+        inputs[WORKERS_INPUT]['via'] = {'file': os.path.basename(a.workers_via), 'sha256': sha256_file(a.workers_via), 'field': 'DIW_workers'}
+    moi_fig = {}
+    if a.moi_workers:
+        inputs[MOI_WORKERS_TAB] = {'file': os.path.basename(a.moi_workers), 'sha256': sha256_file(a.moi_workers), 'gid': 2026111626,
+                                   'fields': ['fid', 'workers_source', 'source_last_update']}
+        for r in read_csv(a.moi_workers):
+            fid, w = r['fid'].strip(), (r['workers_source'] or '').strip()
+            if fid in moi_fig:
+                sys.exit(f'26_ICTC_METRICS lists {fid} twice')
+            if w != '':
+                v = float(w)
+                if v < 0 or not v.is_integer():
+                    sys.exit(f'{fid}: MOI worker figure {w!r} is not a whole number of people')
+                on = (r['source_last_update'] or '').strip()
+                if on and not re.match(r'^\d{4}-\d{2}-\d{2}$', on):
+                    sys.exit(f'{fid}: source_last_update {on!r} is not YYYY-MM-DD')
+                moi_fig[fid] = (int(v), on)
 
     # DIW worker figures: one figure per FID (a FID listed twice must carry one figure).
     figures = {}
@@ -304,11 +344,15 @@ def main():
             sys.exit(f'{fid} missing from the name or operator export of 02_FACTORIES')
         pc, d, method = place(f)
         workers = figures.get(fid)
+        ws, w_on = ('diw', '') if workers is not None else (None, '')
+        if workers is None and fid in moi_fig:
+            workers, w_on = moi_fig[fid]
+            ws = 'moi'
         if f['core_basis'].startswith('DIW') != (fid in figures):
             sys.exit(f'{fid}: core_basis {f["core_basis"]} disagrees with the DIW exports')
         q = p90.get(fid)
         if q is not None:
-            if workers is None or int(float(q['workers'])) != workers:
+            if ws != 'diw' or int(float(q['workers'])) != workers:
                 sys.exit(f'{fid}: worker figure {workers} differs from 18_WORKERS_P90 ({q["workers"]})')
             if (q['province'] or '').strip() != (f['province'] or '').strip():
                 sys.exit(f'province differs between 18_WORKERS_P90 and 02_FACTORIES for {fid}')
@@ -328,7 +372,7 @@ def main():
         rows.append({
             'fid': fid, 'name': '' if name_person or blank else name,
             'op': '' if op_person or op in ('', '-') or same_name(op, name) else op, 'person': person,
-            'workers': workers, 'p90': q is not None, 'type': f['factory_type_code_raw'], 'group': type_group.get(f['factory_type_code_raw'], ''),
+            'workers': workers, 'ws': ws, 'wOn': w_on, 'p90': q is not None or (ws == 'moi' and workers >= THRESHOLD), 'type': f['factory_type_code_raw'], 'group': type_group.get(f['factory_type_code_raw'], ''),
             'cls': CLASS_INDEX[f['functional_class']], 'fcls': f['factory_class_code_raw'], 'conf': f['classification_confidence'],
             'province': pc, 'district': d, 'admin': method, 'sub': (f['subdistrict'] or '').strip(),
             'lat': round(lat, 5) if point else None, 'lon': round(lon, 5) if point else None,
@@ -344,11 +388,12 @@ def main():
         sys.exit(f'{len(extra)} DIW FIDs missing from 02_FACTORIES')
 
     # The 95+ lens: the P90 of the figures must be the sheet's threshold, and 18_WORKERS_P90 exactly the FIDs at or above it.
-    figured = sorted(x['workers'] for x in rows if x['workers'] is not None)
+    # The threshold and the lens parity read the DIW figures only (95 stays fixed; it is never recomputed with MOI figures).
+    figured = sorted(x['workers'] for x in rows if x['ws'] == 'diw')
     p90_value = percentile_inc(figured, 0.9)
     if p90_value != THRESHOLD:
         sys.exit(f'P90 of the worker figures is {p90_value}, not {THRESHOLD}')
-    lens = {x['fid'] for x in rows if x['workers'] is not None and x['workers'] >= THRESHOLD}
+    lens = {x['fid'] for x in rows if x['ws'] == 'diw' and x['workers'] >= THRESHOLD}
     if lens != set(p90):
         sys.exit(f'18_WORKERS_P90 differs from the FIDs with {THRESHOLD}+ workers ({len(lens)} / {len(p90)})')
 
@@ -381,7 +426,7 @@ def main():
     district_index = {d: i for i, d in enumerate(districts)}
     subs = sorted({x['sub'] for x in rows if x['sub']})
     sub_index = {v: i for i, v in enumerate(subs)}
-    dates = sorted({x['moiOn'] for x in rows if x['moiOn']})
+    dates = sorted({x['moiOn'] for x in rows if x['moiOn']} | {x['wOn'] for x in rows if x['wOn']})
     date_index = {v: i for i, v in enumerate(dates)}
 
     def col(fn):
@@ -409,10 +454,15 @@ def main():
         'dup': col(lambda x: 1 if x['dup'] else 0),
         'off': col(lambda x: 1 if x['off'] else 0),
     }
+    if moi_fig:  # worker source per row (0 DIW, 1 MOI fill, -1 none) and the MOI row update date of a filled figure
+        cols['ws'] = col(lambda x: {'diw': 0, 'moi': 1}.get(x['ws'], -1))
+        cols['wOn'] = col(lambda x: date_index[x['wOn']] if x['wOn'] else -1)
 
     # Sources (public pages only).
     sources = []
     for sid, th in SOURCES:
+        if sid == 'ICTC_FACTORY_DATA_20261116' and not moi_fig:
+            continue
         s = source_rows.get(sid, {})
         url = s.get('source_url', '')
         if not url.startswith('https://') or any(h in url for h in PRIVATE_HOSTS):
@@ -435,21 +485,26 @@ def main():
         return next((s_[0] for s_ in SIZES if s_[2] <= w <= s_[3]), '') if w is not None else 'none'
 
     total_workers = sum(x['workers'] for x in rows if x['workers'] is not None)
+    with_workers = [x['workers'] for x in rows if x['workers'] is not None]
+    by_source = lambda s_: [x['workers'] for x in rows if x['ws'] == s_]
     counts = {
-        'rows': len(rows), 'withWorkers': len(figured), 'workers': total_workers, 'zeroWorkers': sum(1 for v in figured if v == 0),
-        'p90': len(lens), 'p90Workers': sum(x['workers'] for x in rows if x['p90']),
+        'rows': len(rows), 'withWorkers': len(with_workers), 'workers': total_workers, 'zeroWorkers': sum(1 for v in with_workers if v == 0),
+        'workerSources': {s_: {'rows': len(by_source(s_)), 'workers': sum(by_source(s_)), 'zero': sum(1 for v in by_source(s_) if v == 0)}
+                          for s_ in ('diw', 'moi')},
+        'p90': sum(1 for x in rows if x['p90']), 'p90Workers': sum(x['workers'] for x in rows if x['p90']), 'p90Diw': len(lens),
         'points': sum(1 for x in rows if x['lat'] is not None),
         'persons': sum(1 for x in rows if x['person']), 'admin': dict(collections.Counter(x['admin'] for x in rows)),
         'moi': dict(collections.Counter(x['moi'] or 'none' for x in rows)), 'basis': dict(collections.Counter(x['basis'] for x in rows)),
         'classes': dict(collections.Counter(CLASSES[x['cls']][0] for x in rows)),
         'possibleSameSite': sum(1 for x in rows if x['dup']), 'ties': sum(1 for x in rows if x['workers'] == THRESHOLD),
         'estates': len(estates),
-        'sizes': dict(collections.Counter(band(x['workers']) for x in rows)),
+        # Every band and `none` is listed, 0 included (release 0.9.0: no registration is without a figure).
+        'sizes': {k: collections.Counter(band(x['workers']) for x in rows).get(k, 0) for k in [s_[0] for s_ in SIZES] + ['none']},
         'estateContext': dict(collections.Counter(x['estate'] or 'blank' for x in rows)),
         'p90Parity': {'workers': len(p90), 'nameDiffers': mismatch['name'], 'moiDiffers': mismatch['moi']},
     }
     checked = sorted({us_date(source_rows[sid].get('checked_date', '')) for sid in ('DIW_factype2', 'DIW_factype3', 'MOI_location')
-                      if sid in source_rows} - {''})
+                      + (('ICTC_FACTORY_DATA_20261116',) if moi_fig else ()) if sid in source_rows} - {''})
     meta = {
         'dataset': 'CityMETER Factory', 'datasetTh': 'ทะเบียนโรงงานทุกขนาด ทะเบียน กรอ. (นอกนิคมอุตสาหกรรม) และ อก.',
         'registryId': 'research.TH.factory', 'productionCode': 'factory',
@@ -457,12 +512,17 @@ def main():
         'tab': {'name': '02_FACTORIES'}, 'lensTab': {'name': P90_TAB, 'gid': 2026110418},
         'estateSheetTitle': 'CityMETER Industrial Estates — นิคม สวน และเขตอุตสาหกรรม 106 รายการ — Research Master 2026-10-25',
         'checkedOn': checked[-1] if checked else '', 'builtOn': a.built_on,
-        'scope': {'threshold': THRESHOLD, 'percentile': 'PERCENTILE.INC 0.9', 'withWorkers': len(figured), 'core': len(rows),
-                  'workersPeriod': 'DIW class 2/3 exports (คนงานรวม), resource metadata updated 2026-10-01; observation date of the figure not exported',
+        'scope': {'threshold': THRESHOLD, 'percentile': 'PERCENTILE.INC 0.9 of the DIW figures', 'withWorkers': len(with_workers), 'core': len(rows),
+                  'workersPeriod': 'DIW class 2/3 exports (คนงานรวม), resource metadata updated 2026-10-01; observation date of the figure not exported'
+                                   + ('; where DIW has no figure, MOI TOTAL_WORKER (ข้อมูลโรงงานอุตสาหกรรม ops_13_01, read 2026-11-16; per-row LAST_UPDATE is a row update date, not a count date)' if moi_fig else ''),
                   'estates': 'estate_context of 02_FACTORIES (counts.estateContext): outside_estate_source_scope_DIW_catalog for the DIW-listed FIDs — the DIW class 2/3 open-data exports cover registrations outside IEAT industrial estates; unknown_estate_context for the MOI-only FIDs',
                   'note': 'Core registrations (FID) of the research master, every size; not a census of operating plants.'},
         'rows': len(rows), 'counts': counts, 'inputs': inputs,
-        'unit': {'workers': 'คน (Σ คนงานรวม of the DIW class 2/3 exports; registrations without a figure add nothing)', 'count': 'ทะเบียน (FID)'},
+        'unit': {'workers': 'คน (Σ คนงานรวม of the DIW class 2/3 exports' + ('; MOI TOTAL_WORKER only where DIW has none' if moi_fig else '')
+                            + '; registrations without a figure add nothing)', 'count': 'ทะเบียน (FID)'},
+        'workerSources': [{'id': 'diw', 'th': 'กรอ.', 'en': 'DIW', 'what': 'คนงานรวม of the DIW class 2/3 exports', 'period': '2026-10-01'}]
+                         + ([{'id': 'moi', 'th': 'อก.', 'en': 'MOI', 'what': 'TOTAL_WORKER of ข้อมูลโรงงานอุตสาหกรรม (ops_13_01), only where DIW has no figure',
+                              'checkedOn': '2026-11-16', 'dateIs': 'source row update date (LAST_UPDATE), not when the workers were counted'}] if moi_fig else []),
         'adminMethods': ADMIN, 'checks': {'pointWithheld': dict(elsewhere)},
         'excludedFields': EXCLUDED,
         'context': {

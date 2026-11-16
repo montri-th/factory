@@ -18,7 +18,7 @@
  */
 import {LANG} from './shell/i18n.js';
 import {thaiEstateName} from './lang.js';
-import {productionLink, provinceByCode, hasPoint, SIZE_BANDS, SCOPE, MOI_TH, NO_FIGURE} from './model.js';
+import {productionLink, provinceByCode, hasPoint, SIZE_BANDS, SCOPE, MOI_TH, NO_FIGURE, UNSTATED} from './model.js';
 import {areaWord} from './areas.js';
 import {cueMarkup} from './cues.js';
 import {actionBar} from './ask.js';
@@ -69,6 +69,17 @@ export const words = areas => {
 };
 const valueText = (v, unit) => nw(`<strong class="data-number">${num(v)}</strong> ${esc(unit.one)}`);
 const workersText = r => (Number.isFinite(r?.workers) ? `${num(r.workers)} คน` : '');
+/**
+ * Release 0.9.0 (owner 2026-11-16, research rule 28_PRODUCT_BENEFITS “คงยอด DIW เดิม และเติม MOI เฉพาะ FID ที่ DIW ว่าง”):
+ * the workers of a selection keep their two sources apart — DIW's figures, then the MOI TOTAL_WORKER filled in for the
+ * registrations DIW has no figure for. Shown only when the selection holds a filled figure.
+ */
+const MOI_SPLIT_TITLE = 'ทะเบียนที่ กรอ. ไม่มีตัวเลขคนงาน ใช้คนงานรวมตามข้อมูลโรงงานอุตสาหกรรมของ อก.';
+const sourceSplit = x => (x?.moi > 0
+  ? `<p class="hint source-split" title="${esc(MOI_SPLIT_TITLE)}">${pic('workers')}<span>${nw(`กรอ. ${num(x.workers - x.moiWorkers)} คน`)} · ${nw(`อก. เติม ${num(x.moiWorkers)} คน (${num(x.moi)} ทะเบียน)`)}</span></p>`
+  : '');
+/** The source tag of a filled figure (a chip, a table cell). */
+const moiTag = r => (r?.ws === 'moi' ? ` <span class="src-tag" title="ตัวเลขคนงานจาก อก.">อก.</span>` : '');
 /** Workers of an aggregate in words; registrations that all lack a figure say so (never “0 คน”). */
 const workersWords = x => (x.count && x.figured === 0 ? NO_FIGURE.th : `${num(x.workers)} คน`);
 /** The other measure of an aggregate, in words ("85,921 คน" beside registrations, "211 ทะเบียน" beside workers). */
@@ -104,11 +115,12 @@ export function provenance(ctx = {}, boundary = '', {terrain = false, estates = 
 /** Bars per industry family in the family's series colour + shape cue; value = the measure. */
 function familyBars(byGroup, unit) {
   const val = g => (unit.id === 'count' ? g.count : g.workers);
-  const list = byGroup.filter(g => val(g) > 0).sort((a, b) => val(b) - val(a) || a.index - b.index);
+  // “Not stated” (family `unstated`) is no industry: it follows the ranked families, set apart (release 0.9.0).
+  const list = byGroup.filter(g => val(g) > 0).sort((a, b) => (a.id === UNSTATED) - (b.id === UNSTATED) || val(b) - val(a) || a.index - b.index);
   if (!list.length) return `<p class="hint">${unit.id === 'workers' && byGroup.some(g => g.count) && !byGroup.some(g => g.figured) ? esc(NO_FIGURE.th) : `ไม่มี${esc(unit.subject)}`}</p>`;
   const max = Math.max(1, ...list.map(val));
   return `<ul class="mix-list" aria-label="อุตสาหกรรม (${esc(unit.one)})">${list.map(g => `
-    <li><button type="button" class="mix-row" data-action="filter-group" data-value="${esc(g.id)}" title="${esc(g.th)}: ${esc(`${num(g.count)} ทะเบียน · ${num(g.workers)} คน`)} (ดูเฉพาะอุตสาหกรรมนี้)"><span class="mix-label">${cueMarkup(g.series)}${esc(g.th)}</span>
+    <li${g.id === UNSTATED ? ' class="is-unstated"' : ''}><button type="button" class="mix-row" data-action="filter-group" data-value="${esc(g.id)}" title="${esc(g.th)}: ${esc(`${num(g.count)} ทะเบียน · ${num(g.workers)} คน`)} (ดูเฉพาะอุตสาหกรรมนี้)"><span class="mix-label">${cueMarkup(g.series)}${esc(g.th)}</span>
       <span class="mix-track" aria-hidden="true"><span class="mix-fill category-${g.series}" style="width:${Math.max(3, Math.round((val(g) / max) * 100))}%"></span></span>
       <span class="mix-value data-number">${num(val(g))}</span></button></li>`).join('')}</ul>`;
 }
@@ -155,7 +167,7 @@ function industryBars(list, unit) {
   const max = Math.max(1, ...list.map(c => c.value));
   const unknown = c => unit.id === 'workers' && c.count && !c.figured;
   return `<ul class="mix-list industry-list" aria-label="กลุ่มอุตสาหกรรม กรอ. (${esc(unit.one)})">${list.map(c => `
-    <li title="${esc(c.industry.th)}: ${esc(`${num(c.count)} ทะเบียน · ${workersWords(c)}`)}"><span class="mix-label">${c.industry.familyRec ? cueMarkup(c.industry.familyRec.series) : ''}${esc(c.industry.th)}</span>
+    <li${c.unstated ? ' class="is-unstated"' : ''} title="${esc(c.industry.th)}: ${esc(`${num(c.count)} ทะเบียน · ${workersWords(c)}`)}"><span class="mix-label">${c.industry.familyRec ? cueMarkup(c.industry.familyRec.series) : ''}${esc(c.industry.th)}</span>
       <span class="mix-track" aria-hidden="true"><span class="mix-fill industry-fill" style="width:${unknown(c) ? 0 : Math.max(3, Math.round((c.value / max) * 100))}%"></span></span>
       <span class="mix-value data-number">${unknown(c) ? '—' : num(c.value)}</span></li>`).join('')}</ul>`;
 }
@@ -222,12 +234,13 @@ const shareDetail = (g, base, unit, where) => `${g.th}: ${num(g.value)} จา�
 /** The industries of the focus as bars (family colour + cue), each with its share of the focus total. */
 function industryCompare(insight, unit, here) {
   const ind = insight.industry;
-  if (!ind?.list?.length || !ind.base) return '';
+  if (!(ind?.list?.length || ind?.unstated) || !ind.base) return '';
   const bar = g => `<li title="${esc(shareDetail(g, ind.base, unit, here))}"><span class="mix-label">${cueMarkup(g.series)}${esc(g.short || g.th)}</span>
       <span class="mix-track" aria-hidden="true"><span class="mix-fill category-${g.series}" style="width:${Math.max(2, Math.round(g.share))}%"></span></span>
       <span class="mix-value data-number">${pct(g.value, ind.base)}</span><span class="sr-only">${esc(shareDetail(g, ind.base, unit, here))}</span></li>`;
+  const unstated = ind.unstated ? `<ul class="mix-list rail-compare rail-unstated">${bar(ind.unstated)}</ul>` : '';
   return `<div class="aha-rail aha-industry"><p class="aha-rail-title">${pic('segment')}อุตสาหกรรมหลัก</p>
-    <ul class="mix-list rail-compare">${ind.list.map(bar).join('')}</ul></div>`;
+    <ul class="mix-list rail-compare">${ind.list.map(bar).join('')}</ul>${unstated}</div>`;
 }
 
 /** The district(s) with the most of the measure outside the leading province — every district tied at that value. */
@@ -299,7 +312,7 @@ export function renderOverview({insight, summary, overview, focusMode = 'auto', 
     ${metricTile(summary.count, `ทะเบียน${narrowed ? ' ในโฟกัส' : ''}`, 'factory')}
     ${metricTile(summary.areas, narrowed ? w : 'เขต/อำเภอ', 'area')}
     ${metricTile(summary.provinces, 'จังหวัด', 'province')}
-  </section>`;
+  </section>${sourceSplit(summary)}`;
   const scopeText = province ? provinceName(province) : 'ประเทศไทย';
   const provinceRows = p => `<li><button type="button" class="province-row" data-action="select-province" data-id="${esc(p.code)}" aria-label="${esc(p.name)} ${num(p.value)} ${esc(unit.one)} กดเพื่อดูจังหวัด"><i class="province-swatch" style="background:${esc(p.fill)}" aria-hidden="true"></i><span class="province-name">${esc(p.name)}</span><span class="province-count data-number">${num(p.value)}<small>${esc(unit.one)}</small></span></button></li>`;
   const shown = provinces.slice(0, 8), rest = provinces.slice(8);
@@ -351,7 +364,7 @@ export function renderArea(p, classOf, ctx = {}) {
       <p class="eyebrow">${esc(w.area)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(a.province)}">${esc(prov)}</button></p>
       <h2>${esc(place)}</h2>${a.nameEn ? (LANG === 'en' ? `<p class="subtle" lang="th" translate="no">${esc(place)}</p>` : `<p class="subtle">${esc(a.nameEn)}</p>`) : ''}
       ${rank}
-      <div class="metrics compact">${workersTile}${metricTile(p.count, 'ทะเบียน', 'factory')}${metricTile(share, `ของ${prov}`, 'province', shareText)}${lensTile}</div>
+      <div class="metrics compact">${workersTile}${metricTile(p.count, 'ทะเบียน', 'factory')}${metricTile(share, `ของ${prov}`, 'province', shareText)}${lensTile}</div>${sourceSplit(p)}
       ${selectionNote(p, place, ctx)}
       ${actionBar({kind: 'area', area: {place, province: prov}})}
       <div class="detail-actions">${p.count ? '<button type="button" class="btn" data-action="open-table">ดูรายชื่อ</button><button type="button" class="btn quiet" data-action="open-charts">เปรียบเทียบพื้นที่</button>' : ''}${link(productionLink({province: a.province, area: a.id}), 'ดูใน CityMETER', 'btn quiet source-link')}</div>
@@ -422,9 +435,11 @@ export function renderFactory(d, ctx = {}) {
     ? `<button type="button" class="fact-chip" data-action="select-area" data-id="${esc(d.area.id)}">${pic('area')}${esc(w.area)}${esc(d.area.name)} · ${esc(prov)}</button>`
     : r.province ? `<button type="button" class="fact-chip" data-action="select-province" data-id="${esc(r.province)}">${pic('province')}${esc(prov)}</button>` : '<span class="fact-chip is-quiet">ไม่ระบุจังหวัด</span>';
   const size = SIZE_BANDS.find(b => b.id === r.size);
+  const moiTitle = ['คนงานรวมตามข้อมูลโรงงานอุตสาหกรรมของ อก.', r.wOn ? `ปรับปรุงแถว ${thaiDate(r.wOn)}` : '', 'กรอ. ไม่มีตัวเลขของทะเบียนนี้'].filter(Boolean).join(' · ');
   const workersChip = r.workers == null
     ? `<span class="fact-chip is-quiet" title="ทะเบียนนี้ไม่มีตัวเลขคนงานในข้อมูล กรอ.">${pic('workers')}${esc(NO_FIGURE.th)}</span>`
-    : `<span class="fact-chip" title="คนงานตามทะเบียน กรอ.">${pic('workers')}${esc(workersText(r))}${size ? ` · ${esc(size.short)}` : ''}</span>`;
+    : `<span class="fact-chip" title="${esc(r.ws === 'moi' ? moiTitle : 'คนงานตามทะเบียน กรอ.')}">${pic('workers')}${esc(workersText(r))}${size ? ` · ${esc(size.short)}` : ''}${moiTag(r)}</span>`;
+  const diwOn = (ctx.meta?.workerSources || []).find(s => s.id === 'diw')?.period || '';
   const rankChip = r.rank ? `<span class="fact-chip" title="อันดับตามคนงาน จาก ${num(d.rankOf)} ทะเบียนที่มีตัวเลขคนงานทั่วประเทศ">${pic('rank')}อันดับ ${num(r.rank)} จาก ${num(d.rankOf)}</span>` : '';
   const familyChip = fam ? `<button type="button" class="fact-chip" data-action="filter-group" data-value="${esc(fam.id)}" title="${esc(r.industry?.th || fam.th)} (ดูเฉพาะ${esc(fam.th)})">${cueMarkup(fam.series)}${esc(fam.th)}</button>` : '';
   const classChip = r.fcls ? `<span class="fact-chip" title="โรงงานจำพวก ${num(r.fcls)} ตามทะเบียน กรอ.">${pic('class')}จำพวก ${num(r.fcls)}</span>` : '';
@@ -461,6 +476,7 @@ export function renderFactory(d, ctx = {}) {
       <details class="source-details"><summary>ที่มาและพิกัด</summary>
         <dl class="facts">
           <dt>แหล่ง</dt><dd>${esc(r.basis || 'ทะเบียน กรอ.')}${sourceLinks ? ` · ${sourceLinks}` : ''}</dd>
+          ${r.workers != null ? `<dt>คนงาน</dt><dd>${r.ws === 'moi' ? `อก. · ข้อมูลโรงงานอุตสาหกรรม${r.wOn ? ` · ${nw(esc(`ปรับปรุงแถว ${thaiDate(r.wOn)}`))}` : ''}` : `กรอ.${diwOn ? ` · ${nw(esc(`ข้อมูล ณ ${thaiDate(diwOn)}`))}` : ''}`}</dd>` : ''}
           ${r.type?.code ? `<dt>ประเภท</dt><dd><span class="data-number">${esc(r.type.code)}</span> ${esc(r.type.th)}</dd>` : ''}
           ${r.industry?.th ? `<dt>กลุ่ม กรอ.</dt><dd>${esc(r.industry.th)}</dd>` : ''}
           ${r.cls ? `<dt>หน้าที่</dt><dd>${esc(r.cls.th)} · จัดจากประเภทโรงงาน (งานวิจัย)</dd>` : ''}
@@ -503,7 +519,7 @@ export function renderEstate(p, ctx = {}) {
       <p class="eyebrow">${pic('estate')}${esc(e.typeTh)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(e.province)}">${esc(prov)}</button></p>
       <h2>${esc(e.name)}</h2>${sub}
       ${logo ? `<p class="estate-identity">${logo}</p>` : ''}
-      ${p.outline ? `<div class="metrics compact">${workersTile}${metricTile(p.count, `ทะเบียน ${within}`, 'factory')}</div>` : ''}
+      ${p.outline ? `<div class="metrics compact">${workersTile}${metricTile(p.count, `ทะเบียน ${within}`, 'factory')}</div>${sourceSplit(p)}` : ''}
       <div class="detail-actions">${ctx.estateHref ? `<a class="btn primary" href="${esc(ctx.estateHref(e.id))}">ดูใน Industrial Estate</a>` : ''}${p.count ? '<button type="button" class="btn quiet" data-action="open-table">ดูรายชื่อ</button>' : ''}${link(e.url, /(^|\.)ieat\.go\.th$/.test(hostOf(e.url)) ? 'หน้า กนอ.' : 'หน้าโครงการ', 'btn quiet source-link')}</div>
     </section>
 `;

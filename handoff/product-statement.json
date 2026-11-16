@@ -3,8 +3,8 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-statement",
   "productId": "citymeter-factory",
-  "productVersion": "0.8.2",
-  "updatedOn": "2026-11-05",
+  "productVersion": "0.9.0",
+  "updatedOn": "2026-11-16",
   "dataset_id": "research.TH.factory",
   "productionDatasetCode": "factory",
   "language": "th",
@@ -82,13 +82,13 @@
     "ต่อยอด: นิคม กนอ. คีย์ไซต์ โลโก้บริษัท พิกัดของทะเบียนที่แหล่งไม่มีจุด"
   ],
   "firstFinding": {
-    "evidence": "Observed fact (data/factories.json, release 0.2.0)",
-    "text": "72% ของคนงานโรงงานในสมุทรปราการ (330,987 จาก 457,353 คน) อยู่ใน 3 อำเภอ — บางพลี เมืองสมุทรปราการ พระประแดง; อุตสาหกรรม: ยานพาหนะและเครื่องจักร 18% · สิ่งทอ 17% · โลหะ 16%; อันดับ 1 นอกจังหวัด: เมืองสมุทรสาคร 264,666 คน (อาหาร 42%); โรงงานคนงาน 95 คนขึ้นไป 7,175 ทะเบียนมีคนงาน 65%"
+    "evidence": "Observed fact (data/factories.json, release 0.9.0: DIW figures first, MOI fills the FIDs without one)",
+    "text": "75% ของคนงานโรงงานในสมุทรปราการ (400,991 จาก 537,271 คน) อยู่ใน 3 อำเภอ — เมืองสมุทรปราการ บางพลี บางเสาธง; อุตสาหกรรม: ยานพาหนะและเครื่องจักร 16% · พลาสติก ยาง เคมี 13% · สิ่งทอ 11% · ไม่ระบุกลุ่มอุตสาหกรรม 19% (แยกไว้ ไม่จัดอันดับ); แยกแหล่ง: กรอ. 323,654 คน · อก. เติม 77,337 คน (398 ทะเบียน); อันดับ 1 นอกจังหวัด: เมืองสมุทรสาคร 289,471 คน (อาหาร 38%); โรงงานคนงาน 95 คนขึ้นไป 8,727 ทะเบียนมีคนงาน 69% (กรอ. อย่างเดียว: 7,175 ทะเบียน · 65% ตามรุ่น 0.2.0)"
   },
   "data_transparency": {
     "row": "one FID of 02_FACTORIES (registration, not a plant or a company), every size",
-    "workers": "DIW-reported workers (คนงานรวม; no date for the figure); 2,923 registrations without a figure are never 0",
-    "lens": "95+ = the P90 of the figures (the FIDs of 18_WORKERS_P90)",
+    "workers": "worker figures: DIW คนงานรวม first (71,124 FIDs; no date for the figure); MOI TOTAL_WORKER only for the 2,923 FIDs without one (row update date shown, never a count date); every registration has a figure since 0.9.0; the sources stay apart on screen",
+    "lens": "95+ = a fixed 95 workers: the P90 of the DIW figures (the FIDs of 18_WORKERS_P90); MOI-filled figures meet the same 95, no P90 is recomputed",
     "scope": "DIW class 2/3 open data = registrations outside IEAT estates, plus MOI-only registrations",
     "status": "MOI location status with its date (not a field check)",
     "points": "source points inside the registration’s own district only",
@@ -97,7 +97,8 @@
   "known_limitations": [
     "IEAT estate factories are outside the dataset",
     "the worker figure has no date",
-    "2,923 registrations have no worker figure",
+    "2,923 worker figures come from MOI TOTAL_WORKER (row update dates 2014–2026; in 2,758 of them the total differs from its sex/skill components — the master keeps the total)",
+    "3,114 registrations have no DIW industry group (2,921 of them MOI-only): kept apart as “ไม่ระบุกลุ่มอุตสาหกรรม”, never an industry",
     "3,328 registrations share an exact name and address with another FID",
     "functional class is rule-based, not human-verified",
     "58,393 registrations have no published point (the sources have none for 55,772)",

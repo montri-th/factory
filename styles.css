@@ -605,6 +605,9 @@ td small { display: block; color: var(--text-metadata); font-size: 12px; margin-
 .store-pin[data-category="8"], .category-8 { --pin-fill: var(--series-8-fill); }
 .store-pin[data-category="9"], .category-9 { --pin-fill: var(--series-9-fill); }
 .store-pin[data-category="10"], .category-10 { --pin-fill: var(--series-10-fill); }
+/* Industry group not stated (family `unstated`, release 0.9.0): not a category — the neutral state ink, no series hue. */
+.store-pin[data-category="11"], .category-11 { --pin-fill: var(--state-neutral-content); }
+.rail-unstated, .mix-list li.is-unstated { margin-top: 4px; padding-top: 6px; border-top: 1px dashed var(--border-default, var(--border-emphasis)); }
 .mix-fill[class*="category-"], .bar-fill[class*="category-"], .quality-fill { background: var(--pin-fill); }
 .bar-label .cue-shape { margin-right: 5px; }
 /* Official DIW group names are long: they wrap, never cut (Factory 0.1.0). */
@@ -656,6 +659,10 @@ td small { display: block; color: var(--text-metadata); font-size: 12px; margin-
 button.fact-chip { cursor: pointer; }
 button.fact-chip:hover { background: var(--surface-alt); }
 .fact-chip.is-quiet { color: var(--text-metadata); background: transparent; border-style: dashed; }
+/* Release 0.9.0: workers keep their two sources apart — a filled MOI figure carries a tag, a selection its split line. */
+.src-tag { display: inline-block; padding: 1px 5px; border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-secondary); font: 600 10px/1.3 var(--font-body); white-space: nowrap; vertical-align: 1px; }
+.source-split { display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; font-size: 12px; }
+.source-split .pictogram { flex: none; width: 16px; height: 16px; font-size: 16px; }
 .fact-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 8px; font-size: 13px; color: var(--text-secondary); }
 /* Nearby-set rule as chips (industry · workers · radius) and the list's “ดูทั้งหมด” link. */
 .rule-chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 2px 0 8px; }

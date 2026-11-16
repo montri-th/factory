@@ -3,7 +3,7 @@
   "schemaVersion": "1.5.0",
   "documentType": "implementation-plan",
   "productId": "citymeter-factory",
-  "productVersion": "0.8.2",
+  "productVersion": "0.9.0",
   "updatedOn": "2026-11-05",
   "architecture": {
     "runtime": "static site (GitHub Pages), ES modules with an import map, no build step; Node ≥ 20 for tests, Python 3 for data builds",
@@ -271,7 +271,7 @@
     {
       "id": "AC2",
       "scenario": "decode data/factories.json",
-      "expected": "74,047 rows, unique FIDs, Σ workers 3,755,632 over 71,124 figures, 2,923 null (never 0), the 95+ lens 7,175 rows Σ 2,435,798, nothing dropped",
+      "expected": "74,047 rows, unique FIDs, Σ workers 4,387,259 = DIW 3,755,632 (71,124 figures) + MOI 631,627 (2,923 FIDs without a DIW figure; release 0.9.0), no null, the 95+ lens 8,727 rows Σ 3,008,749 (DIW 7,175 = 18_WORKERS_P90), nothing dropped",
       "verificationType": "unit"
     },
     {
