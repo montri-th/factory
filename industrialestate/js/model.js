@@ -42,6 +42,8 @@ export function decodeData(raw, index) {
       ...e,
       typeId: type.id, typeTh: type.th, typeEn: type.en,
       outline: e.boundary.state === 'shown',
+      // R9 (release 1.3.0): a context area is drawn apart from the outlines and never counts as one.
+      context: e.boundary.state === 'context',
       listed: e.dir.state === 'measured',
       label: e.boundary.label || null,
       search: fold([e.name, e.nameEn, ...(e.aliases || []), e.developer, e.logoLabel, PROVINCES.get(e.province)?.th, PROVINCES.get(e.province)?.en, type.th, e.id].filter(Boolean).join(' ')),
@@ -134,12 +136,56 @@ export function developerGroups(estates) {
 /** What the page says about an estate that has no outline on the map (DEMO_BOUNDARIES status → words). */
 export const BOUNDARY_WORDS = Object.freeze({
   shown: ['ขอบเขตจาก OpenStreetMap', 'Outline from OpenStreetMap'],
+  context: ['พื้นที่บริบทจาก OpenStreetMap — ไม่ใช่ขอบนิคม', 'Context area from OpenStreetMap — not the estate outline'],
   hold: ['ยังไม่แสดงขอบเขต: แหล่งขอบเขตยังขัดกัน', 'No outline yet: the boundary sources still conflict'],
   scope: ['ยังไม่แสดงขอบเขต: ต้องแยกโครงการย่อยก่อน', 'No outline yet: the sub-projects must be separated first'],
   missing: ['ยังไม่แสดงขอบเขต: ยังไม่พบขอบเขตเต็มที่จับคู่ได้', 'No outline yet: no matching whole outline found'],
   license: ['ยังไม่แสดงขอบเขต: แหล่งที่พบยังไม่ยืนยันสิทธิ์ใช้', 'No outline yet: the sources found have no confirmed reuse right'],
 });
 export const boundaryWords = e => T(...BOUNDARY_WORDS[e.boundary.state]);
+
+/**
+ * R9 (estate master 30_DEMO_COVERAGE_R9, reviewed 2026-11-10): the label and the note that stay beside a drawn shape.
+ * English: the labels and the three shared notes are translated here; a note written for one estate stays in Thai (the
+ * register's words, marked lang="th"), never paraphrased.
+ */
+const OUTLINE_EN = Object.freeze({
+  'แนวจาก OSM — ยังไม่ยืนยันครบทั้งโครงการ': 'Outline from OSM — not confirmed for the whole project',
+  'แนว OSM บางชัน — ขอบเขตยังไม่ยืนยัน': 'OSM outline, Bang Chan — boundary not confirmed',
+  'ขอบเขต TFD 2 บางส่วนตาม OSM — ส่วนขยายยังไม่ครบ': 'TFD 2, part of the boundary per OSM — extensions not complete',
+  'อมตะซิตี้ ชลบุรี — ส่วนที่ OSM เรียกโครงการ 1; ยังไม่ครอบทั้งนิคม': 'Amata City Chonburi — the part OSM calls Project 1; not the whole estate',
+  'แนว OSM นครหลวง — ขอบเขตยังไม่ยืนยัน': 'OSM outline, Nakhon Luang — boundary not confirmed',
+  'แนว OSM พิจิตร — ครอบคลุมบางส่วน': 'OSM outline, Phichit — covers part of the estate',
+  'CPGC — เส้นจาก OSM ยังไม่ยืนยันครบทั้ง 3 เฟส': 'CPGC — OSM line not confirmed for all 3 phases',
+  'WHA ระยอง 36 — ขอบเขตประมาณการจาก OSM มีส่วนรอยืนยัน': 'WHA Rayong 36 — approximate boundary from OSM; parts await confirmation',
+  'หลักชัยเมืองยาง — ส่วนที่ปรากฏใน OSM; ส่วนขยายยังรอยืนยัน': 'Lakchai Mueang Yang — the part shown in OSM; extensions await confirmation',
+  'อมตะซิตี้ ระยอง — ขอบเขตประมาณการจาก OSM ยังไม่ยืนยันครบทุกระยะ': 'Amata City Rayong — approximate boundary from OSM; not confirmed for every phase',
+  'แนว OSM ภาคเหนือ — เฉพาะส่วนตะวันออก': 'OSM outline, Northern Region — eastern part only',
+  'แนว OSM บางปู — ขอบเขตยังไม่ยืนยัน': 'OSM outline, Bang Poo — boundary not confirmed',
+  'แนว OSM บางพลี — ขอบเขตยังไม่ยืนยัน': 'OSM outline, Bang Phli — boundary not confirmed',
+  'สวนอุตสาหกรรม 304 ฉะเชิงเทรา — ขอบตาม OSM ยังไม่ยืนยันทั้งโครงการ': '304 Industrial Park Chachoengsao — OSM boundary not confirmed for the whole project',
+  'แนว OSM สุรนารี — ขอบเขตยังไม่ยืนยัน': 'OSM outline, Suranaree — boundary not confirmed',
+  'แนว OSM สวน 304 ปราจีนบุรี — ส่วนพื้นที่แยกกัน': 'OSM outline, 304 Industrial Park Prachinburi — separate parts',
+  'แนว OSM โรจนะ อยุธยา — ส่วนพื้นที่ยังไม่ครบทุกเฟส': 'OSM outline, Rojana Ayutthaya — parts, not every phase',
+  'SEP1 สยามอีสเทิร์น — แนว OSM โดยประมาณ; ขอบเต็มยังรอยืนยัน': 'SEP1 Siam Eastern — approximate OSM outline; the full boundary awaits confirmation',
+  'WHA Rayong Industrial Land — แนว OSM โดยประมาณ; ขอบเต็มยังรอยืนยัน': 'WHA Rayong Industrial Land — approximate OSM outline; the full boundary awaits confirmation',
+  'แนว OSM แก่งคอย — อาจรวมพื้นที่นอกนิคม': 'OSM outline, Kaeng Khoi — may take in land outside the estate',
+  'แนว OSM นิคมภาคใต้ จังหวัดสงขลา — ยังไม่แยก Rubber City': 'OSM outline, Southern Region estate, Songkhla — Rubber City not separated',
+  'ย่านอุตสาหกรรมมาบตาพุดตาม OSM — ไม่ใช่ขอบนิคมที่ยืนยันแล้ว': 'Map Ta Phut industrial district per OSM — not a confirmed estate boundary',
+  'ยังไม่มีขอบเขตที่ใช้แสดงได้': 'No outline that can be shown yet',
+  'ยังไม่ยืนยันว่าครบทุกเฟสและส่วนขยาย': 'Not confirmed to cover every phase and extension',
+  'ยังไม่ยืนยันว่าครบทุกเฟสและส่วนขยาย; พื้นที่แนวต่างจากฐานอ้างอิงเกิน 15% ใช้เตือนเพื่อตรวจต่อ ไม่ใช่ข้อพิสูจน์ว่าแนวผิดหรือครบ':
+    'Not confirmed to cover every phase and extension; the outline’s area is more than 15% from the reference — a flag to check further, not proof that the outline is wrong or complete',
+  'ยังไม่ยืนยันว่าครบทุกเฟสและส่วนขยาย; พื้นที่แนวต่างจากฐานอ้างอิงเกิน 15% ใช้เตือนเพื่อตรวจต่อ ไม่ใช่ข้อพิสูจน์ว่าแนวผิดหรือครบ; แหล่งเจ้าของมีฐานพื้นที่ 3,900 ไร่ และ 2,025 ไร่ที่ยังอธิบายความต่างไม่ได้':
+    'Not confirmed to cover every phase and extension; the outline’s area is more than 15% from the reference — a flag to check further, not proof that the outline is wrong or complete; the owner’s sources state 3,900 rai and 2,025 rai, a difference not yet explained',
+});
+/** {text, th} — `th` when the English page keeps the register's Thai words. */
+const outlineText = th => (!th ? null : !EN ? {text: th, th: false} : OUTLINE_EN[th] ? {text: OUTLINE_EN[th], th: false} : {text: th, th: true});
+export const outlineLabel = e => outlineText(e.boundary.labelTh);
+/** R9 roles of an outline that is part of the estate only: drawn with a dashed edge so the shape never reads as the whole. */
+export const PARTIAL_ROLES = Object.freeze(['known_incomplete_source_outline', 'source_part', 'named_project_part_source_outline', 'source_parts_separate']);
+export const partialOutline = e => Boolean(e?.outline && PARTIAL_ROLES.includes(e.boundary.role));
+export const outlineNote = e => outlineText(e.boundary.note);
 
 /**
  * Short form of a long organisation label for chips and captions (owner 2026-11-10: “ยังคงให้สั้นเหมือนเดิม”); the full

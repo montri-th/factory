@@ -41,12 +41,15 @@ function ringDistance(lon, lat, geometry) {
   return inside ? 0 : best;
 }
 
-test('estate context: 106 records, the 46 outlines the master selected, around sets only for outlined estates', () => {
+test('estate context: 106 records, the 64 outlines the estate demo draws (R9: 66 source parts), around sets only for outlined estates', () => {
   const ctx = context();
   assert.ok(ctx, 'decodes');
   assert.equal(ctx.estates.length, 106);
-  assert.equal(ctx.outlines.features.length, 46);
-  assert.equal(ctx.estates.filter(e => e.outline).length, 46);
+  assert.equal(ctx.outlines.features.length, 66);
+  assert.equal(ctx.estates.filter(e => e.outline).length, 64);
+  // Two estates keep two source parts apart on the map; framing and distances read them together.
+  assert.equal(ctx.outlineById.get('EST-AREA-ROJANA-AYUTTHAYA').geometry.type, 'MultiPolygon');
+  assert.equal(ctx.outlines.features.filter(f => f.properties.id === 'EST-AREA-ROJANA-AYUTTHAYA').length, 2);
   for (const f of ctx.outlines.features) assert.ok(ctx.byId.get(f.properties.id)?.outline, f.properties.id);
   assert.equal(ctx.km, AROUND_KM);
   assert.match(ctx.meta.attribution.boundaries, /OpenStreetMap contributors · ODbL 1\.0/);

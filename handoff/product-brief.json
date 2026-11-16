@@ -3,8 +3,8 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-brief",
   "productId": "citymeter-factory",
-  "productVersion": "0.9.0",
-  "updatedOn": "2026-11-16",
+  "productVersion": "0.9.1",
+  "updatedOn": "2026-11-17",
   "datasetCheckedOn": "2026-11-16",
   "language": "th",
   "productName": "CityMETER · Factory",
@@ -28,7 +28,7 @@
     "charts / table",
     "CityMETER production"
   ],
-  "changesSince": "0.9.0 (2026-11-16, owner: “update web demo … ตามข้อมูลที่อัพเดท”): worker figures are DIW คนงานรวม first and, only for the 2,923 FIDs without one, MOI TOTAL_WORKER of 26_ICTC_METRICS (master rule 28_PRODUCT_BENEFITS: “คงยอด DIW เดิม และเติม MOI เฉพาะ FID ที่ DIW ว่าง”) — 4,387,259 workers = DIW 3,755,632 + MOI 631,627; every figure names its source (`ws`, the อก. tag, the row update date) and every total with MOI figures shows the split “กรอ. … · อก. เติม …”; 95 stays the fixed 95+ threshold (8,727 registrations); the registrations without a DIW group are the family `unstated` (“ไม่ระบุกลุ่มอุตสาหกรรม”, neutral, never ranked as an industry; master: “แยกกลุ่มไม่ระบุ”) instead of sitting in “การผลิตอื่น ๆ”. 0.2.0 (2026-11-05): the rows are every core registration of 02_FACTORIES (74,047) instead of the 7,175 FIDs of 18_WORKERS_P90 (owner: “ขยายเลย”); worker figures from คนงานรวม of the DIW class 2/3 exports, checked against 18_WORKERS_P90; the 95+ registrations stay as the size filter p90 and a lens in every area panel; registrations without a worker figure read ไม่มีตัวเลขคนงาน and areas without any figure are EVID-05 no data; the separate registry context is gone. 0.1.0 (2026-11-05): first release, built from CityMETER · Hotel 0.3.6 (montri-th/hotel@177e592).",
+  "changesSince": "0.9.1 (2026-11-17, owner: “ขึ้นเวบเลย” on the estate master's R9 tab): the estate context follows Industrial Estate 1.3.0 — 64 outlined estates from 66 OpenStreetMap source parts (46 before), parts drawn apart and read together for framing; the register's outline label (display_label_th) in the estate panel; R9 context areas stay in the estate demo. 0.9.0 (2026-11-16, owner: “update web demo … ตามข้อมูลที่อัพเดท”): worker figures are DIW คนงานรวม first and, only for the 2,923 FIDs without one, MOI TOTAL_WORKER of 26_ICTC_METRICS (master rule 28_PRODUCT_BENEFITS: “คงยอด DIW เดิม และเติม MOI เฉพาะ FID ที่ DIW ว่าง”) — 4,387,259 workers = DIW 3,755,632 + MOI 631,627; every figure names its source (`ws`, the อก. tag, the row update date) and every total with MOI figures shows the split “กรอ. … · อก. เติม …”; 95 stays the fixed 95+ threshold (8,727 registrations); the registrations without a DIW group are the family `unstated` (“ไม่ระบุกลุ่มอุตสาหกรรม”, neutral, never ranked as an industry; master: “แยกกลุ่มไม่ระบุ”) instead of sitting in “การผลิตอื่น ๆ”. 0.2.0 (2026-11-05): the rows are every core registration of 02_FACTORIES (74,047) instead of the 7,175 FIDs of 18_WORKERS_P90 (owner: “ขยายเลย”); worker figures from คนงานรวม of the DIW class 2/3 exports, checked against 18_WORKERS_P90; the 95+ registrations stay as the size filter p90 and a lens in every area panel; registrations without a worker figure read ไม่มีตัวเลขคนงาน and areas without any figure are EVID-05 no data; the separate registry context is gone. 0.1.0 (2026-11-05): first release, built from CityMETER · Hotel 0.3.6 (montri-th/hotel@177e592).",
   "rowScopes": {
     "scopeRows": "rows after search · industry family · size · province · function, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
     "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
@@ -762,6 +762,6 @@
     "site": "GitHub Pages from main /root",
     "handoff": "dist/CityMETER-Factory-Developer-Handoff.zip (START_HERE.md, RELEASE_RECEIPT.json, evidence/, source/)",
     "liveCheck": "npm run verify:live",
-    "cacheTag": "?v=20261116-r2 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
+    "cacheTag": "?v=20261117-r1 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
   }
 }

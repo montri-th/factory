@@ -19,7 +19,7 @@
  */
 import {registerDataNames, keepNames} from './lang.js';
 import {EN, T, decodeData, filterEstates, summarize, ahaOf, estateRamp, developerGroups, catalogueOrder, provinceByCode, provinceName,
-  nameOf, typeOf, aroundRows, directoryRows, aroundRadius, shortLabel, FAMILY_IDS, EEC, FILTERS} from './model.js';
+  nameOf, typeOf, aroundRows, directoryRows, aroundRadius, shortLabel, FAMILY_IDS, EEC, FILTERS, partialOutline} from './model.js';
 import {renderOverview, renderProvince, renderEstate, renderDirectory, renderFilterChips, estateList, esc, num, pct, dateText, provenance} from './panel.js';
 import {loadMapLibrary} from './shell/vendors.js';
 import {buildMapStyle, basemapPalette, TILEJSON_URL, MASSING_BEFORE} from './shell/map-style.js';
@@ -42,7 +42,7 @@ const RELEASE = (() => { try { return new URL(import.meta.url).searchParams.get(
 const reduced = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
 const mobilePortrait = () => matchMedia('(max-width: 760px) and (orientation: portrait)').matches;
 const THAILAND = [[97.34, 5.61], [105.64, 20.47]];
-const ESTATE_SRC = 'estates', AROUND_SRC = 'around', PROVINCE_SRC = 'provinces', HATCH = 'estate-nodata-hatch';
+const ESTATE_SRC = 'estates', CONTEXT_SRC = 'estate-context-areas', AROUND_SRC = 'around', PROVINCE_SRC = 'provinces', HATCH = 'estate-nodata-hatch';
 const PAGE_SIZE = 25;
 const FACTORY = DEMOS.find(d => d.path === 'factory');
 
@@ -289,6 +289,9 @@ function renderLegend() {
   // Factory 0.9.0: the open circle in the neutral ink = no DIW industry group (never an industry); named only when drawn.
   const unstated = !$('legend-around').hidden && Boolean(state.around) && aroundRows(state.around, state.panel.id).some(r => FAMILY_IDS[r.family] === 'unstated');
   $('legend-unstated').hidden = !unstated;
+  // R9: the context key only while a context area is on the map.
+  $('legend-context').hidden = !state.scope.some(x => x.context);
+  $('legend-part').hidden = !state.scope.some(partialOutline);
   if (unstated && !$('legend-unstated-cue').innerHTML) $('legend-unstated-cue').innerHTML = cueMarkup(seriesOf('unstated'));
 }
 
@@ -330,7 +333,7 @@ function renderTable() {
     <td><button type="button" class="link-button" data-action="select-estate" data-id="${esc(e.id)}">${esc(nameOf(e))}</button><span class="table-sub">${esc(typeOf(e))}</span></td>
     <td>${esc(provinceName(e.province))}</td>
     <td class="num data-number">${e.listed ? num(e.dir.n) : '—'}</td>
-    <td>${e.outline ? T('มี', 'yes') : T('ยังไม่มี', 'not yet')}</td>
+    <td>${e.outline ? T('มี', 'yes') : e.context ? T('พื้นที่บริบท', 'context area') : T('ยังไม่มี', 'not yet')}</td>
     <td>${esc(shortLabel(e.logoLabel || e.developer || '') || '—')}</td></tr>`).join('') || `<tr><td colspan="5" class="hint">${T('ไม่มีรายการตามตัวกรอง', 'No record matches the filters')}</td></tr>`;
   $('page-label').textContent = `${num(state.page + 1)} / ${num(pages)}`;
   $('prev-page').disabled = state.page === 0;
@@ -341,19 +344,29 @@ function renderTable() {
 function estateFeatures() {
   const inScope = new Set(state.scope.map(e => e.id));
   const selected = state.panel.mode === 'estate' ? state.panel.id : '';
-  return {type: 'FeatureCollection', features: state.boundaries.features.filter(f => inScope.has(f.properties.id) || f.properties.id === selected).map(f => {
+  return {type: 'FeatureCollection', features: state.boundaries.features.filter(f => !f.properties.ctx && (inScope.has(f.properties.id) || f.properties.id === selected)).map(f => {
     const c = state.ramp.byId.get(f.properties.id);
-    return {type: 'Feature', id: f.id, geometry: f.geometry, properties: {id: f.properties.id, fill: c?.fill || '', nodata: !c?.fill}};
+    return {type: 'Feature', id: f.id, geometry: f.geometry, properties: {id: f.properties.id, fill: c?.fill || '', nodata: !c?.fill, part: partialOutline(estateById(f.properties.id))}};
   })};
+}
+
+/** R9 context areas (release 1.3.0): drawn apart in the neutral ink, never filled by the listings, never an outline. */
+function contextFeatures() {
+  const inScope = new Set(state.scope.map(e => e.id));
+  const selected = state.panel.mode === 'estate' ? state.panel.id : '';
+  return {type: 'FeatureCollection', features: state.boundaries.features.filter(f => f.properties.ctx && (inScope.has(f.properties.id) || f.properties.id === selected))
+    .map(f => ({type: 'Feature', id: f.id, geometry: f.geometry, properties: {id: f.properties.id}}))};
 }
 
 function updateSpatialLayers() {
   if (!state.loaded || !state.map) return;
   const map = state.map;
   map.getSource(ESTATE_SRC)?.setData(estateFeatures());
+  map.getSource(CONTEXT_SRC)?.setData(contextFeatures());
   const sel = state.panel.mode === 'estate' ? state.panel.id : '';
   const code = state.panel.mode === 'estate' ? estateById(sel)?.province || '' : $('province').value;
   if (map.getLayer('estate-selected')) map.setFilter('estate-selected', ['==', ['get', 'id'], sel || '__none__']);
+  if (map.getLayer('estate-context-selected')) map.setFilter('estate-context-selected', ['==', ['get', 'id'], sel || '__none__']);
   if (map.getLayer('province-selected')) map.setFilter('province-selected', ['==', ['to-string', ['get', 'id']], code || '__none__']);
   state.labels?.update(state.scope.filter(e => e.outline), {selected: sel, ramp: state.ramp, province: code});
   updateAroundLayer();
@@ -363,8 +376,8 @@ function updateSpatialLayers() {
 function updateMassing() {
   if (!state.massing) return;
   const e = state.panel.mode === 'estate' ? estateById(state.panel.id) : null;
-  const feature = e?.outline ? state.boundaries.features.find(f => f.properties.id === e.id) : null;
-  const regions = feature ? outerRings(feature) : [];
+  // Every source part of the estate (R9 keeps an estate's parts apart); a context area never frames the buildings.
+  const regions = e?.outline ? state.boundaries.features.filter(f => f.properties.id === e.id && !f.properties.ctx).flatMap(outerRings) : [];
   const anchors = e?.label ? [e.label] : [state.map.getCenter().toArray()];
   const codes = e ? [e.province] : [];
   state.buildingUnits?.ensureMany(codes);
@@ -424,8 +437,16 @@ function installSpatialLayers() {
     paint: {'fill-color': ['get', 'fill'], 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.85, 13, 0.62, 16, 0.4]}}, MASSING_BEFORE && map.getLayer(MASSING_BEFORE) ? MASSING_BEFORE : undefined);
   map.addLayer({id: 'estate-hatch', type: 'fill', source: ESTATE_SRC, filter: ['get', 'nodata'],
     paint: {'fill-pattern': HATCH, 'fill-opacity': ['interpolate', ['linear'], ['zoom'], 8, 0.9, 16, 0.5]}}, MASSING_BEFORE && map.getLayer(MASSING_BEFORE) ? MASSING_BEFORE : undefined);
-  map.addLayer({id: 'estate-line', type: 'line', source: ESTATE_SRC, paint: {'line-color': ink, 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.8, 12, 1.4, 16, 2], 'line-opacity': 0.75}});
+  map.addLayer({id: 'estate-line', type: 'line', source: ESTATE_SRC, filter: ['!', ['get', 'part']], paint: {'line-color': ink, 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.8, 12, 1.4, 16, 2], 'line-opacity': 0.75}});
+  // R9: an outline that is part of the estate only keeps a dashed edge (the same ink), so it never reads as the whole estate.
+  map.addLayer({id: 'estate-line-part', type: 'line', source: ESTATE_SRC, filter: ['get', 'part'], paint: {'line-color': ink, 'line-dasharray': [3, 2], 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.9, 12, 1.6, 16, 2.2], 'line-opacity': 0.85}});
   map.addLayer({id: 'estate-selected', type: 'line', source: ESTATE_SRC, filter: ['==', ['get', 'id'], '__none__'], paint: {'line-color': selected, 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 2, 14, 3.5]}});
+  // R9 context areas: a light neutral ground (to find and click) under a dashed neutral line — apart from the outlines.
+  const neutral = cssVar('--state-neutral-content', '#5F635A'), neutralGround = cssVar('--state-neutral-surface', '#ECE4D2');
+  map.addSource(CONTEXT_SRC, {type: 'geojson', data: contextFeatures(), maxzoom: GEOJSON_MAXZOOM});
+  map.addLayer({id: 'estate-context-fill', type: 'fill', source: CONTEXT_SRC, paint: {'fill-color': neutralGround, 'fill-opacity': 0.35}}, MASSING_BEFORE && map.getLayer(MASSING_BEFORE) ? MASSING_BEFORE : undefined);
+  map.addLayer({id: 'estate-context-line', type: 'line', source: CONTEXT_SRC, paint: {'line-color': neutral, 'line-dasharray': [2, 2], 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 0.8, 12, 1.4, 16, 2]}});
+  map.addLayer({id: 'estate-context-selected', type: 'line', source: CONTEXT_SRC, filter: ['==', ['get', 'id'], '__none__'], paint: {'line-color': selected, 'line-dasharray': [2, 1.5], 'line-width': ['interpolate', ['linear'], ['zoom'], 6, 2, 14, 3]}});
   state.massing = installMassing(map, {
     beforeId: MASSING_BEFORE,
     colors: {quiet: palette.massingQuiet, focus: palette.massingFocus, ground: palette.ground, venue: cssVar('--map-active-layer') || undefined},
@@ -472,7 +493,7 @@ function fitMap({instant = false, around = false} = {}) {
   const e = state.panel.mode === 'estate' ? estateById(state.panel.id) : null;
   const code = e?.province || $('province').value;
   let box = null, preset = state.view3d ? 'city' : 'plan', maxZoom = 12.5;
-  if (e?.outline) {
+  if (e?.outline || e?.context) {
     const b = e.boundary.bbox;
     const pad = around ? 0.03 : 0.006;
     box = [[b[0] - pad, b[1] - pad], [b[2] + pad, b[3] + pad]];
@@ -518,7 +539,7 @@ function onMapClick(event) {
   const map = state.map;
   const around = map.getLayer('around-points') ? map.queryRenderedFeatures(event.point, {layers: ['around-points']})[0] : null;
   if (around) { openAroundPopup(around); return; }
-  const hit = map.queryRenderedFeatures(event.point, {layers: ['estate-fill', 'estate-hatch'].filter(id => map.getLayer(id))})[0];
+  const hit = map.queryRenderedFeatures(event.point, {layers: ['estate-fill', 'estate-hatch', 'estate-context-fill'].filter(id => map.getLayer(id))})[0];
   if (hit) { const id = hit.properties.id; if (id && id !== state.panel.id) selectEstate(id, {fromMap: true}); return; }
 }
 
@@ -529,7 +550,7 @@ function onMapMove(event) {
     onMapMove.frame = 0;
     const map = state.map;
     if (!map || !state.loaded) return;
-    const layers = ['around-points', 'estate-fill', 'estate-hatch'].filter(id => map.getLayer(id));
+    const layers = ['around-points', 'estate-fill', 'estate-hatch', 'estate-context-fill'].filter(id => map.getLayer(id));
     const over = layers.length && map.queryRenderedFeatures(onMapMove.point, {layers}).length > 0;
     map.getCanvas().style.cursor = over ? 'pointer' : '';
   });

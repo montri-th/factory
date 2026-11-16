@@ -807,6 +807,10 @@ td.num, th.num { text-align: right; }
 .estate-swatch { width: 12px; height: 12px; border-radius: 3px; border: 1px solid var(--border-default); }
 .estate-swatch.is-hatch { background: repeating-linear-gradient(135deg, var(--data-zero-outline) 0 1.5px, var(--data-no-data) 1.5px 6px); }
 .estate-swatch.is-none { background: transparent; border-style: dashed; }
+/* R9 context area (release 1.3.0): neutral ground, dashed neutral edge — never a listing colour. */
+.estate-swatch.is-context, .legend-context { background: var(--state-neutral-surface); border: 1px dashed var(--state-neutral-content); }
+.legend-context { display: inline-block; width: 12px; height: 10px; border-radius: 2px; }
+.legend-part { display: inline-block; width: 12px; height: 10px; border-radius: 2px; border: 1.5px dashed var(--text-primary); }
 .developer-grid { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
 .developer-chip { display: inline-flex; align-items: center; gap: 6px; min-height: 36px; padding: 4px 10px 4px 6px; border: 1px solid var(--border-hairline); border-radius: 999px; background: var(--surface-card); font-size: 12px; }
 .developer-name { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }

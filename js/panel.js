@@ -75,6 +75,8 @@ const workersText = r => (Number.isFinite(r?.workers) ? `${num(r.workers)} ค�
  * registrations DIW has no figure for. Shown only when the selection holds a filled figure.
  */
 const MOI_SPLIT_TITLE = 'ทะเบียนที่ กรอ. ไม่มีตัวเลขคนงาน ใช้คนงานรวมตามข้อมูลโรงงานอุตสาหกรรมของ อก.';
+/** Industrial Estate 1.3.0 (R9): the drawn outline carries the register's own label (display_label_th) beside it. */
+const OUTLINE_TITLE = 'คำกำกับแนวขอบเขตจากทะเบียนนิคม (30_DEMO_COVERAGE_R9) · แนว OpenStreetMap ไม่ใช่ขอบเขตตามกฎหมาย';
 const sourceSplit = x => (x?.moi > 0
   ? `<p class="hint source-split" title="${esc(MOI_SPLIT_TITLE)}">${pic('workers')}<span>${nw(`กรอ. ${num(x.workers - x.moiWorkers)} คน`)} · ${nw(`อก. เติม ${num(x.moiWorkers)} คน (${num(x.moi)} ทะเบียน)`)}</span></p>`
   : '');
@@ -519,6 +521,7 @@ export function renderEstate(p, ctx = {}) {
       <p class="eyebrow">${pic('estate')}${esc(e.typeTh)} · <button type="button" class="link-button" data-action="select-province" data-id="${esc(e.province)}">${esc(prov)}</button></p>
       <h2>${esc(e.name)}</h2>${sub}
       ${logo ? `<p class="estate-identity">${logo}</p>` : ''}
+      ${p.outline && e.outlineTh ? `<p class="hint outline-label" title="${esc(OUTLINE_TITLE)}">${pic('distance')}<span>${esc(e.outlineTh)}</span></p>` : ''}
       ${p.outline ? `<div class="metrics compact">${workersTile}${metricTile(p.count, `ทะเบียน ${within}`, 'factory')}</div>${sourceSplit(p)}` : ''}
       <div class="detail-actions">${ctx.estateHref ? `<a class="btn primary" href="${esc(ctx.estateHref(e.id))}">ดูใน Industrial Estate</a>` : ''}${p.count ? '<button type="button" class="btn quiet" data-action="open-table">ดูรายชื่อ</button>' : ''}${link(e.url, /(^|\.)ieat\.go\.th$/.test(hostOf(e.url)) ? 'หน้า กนอ.' : 'หน้าโครงการ', 'btn quiet source-link')}</div>
     </section>

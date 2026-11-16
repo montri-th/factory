@@ -10,14 +10,17 @@ Inputs (never committed: the research sheet export and the boundary bundle stay 
              whose area differs from the area its source states by more than 15 % says so, without either area) and
              DEMO_DIRECTORY_SOURCES_R8 (an owner's customer list is linked, its counts never shown or summed)
   --r7       industrial-boundary-research-r7-20261026.geojson (the boundary bundle DEMO_BOUNDARIES names in
-             source_bundle_sha256); only the 46 features DEMO_BOUNDARIES selects for the demo are read
+             source_bundle_sha256); only the 46 features DEMO_BOUNDARIES selects for the demo are read — or, with --r9, the
+             66 parts of 64 estates and the 3 context areas the R9 package names (each the R7 shape of its version id)
+  --r9       the unpacked R9 demo-boundary package (release 1.3.0) with the sheet tab 30_DEMO_COVERAGE_R9
   --logos    folder of display copies made by scripts/build-logos.py (logo manifest included)
   --factory  ../data/factories.json of CityMETER Factory (rows with a published point, for the around-estate set)
   --index    ../data/area-index.json (production province codes and names)
 
 Outputs:
   data/estates.json          the 106 catalogue records (one row = one approved catalogue record, not one legal estate)
-  data/boundaries.geojson    the 46 OpenStreetMap source snapshots the master selected for the demo (ODbL)
+  data/boundaries.geojson    the OpenStreetMap source snapshots the demo may draw (ODbL): 46 outlines, or with --r9 66 parts
+                             of 64 estates followed by 3 context areas (`ctx`)
   data/directory.json        IEAT directory names by estate (loaded when a panel needs them) and FID candidates
   ../data/estate-context.json  what CityMETER Factory reads: estates, outlines and the FID → estate name candidates
 
@@ -55,6 +58,8 @@ BOUNDARY_STATES = {
     'missing_whole_candidate': 'missing',
     'hold_no_eligible_licensed_whole_source': 'license',
 }
+# R9 (estate master 30_DEMO_COVERAGE_R9, reviewed 2026-11-10; the owner's "ขึ้นเวบเลย" 2026-11-17): what the demo may draw.
+R9_STATES = {'demo_source_outline': 'shown', 'context_only': 'context'}   # no_usable_outline keeps its DEMO_BOUNDARIES reason
 AROUND_KM = 3.0
 QA_GAP = 0.15   # R8 outline QA: an outline whose area is more than 15 % from its source's stated area says so
 PERSON = re.compile(r'^\s*(นาย|นาง|นางสาว|น\.ส\.|ด\.ช\.|ด\.ญ\.|mr\.?\s|mrs\.?\s|ms\.?\s|miss\s)', re.I)
@@ -247,6 +252,8 @@ def main():
     ap.add_argument('--out', default=str(Path(__file__).resolve().parents[1] / 'data'))
     ap.add_argument('--factory-out', default=str(Path(__file__).resolve().parents[2] / 'data/estate-context.json'))
     ap.add_argument('--built-on', default=date.today().isoformat())
+    ap.add_argument('--r9', help='folder of the R9 demo-boundary package (02-CityMETER__industrial-estate-demo-boundaries-R9__2026-11-10.zip, '
+                    'unpacked): demo-boundaries-r9.geojson, context-only-r9.geojson, package-manifest.json; with the sheet tab 30_DEMO_COVERAGE_R9')
     args = ap.parse_args()
 
     wb = openpyxl.load_workbook(args.sheet, read_only=True, data_only=True)
@@ -283,6 +290,32 @@ def main():
     prov_by_name = {p['name']: p for p in index['provinces']}
     r7 = json.loads(Path(args.r7).read_text())
     r7_by_version = {f['properties']['geometry_version_id']: f for f in r7['features']}
+    # R9 (release 1.3.0): the demo may draw 64 estates (66 source parts, never merged, cut or stretched), 3 more only as
+    # context areas, and 39 none. Every part is the R7 source geometry of its version id, unmodified (checked here).
+    r9 = None
+    if args.r9:
+        d = Path(args.r9)
+        manifest = json.loads((d / 'package-manifest.json').read_text())
+        for f in manifest['files']:
+            assert sha256(d / f['path']) == f['sha256'], f['path']
+        assert has('30_DEMO_COVERAGE_R9'), 'the R9 package needs the sheet tab 30_DEMO_COVERAGE_R9'
+        coverage = {r['estate_id']: r for r in tab(wb, '30_DEMO_COVERAGE_R9')}
+        parts = {'demo': {}, 'context': {}}
+        for kind, name in (('demo', 'demo-boundaries-r9.geojson'), ('context', 'context-only-r9.geojson')):
+            for f in json.loads((d / name).read_text())['features']:
+                q = f['properties']
+                assert not q['geometry_modified'] and q['license'] == 'ODbL-1.0', q['geometry_version_id']
+                assert not any(q[k] for k in ('whole_extent_verified', 'current_boundary_verified', 'legal_boundary_verified', 'factory_membership_verified'))
+                assert (kind == 'demo') == bool(q['default_estate_outline_allowed']), q['geometry_version_id']
+                src = r7_by_version.get(q['geometry_version_id'])
+                assert src is None or src['geometry'] == f['geometry'], q['geometry_version_id']
+                assert kind == 'context' or src is not None, f"{q['geometry_version_id']}: an outline the demo draws must be an R7 source shape"
+                parts[kind].setdefault(q['estate_id'], []).append(f)
+        assert len(coverage) == 106 and sum(len(v) for v in parts['demo'].values()) == 66 and len(parts['demo']) == 64 and len(parts['context']) == 3
+        for eid, r in coverage.items():
+            st = r['demo_display_status']
+            assert (st == 'demo_source_outline') == (eid in parts['demo']) and (st == 'context_only') == (eid in parts['context']), eid
+        r9 = {'coverage': coverage, 'parts': parts, 'manifest': manifest, 'dir': d}
     logo_manifest = json.loads((Path(args.logos) / 'manifest.json').read_text())
     logo_by_sha = {x['sourceSha256']: x for x in logo_manifest['logos']}
 
@@ -300,7 +333,7 @@ def main():
 
     # ---------- estates ----------
     assert len(catalog) == 106, len(catalog)
-    estates, features, factory_outlines = [], [], []
+    estates, features, factory_outlines, context_features = [], [], [], []
     around_points = {}
     shown = 0
     for c in catalog:
@@ -311,6 +344,12 @@ def main():
         b = boundaries[eid]
         state = BOUNDARY_STATES[b['demo_boundary_status']]
         assert (state == 'shown') == bool(b['demo_selected']) == bool(c['demo_selected']), eid
+        cov = r9['coverage'][eid] if r9 else None
+        if r9:
+            # R9 widens what the demo may draw; the master's own states are not changed (an R8 outline stays drawn).
+            r9_state = R9_STATES.get(cov['demo_display_status'])
+            assert state != 'shown' or r9_state == 'shown', eid
+            state = r9_state or state
         rec = {
             'id': eid,
             'name': clean(c['name_th']),
@@ -325,21 +364,53 @@ def main():
         }
         # Boundary: the master's demo selection only (current/legal boundary accepted: none).
         boundary = {'state': state}
-        if state == 'shown':
-            f = r7_by_version[b['demo_geometry_version_id']]
-            p = f['properties']
-            assert p['estate_id'] == eid and p.get('source_provider') == 'OpenStreetMap', eid
-            geometry = simplify(f['geometry'], 1.5)
-            light = simplify(f['geometry'], 6.0)
+        if r9:
+            boundary['labelTh'] = clean(cov['display_label_th'])
+        if r9 and state in ('shown', 'context'):
+            # R9 parts: each drawn on its own (never merged); the label sits in the largest part.
+            fs = r9['parts']['demo' if state == 'shown' else 'context'][eid]
+            p = fs[0]['properties']
+            geoms = [simplify(f['geometry'], 1.5) for f in fs]
+            boxes = [bbox(g) for g in geoms]
+            largest = max(range(len(fs)), key=lambda k: (boxes[k][2] - boxes[k][0]) * (boxes[k][3] - boxes[k][1]))
             boundary.update({
-                'version': b['demo_geometry_version_id'],
-                'osm': b['source_feature_id'],
-                'osmVersion': num(b['source_version']),
-                'snapshot': iso(b['source_snapshot_date']),
-                'lastEdit': iso(b['source_last_edit_at']),
-                'bbox': bbox(geometry),
-                'label': label_point(geometry),
+                'version': p['geometry_version_id'],
+                'osm': p['source_feature_id'],
+                'osmVersion': num(p['source_version']),
+                'snapshot': iso(p['source_snapshot_date']),
+                'lastEdit': iso(p['source_last_edit_at']),
+                'bbox': [min(x[0] for x in boxes), min(x[1] for x in boxes), max(x[2] for x in boxes), max(x[3] for x in boxes)],
+                'label': label_point(geoms[largest]),
+                'note': clean(p['uncertainty_note']),
+                'role': p['display_role'],
             })
+            assert all(clean(f['properties']['display_label_th']) == boundary['labelTh'] for f in fs), eid
+            if len(fs) > 1:
+                boundary['parts'] = [{'osm': f['properties']['source_feature_id'], 'osmVersion': num(f['properties']['source_version']),
+                                      'lastEdit': iso(f['properties']['source_last_edit_at'])} for f in fs]
+            if p['newly_available_for_demo']:
+                boundary['r9'] = True
+            if state == 'context':
+                context_features.extend({'type': 'Feature', 'properties': {'id': eid, 'ctx': True}, 'geometry': g} for g in geoms)
+        if state == 'shown':
+            if r9:
+                fs = r9['parts']['demo'][eid]
+                shapes = [f['geometry'] for f in fs]
+            else:
+                f = r7_by_version[b['demo_geometry_version_id']]
+                p = f['properties']
+                assert p['estate_id'] == eid and p.get('source_provider') == 'OpenStreetMap', eid
+                shapes = [f['geometry']]
+                geometry = simplify(f['geometry'], 1.5)
+                boundary.update({
+                    'version': b['demo_geometry_version_id'],
+                    'osm': b['source_feature_id'],
+                    'osmVersion': num(b['source_version']),
+                    'snapshot': iso(b['source_snapshot_date']),
+                    'lastEdit': iso(b['source_last_edit_at']),
+                    'bbox': bbox(geometry),
+                    'label': label_point(geometry),
+                })
             # R8 outline QA: the area the source states versus the outline's (QA only); whole coverage stays unconfirmed.
             # More than 15 % apart → the page says the outline may be partial (smaller) or take in more (larger).
             q = qa_r8.get(eid)
@@ -350,15 +421,16 @@ def main():
                     'url': q['area_source_url'] if str(q['area_source_url'] or '').startswith('https://') else None,
                     'on': iso(q['checked_on']),
                 }
-            features.append({'type': 'Feature', 'id': len(features), 'properties': {'id': eid}, 'geometry': geometry})
-            factory_outlines.append({'type': 'Feature', 'id': len(factory_outlines), 'properties': {'id': eid}, 'geometry': light})
-            # Around-estate set: Factory registrations with a published point within AROUND_KM of the outline
-            # (0 inside it). A distance set for context, never membership or tenancy.
+            for shape in shapes:
+                features.append({'type': 'Feature', 'id': len(features), 'properties': {'id': eid}, 'geometry': simplify(shape, 1.5)})
+                factory_outlines.append({'type': 'Feature', 'id': len(factory_outlines), 'properties': {'id': eid}, 'geometry': simplify(shape, 6.0)})
+            # Around-estate set: Factory registrations with a published point within AROUND_KM of the outline — of its
+            # nearest part when the source has several (0 inside it). A distance set for context, never membership or tenancy.
             lat0 = boundary['label'][1]
             bx = boundary['bbox']
             pad_lat, pad_lon = AROUND_KM * 1000 / 110574.0, AROUND_KM * 1000 / (111320.0 * math.cos(math.radians(lat0)))
             near = [i for i, lon, lat in points if bx[0] - pad_lon <= lon <= bx[2] + pad_lon and bx[1] - pad_lat <= lat <= bx[3] + pad_lat
-                    and distance_m(lon, lat, f['geometry'], lat0) <= AROUND_KM * 1000]
+                    and min(distance_m(lon, lat, shape, lat0) for shape in shapes) <= AROUND_KM * 1000]
             workers = [cols['workers'][i] for i in near if cols['workers'][i] is not None]
             fam, unstated = {}, [0, 0]
             for i in near:
@@ -417,7 +489,7 @@ def main():
         rec['developer'] = clean(c['related_company_name']) or None
         rec['relation'] = c['company_relation_role'] or None
         estates.append(rec)
-    assert shown == 46, shown
+    assert shown == (64 if r9 else 46), shown
 
     # ---------- directory (default view: eligible records by estate; ambiguous and unaffiliated apart) ----------
     by_dir = {}
@@ -453,6 +525,9 @@ def main():
         if fid in fid_index and eid:
             fid_estates.setdefault(fid, set()).add(eid)
     est_index = {e['id']: i for i, e in enumerate(estates)}
+    # Context areas (R9) follow the outlines in boundaries.geojson, flagged `ctx`: drawn apart, never an estate outline.
+    for k, f in enumerate(context_features):
+        f['id'] = len(features) + k
 
     built = args.built_on
     meta = {
@@ -474,7 +549,8 @@ def main():
             'provinces': len({e['province'] for e in estates}),
             'ieat': sum(e['ieat'] for e in estates),
             'outlines': shown,
-            'boundaryStates': {s: sum(e['boundary']['state'] == s for e in estates) for s in BOUNDARY_STATES.values()},
+            'outlineParts': len(features),
+            'boundaryStates': {s: sum(e['boundary']['state'] == s for e in estates) for s in list(BOUNDARY_STATES.values()) + (['context'] if r9 else [])},
             'directory': sum(counts.values()),
             'directoryEstates': len(counts),
             'directoryAll': len(links),
@@ -495,6 +571,14 @@ def main():
         'r8': {'checkedOn': '2026-11-10', 'note': 'R8 review tabs are supplemental records joined by estate_id: logos (LOGO_LIBRARY_R8), English names '
                '(10_FIELD_EVIDENCE_R8, source_supported), outline QA (29_BOUNDARY_QA_R8: more than 15 % from the source area; whole coverage '
                'unconfirmed for every outline) and owner customer lists (DEMO_DIRECTORY_SOURCES_R8, linked, counts never shown). No new geometry.'},
+        **({'r9': {'reviewedOn': '2026-11-10', 'schema': r9['manifest']['schema_version'],
+                   'note': 'R9 widens what the demo may draw (owner-confirmed for the demo): 64 estates from 66 OpenStreetMap source parts '
+                           '(each part drawn on its own, never merged, cut or stretched), 3 context areas apart from the estate outlines, 39 '
+                           'with no outline that can be shown. display_label_th and uncertainty_note of 30_DEMO_COVERAGE_R9 stay beside the '
+                           'shape. Whole extent, current boundary, legal boundary and factory membership are verified for none.',
+                   'counts': {'outlines': len(r9['parts']['demo']), 'parts': sum(len(v) for v in r9['parts']['demo'].values()),
+                              'context': len(r9['parts']['context']), 'none': sum(1 for r in r9['coverage'].values() if r['demo_display_status'] == 'no_usable_outline')}}}
+           if r9 else {}),
         'around': {'km': AROUND_KM, 'source': 'CityMETER Factory rows with a published point (data/factories.json of this repository)',
                    'rule': 'straight-line distance from the point to the OpenStreetMap outline ≤ 3 km (0 inside it); a context set, never membership',
                    'workers': 'CityMETER Factory worker figures: DIW คนงานรวม first; MOI TOTAL_WORKER only where DIW has none (Factory 0.9.0) — '
@@ -503,8 +587,12 @@ def main():
                    'workerSources': fdata['meta'].get('workerSources', [])},
         'inputs': {
             'sheet': {'file': Path(args.sheet).name, 'sha256': sha256(args.sheet), 'tabs': ['DEMO_CATALOG', 'DEMO_BOUNDARIES', 'DEMO_FACTORY_LINKS', 'DEMO_FID_CANDIDATES', 'DEMO_LINK_SUMMARY', 'LOGO_LIBRARY', '01_ESTATES', '12_ALIASES', 'DEMO_README']
-                      + [t for t in ('LOGO_LIBRARY_R8', '10_FIELD_EVIDENCE_R8', '29_BOUNDARY_QA_R8', 'DEMO_DIRECTORY_SOURCES_R8') if has(t)]},
+                      + [t for t in ('LOGO_LIBRARY_R8', '10_FIELD_EVIDENCE_R8', '29_BOUNDARY_QA_R8', 'DEMO_DIRECTORY_SOURCES_R8') if has(t)]
+                      + (['30_DEMO_COVERAGE_R9'] if r9 else [])},
             'r7': {'file': Path(args.r7).name, 'sha256': sha256(args.r7)},
+            **({'r9': {'package': '02-CityMETER__industrial-estate-demo-boundaries-R9__2026-11-10.zip',
+                       'files': {f['path']: f['sha256'] for f in r9['manifest']['files'] if f['path'].endswith('.geojson') or f['path'] == '30_DEMO_COVERAGE_R9.csv'}}}
+               if r9 else {}),
             'factory': {'file': 'data/factories.json', 'sha256': sha256(args.factory)},
             'logos': {'manifest': 'assets/logos/manifest.json'},
             'demoPackage': {'file': 'industrial-estate-demo-prep-2026-11-10.zip', 'sha256': clean(readme.get('SHA-256 ของ ZIP', '')),
@@ -516,7 +604,7 @@ def main():
     out = Path(args.out)
     out.mkdir(parents=True, exist_ok=True)
     (out / 'estates.json').write_text(json.dumps({'meta': meta, 'types': TYPES, 'estates': estates}, ensure_ascii=False, separators=(',', ':')) + '\n')
-    (out / 'boundaries.geojson').write_text(json.dumps({'type': 'FeatureCollection', 'attribution': meta['attribution']['boundaries'], 'features': features}, ensure_ascii=False, separators=(',', ':')) + '\n')
+    (out / 'boundaries.geojson').write_text(json.dumps({'type': 'FeatureCollection', 'attribution': meta['attribution']['boundaries'], 'features': features + context_features}, ensure_ascii=False, separators=(',', ':')) + '\n')
     (out / 'directory.json').write_text(json.dumps({
         'meta': {'snapshotOn': '2026-11-04', 'source': 'IEAT factory directory (ทำเนียบโรงงานในนิคมอุตสาหกรรม, ieat.go.th) as linked in DEMO_FACTORY_LINKS',
                  'candidatePeriod': '2025-12-31', 'fids': 'candidate FIDs are indexes into fids[] (CityMETER Factory keys)',
@@ -545,9 +633,15 @@ def main():
                  'around': meta['around'], 'attribution': meta['attribution'], 'counts': {'records': len(estates), 'outlines': shown, 'candidateFids': len(fid_estates)}},
         'types': TYPES,
         'estates': [{k: e[k] for k in ('id', 'name', 'nameEn', 'type', 'province', 'url', 'logoLabel')} | {
-            'outline': e['boundary']['state'] == 'shown', 'bbox': e['boundary'].get('bbox'), 'label': e['boundary'].get('label'),
+            'outline': e['boundary']['state'] == 'shown',
+            # Only a drawn outline gives Factory a frame (an R9 context area is the estate demo's alone).
+            'bbox': e['boundary'].get('bbox') if e['boundary']['state'] == 'shown' else None,
+            'label': e['boundary'].get('label') if e['boundary']['state'] == 'shown' else None,
             'dir': e['dir']['n'], 'logo': {k: e['logo'][k] for k in ('file', 'w', 'h', 'surface')} if e['logo'] else None,
-            'logoRole': e['logoRole']} for e in estates],
+            'logoRole': e['logoRole']}
+            # R9: the drawn outline's own label (display_label_th) travels with it.
+            | ({'outlineTh': e['boundary']['labelTh']} if e['boundary']['state'] == 'shown' and e['boundary'].get('labelTh') else {})
+            for e in estates],
         'outlines': {'type': 'FeatureCollection', 'features': [{**f, 'properties': {'i': est_index[f['properties']['id']]}} for f in factory_outlines]},
         'fid': {fid: sorted(est_index[e] for e in eids) for fid, eids in sorted(fid_estates.items())},
         # Around-estate set per outlined estate (the same set the estate demo lists): Factory keys, heaviest first.

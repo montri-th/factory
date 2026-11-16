@@ -5,7 +5,8 @@
  * data/estate-context.json is written by industrialestate/scripts/build-data.py from the industrial-estate research
  * master (registry research.TH.industrial_estates, contract industrial-estate-demo/1.0.0) and this dataset:
  *   estates   the 106 catalogue records: id, names, type, source province label, official page, logo label and mark
- *   outlines  the 46 OpenStreetMap outlines the master selected for the demo (© OpenStreetMap contributors, ODbL 1.0;
+ *   outlines  the OpenStreetMap outlines the estate demo may draw: 64 estates from 66 source parts since its release 1.3.0
+ *             (R9; 46 before) (© OpenStreetMap contributors, ODbL 1.0;
  *             simplified to 6 m) — context on the map, never a legal or current boundary
  *   around    per outlined estate, the registrations of this dataset with a published point ≤ 3 km in a straight line
  *             from the outline (0 inside it): the estate demo lists the same set. A distance set for context, never
@@ -31,7 +32,12 @@ export function decodeEstateContext(json) {
   const features = json.outlines.features
     .map(f => ({type: 'Feature', id: f.id, properties: {id: estates[f.properties?.i]?.id || ''}, geometry: f.geometry}))
     .filter(f => f.properties.id && byId.get(f.properties.id)?.outline);
-  const outlineById = new Map(features.map(f => [f.properties.id, f]));
+  // Industrial Estate 1.3.0 (R9): an estate may have several source parts, drawn apart; framing, the building frame and the
+  // distance checks read them together as one MultiPolygon (never drawn as one).
+  const partsById = new Map();
+  for (const f of features) partsById.set(f.properties.id, [...(partsById.get(f.properties.id) || []), f]);
+  const outlineById = new Map([...partsById].map(([id, list]) => [id, list.length === 1 ? list[0] : {type: 'Feature', id: list[0].id, properties: {id},
+    geometry: {type: 'MultiPolygon', coordinates: list.flatMap(f => (f.geometry.type === 'Polygon' ? [f.geometry.coordinates] : f.geometry.coordinates))}}]));
   const fid = new Map(Object.entries(json.fid || {}).map(([k, v]) => [k, (Array.isArray(v) ? v : []).map(i => estates[i]).filter(Boolean)]));
   const around = new Map(Object.entries(json.around || {}).filter(([id, v]) => byId.has(id) && Array.isArray(v)));
   return {meta: json.meta || {}, types, estates, byId, outlines: {type: 'FeatureCollection', features}, outlineById, fid, around,
