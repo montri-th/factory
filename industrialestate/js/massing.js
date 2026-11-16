@@ -90,6 +90,18 @@ export const CITY_MIN_ZOOM = 13;
  * every tile of the focus is loaded: a truncated focus would show a cut block, so it waits for zoom 13.
  */
 export const FOCUS_MIN_ZOOM = 12;
+/**
+ * A whole estate (Industrial Estate 1.3.1; owner 2026-11-17 01:34: “หน้า industrial estate เวลาคลิกที่นิคม ควรแสดง 3d
+ * building mass ทั้งหมดใน นิคมพร้อมกันด้วย”): every building inside the open estate's outline (all its parts) is shaped
+ * at once, also on a phone's budget — never only the ring round the camera — and drawn from this zoom once every tile
+ * is in: the fit of a wide estate under a phone's sheet is below FOCUS_MIN_ZOOM. Every one of the 64 outlines needs at
+ * most 15 z14 tiles (≤ MAX_TILES) and 54 CityMETER requests with every province's units loaded (≤ WHOLE_CM_REQUESTS),
+ * so none is cut (tests/industrialestate-massing.test.js). Measured on the live 1.3.0 page (desktop, 2026-11-17): the five largest
+ * estates shape 257–2,632 buildings; the phone page that ended had 18,209 (js/shell/maplibre-guard.js#MAP_BUDGETS).
+ * A page recovered from an ended one keeps its lean ring.
+ */
+export const WHOLE_MIN_ZOOM = 10;
+export const WHOLE_CM_REQUESTS = 64;
 export const HEIGHT_LIFT_M = 0.35;
 
 /**
@@ -468,6 +480,11 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
   let enabled = true, hiddenIds = [], disposed = false, token = 0, lastKey = '', lastBucket = -1, lastTruncated = false;
   let lastInput = {regions: [], hosts: [], latitude: 13.75, city: true, zones: []};
   const cache = new Map(), cmCache = new Map();
+  // Parsed tiles kept in memory: few on a lean budget; a whole estate keeps its own plan, so a re-shape at another zoom
+  // parses no tile twice.
+  const KEEP_TILES = lean ? 8 : 24, KEEP_CM = lean ? 16 : 64;
+  let keepTiles = KEEP_TILES, keepCm = KEEP_CM;
+  const trim = (m, n) => { while (m.size > n) m.delete(m.keys().next().value); };
 
   const before = beforeId && map.getLayer(beforeId) ? beforeId : undefined;
   if (map.getSource(sourceId) && !map.getLayer(CITY_LAYER)) {
@@ -580,7 +597,7 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     })();
     cmCache.set(request.key, task);
     task.catch(() => cmCache.delete(request.key));
-    if (cmCache.size > (lean ? 16 : 64)) cmCache.delete(cmCache.keys().next().value);
+    trim(cmCache, keepCm);
     return task;
   }
   async function loadTile(tile) {
@@ -594,7 +611,7 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     })();
     cache.set(key, task);
     task.catch(() => cache.delete(key));
-    if (cache.size > (lean ? 8 : 24)) cache.delete(cache.keys().next().value);
+    trim(cache, keepTiles);
     return task;
   }
 
@@ -612,9 +629,11 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
    * city: the city tier is shown (3D) — kept for zoom- and move-triggered rebuilds;
    * zones: CityMETER units (js/shell/building-units.js) meeting the regions, drawn from CityMETER Building V4.
    */
-  async function update({regions = lastInput.regions, hosts = lastInput.hosts, zoom = map.getZoom(), enabled: on = enabled, city = lastInput.city ?? enabled, latitude = lastInput.latitude, anchors: nextAnchors = null, center = null, zones = lastInput.zones} = {}) {
+  async function update({regions = lastInput.regions, hosts = lastInput.hosts, zoom = map.getZoom(), enabled: on = enabled, city = lastInput.city ?? enabled, latitude = lastInput.latitude, anchors: nextAnchors = null, center = null, zones = lastInput.zones, whole: wholeAsked = lastInput.whole} = {}) {
     enabled = on;
-    lastInput = {regions, hosts, latitude, city, zones};
+    // A whole estate is shaped at once at the full bounds (never on the recovered budget, which keeps its lean ring).
+    const whole = Boolean(wholeAsked) && budget?.level !== 'recovered';
+    lastInput = {regions, hosts, latitude, city, zones, whole: Boolean(wholeAsked)};
     if (nextAnchors) setAnchors(nextAnchors);
     // In plan view (pitch 0) the focus tier still draws as flat rounded footprints; the city tier is hidden.
     for (const id of [CITY_LAYER, CONTEXT_LAYER]) if (map.getLayer(id)) map.setLayoutProperty(id, 'visibility', enabled && city ? 'visible' : 'none');
@@ -622,16 +641,19 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     const bucket = Math.floor(zoom);
     const camera = center || (typeof map.getCenter === 'function' ? map.getCenter().toArray() : null);
     // A lean budget shapes a wide focus round the camera only, and not below its zoom (the city tier draws there).
-    const near = lean ? nearRing(regions, camera, lean.radiusM) : null;
+    const near = lean && !whole ? nearRing(regions, camera, lean.radiusM) : null;
     const waiting = Boolean(near) && bucket < (lean.focusZoom || 0);
-    const {tiles, truncated} = tilesForRegions(near ? [near.ring] : regions, TILE_ZOOM, maxTiles, near ? near.center : camera);
+    const {tiles, truncated} = tilesForRegions(near ? [near.ring] : regions, TILE_ZOOM, whole ? MAX_TILES : maxTiles, near ? near.center : camera);
     const ready = typeof tileUrl === 'function' && tiles.length > 0 && tiles.every(t => Boolean(tileUrl(t)));
-    const plan = typeof cmTileUrl === 'function' && !waiting ? planCmRequests(tiles, zones, {center: camera, max: maxCm}) : {requests: [], zonesByTile: new Map(), truncated: false};
+    const plan = typeof cmTileUrl === 'function' && !waiting ? planCmRequests(tiles, zones, {center: camera, max: whole ? WHOLE_CM_REQUESTS : maxCm}) : {requests: [], zonesByTile: new Map(), truncated: false};
     const ringKey = rings => `${rings.length}:${rings.map(r => r.length + ':' + r[0]?.join(',')).join('|')}`;
-    const key = `${enabled}|${ready}|${bucket}|${city}|${ringKey(regions)}|${ringKey(hosts)}|${tiles.map(t => `${t.x}/${t.y}`).join(',')}|${plan.requests.map(q => q.key).join(',')}|${near ? (waiting ? 'wait' : near.key) : ''}`;
+    const key = `${enabled}|${ready}|${bucket}|${city}|${whole}|${ringKey(regions)}|${ringKey(hosts)}|${tiles.map(t => `${t.x}/${t.y}`).join(',')}|${plan.requests.map(q => q.key).join(',')}|${near ? (waiting ? 'wait' : near.key) : ''}`;
     if (key === lastKey) return {features: 0, tiles: 0, cached: true};
     // Following the camera (onRetile) also when the focus is shaped round it.
     lastKey = key; lastBucket = bucket; lastTruncated = truncated || Boolean(near);
+    keepTiles = whole ? Math.max(KEEP_TILES, tiles.length) : KEEP_TILES;
+    keepCm = whole ? Math.max(KEEP_CM, plan.requests.length) : KEEP_CM;
+    trim(cache, keepTiles); trim(cmCache, keepCm);
     if (!enabled || !regions.length || !ready || waiting) {
       token++; // an update still shaping for the previous state is not applied
       map.getSource(FOCUS_SOURCE)?.setData({type: 'FeatureCollection', features: []}); setHidden([]); setContext([]); setCredit(false);
@@ -703,9 +725,9 @@ export function installMassing(map, {sourceId = 'openmaptiles', beforeId, colors
     setHidden(hidden);
     setContext(context);
     setCredit(cm.kept > 0);
-    setFocusMinZoom(city && !truncated && !near ? FOCUS_MIN_ZOOM : CITY_MIN_ZOOM);
+    setFocusMinZoom(city && !truncated && !near ? (whole ? WHOLE_MIN_ZOOM : FOCUS_MIN_ZOOM) : CITY_MIN_ZOOM);
     updateOcclusion();
-    const result = {features: kept + cm.kept, osm: kept, droppedForHosts: dropped, replaced, context: context.length, cm, tiles: tiles.length, truncated, near: Boolean(near), minZoom: focusMinZoom, radiusM, offsetM, occluders: occluderIds.length, version};
+    const result = {features: kept + cm.kept, osm: kept, droppedForHosts: dropped, replaced, context: context.length, cm, tiles: tiles.length, truncated, near: Boolean(near), whole, minZoom: focusMinZoom, radiusM, offsetM, occluders: occluderIds.length, version};
     // Every applied result (including zoom-triggered rebuilds) reaches the host app through onResult,
     // so a caller whose own update was superseded still sees the figures that are on screen.
     if (typeof onResult === 'function') { try { onResult(result); } catch (e) { console.warn('Massing onResult', e); } }
