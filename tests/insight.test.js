@@ -13,18 +13,21 @@ test('first Aha (snapshot fixture, workers): the three อำเภอ with the 
   const a = summarizeAreaInsight(data.rows, index, {families: data.families});
   assert.equal(a.metric, 'workers');
   assert.equal(a.home, 'SPK');
-  assert.deepEqual(a.areas.map(x => [x.id, x.name, x.value]), [['1103', 'บางพลี', 130258], ['1101', 'เมืองสมุทรปราการ', 124142], ['1104', 'พระประแดง', 76587]]);
-  assert.deepEqual([a.value, a.homePlacedValue, a.homeValue, Math.round(a.share)], [330987, 457353, 457353, 72], 'the share is of the province’s whole total');
-  assert.deepEqual([a.count, a.workers, a.homePlaced, a.homeUnplacedValue], [5041, 330987, 7170, 0]);
-  // Second line: the industries of the focus, each with its share of the focus total (numerator and denominator kept).
+  // Release 0.9.0: DIW figures first, MOI fills the FIDs without one — เมืองสมุทรปราการ and บางเสาธง gain the most.
+  assert.deepEqual(a.areas.map(x => [x.id, x.name, x.value]), [['1101', 'เมืองสมุทรปราการ', 182326], ['1103', 'บางพลี', 130258], ['1106', 'บางเสาธง', 88407]]);
+  assert.deepEqual([a.value, a.homePlacedValue, a.homeValue, Math.round(a.share)], [400991, 537193, 537271, 75], 'the share is of the province’s whole total');
+  assert.deepEqual([a.count, a.workers, a.homePlaced, a.homeUnplacedValue], [5110, 400991, 7170, 78]);
+  // Second line: the industries of the focus, each with its share of the focus total (numerator and denominator kept);
+  // “not stated” never takes a rank — it is reported beside the list against the same base (master: “แยกกลุ่มไม่ระบุ”).
   assert.equal(INDUSTRY_LIMIT, 3);
   assert.equal(a.industry.base, a.value);
-  assert.deepEqual(a.industry.list.map(g => [g.id, g.value, Math.round(g.share)]), [['vehicle', 57959, 18], ['textile', 57590, 17], ['metal', 53221, 16]]);
+  assert.deepEqual(a.industry.list.map(g => [g.id, g.value, Math.round(g.share)]), [['vehicle', 63659, 16], ['polymer', 53246, 13], ['textile', 44128, 11]]);
+  assert.deepEqual([a.industry.unstated.id, a.industry.unstated.value, Math.round(a.industry.unstated.share)], ['unstated', 77337, 19]);
   // The district with the most workers outside Samut Prakan holds more than any Samut Prakan district.
-  assert.deepEqual([a.outside.id, a.outside.name, a.outside.province, a.outside.value, a.outside.count], ['7401', 'เมืองสมุทรสาคร', 'SKN', 264666, 4346]);
+  assert.deepEqual([a.outside.id, a.outside.name, a.outside.province, a.outside.value, a.outside.count], ['7401', 'เมืองสมุทรสาคร', 'SKN', 289471, 4346]);
   assert.ok(a.outside.value > a.areas[0].value);
   assert.deepEqual(a.outside.industry.list.map(g => [g.id, g.value]), [['food', 109886]]);
-  assert.equal(a.outside.industry.base, 264666);
+  assert.equal(a.outside.industry.base, 289471);
   assert.deepEqual(filterAreaRows(data.rows, new Set(a.areaIds)).length, a.count);
 });
 
@@ -34,16 +37,21 @@ test('registrations Aha: the same province, ordered by registrations', () => {
   assert.equal(c.home, 'SPK');
   assert.deepEqual(c.areas.map(x => [x.name, x.value]), [['บางพลี', 2114], ['เมืองสมุทรปราการ', 1987], ['บางเสาธง', 1009]]);
   assert.deepEqual([c.value, c.homeValue, Math.round(c.share)], [5110, 7171, 71]);
-  assert.deepEqual(c.industry.list.map(g => [g.id, g.value]), [['metal', 1025], ['other', 964], ['polymer', 916]]);
+  assert.deepEqual(c.industry.list.map(g => [g.id, g.value]), [['metal', 1025], ['polymer', 916], ['vehicle', 657]]);
+  assert.equal(c.industry.unstated.value, 398, 'until 0.8.2 these sat in “การผลิตอื่น ๆ” (964 = 566 + 398)');
   assert.deepEqual([c.outside.name, c.outside.value], ['เมืองสมุทรสาคร', 4346]);
 });
 
-test('the 95+ lens (size filter p90) reads as release 0.1.0 did: the same three อำเภอ and 74%', () => {
+test('the 95+ lens (size filter p90): the DIW figures read as release 0.1.0 did (the same three อำเภอ and 74%); with the MOI fills บางเสาธง replaces พระประแดง', () => {
   const {data, index} = load();
+  const diw = summarizeAreaInsight(filterRows(data.rows, {size: 'p90'}).filter(r => r.ws === 'diw'), index, {families: data.families});
+  assert.equal(diw.home, 'SPK');
+  assert.deepEqual(diw.areas.map(x => [x.id, x.value]), [['1101', 85921], ['1103', 79620], ['1104', 55439]]);
+  assert.deepEqual([diw.value, diw.homeValue, Math.round(diw.share)], [220980, 299796, 74]);
   const l = summarizeAreaInsight(filterRows(data.rows, {size: 'p90'}), index, {families: data.families});
   assert.equal(l.home, 'SPK');
-  assert.deepEqual(l.areas.map(x => [x.id, x.value]), [['1101', 85921], ['1103', 79620], ['1104', 55439]]);
-  assert.deepEqual([l.value, l.homeValue, Math.round(l.share)], [220980, 299796, 74]);
+  assert.deepEqual(l.areas.map(x => [x.id, x.value]), [['1101', 137238], ['1103', 79620], ['1106', 65083]]);
+  assert.deepEqual([l.value, l.homeValue, Math.round(l.share)], [281941, 370538, 76]);
 });
 
 test('the focus is never every district holding the measure (food: Samut Sakhon has three such districts → its top two)', () => {
@@ -73,8 +81,9 @@ test('the Aha follows the filters: a province, an industry, nothing', () => {
   const {data, index} = load();
   const cbi = summarizeAreaInsight(filterRows(data.rows, {province: 'CBI'}), index, {families: data.families});
   assert.equal(cbi.home, 'CBI');
-  assert.deepEqual(cbi.areas.map(a => a.name), ['บ้านบึง', 'ศรีราชา', 'เมืองชลบุรี']);
+  assert.deepEqual(cbi.areas.map(a => a.name), ['ศรีราชา', 'เมืองชลบุรี', 'บ้านบึง']);
   assert.equal(cbi.industry.list[0].id, 'electrical');
+  assert.equal(Math.round(cbi.industry.unstated.share), 45, 'most MOI-filled registrations of Chon Buri have no DIW group');
   assert.equal(cbi.outside, null, 'a one-province selection has no outside finding');
   const none = summarizeAreaInsight([], index);
   assert.deepEqual([none.areas.length, none.share, none.home, none.industry.list.length], [0, 0, '', 0]);
@@ -87,14 +96,16 @@ test('district model: EVID-05 — a district with no registration is a measured 
   assert.equal(workers.zeroCount, 13, 'twelve districts without a registration and one whose registrations record 0 workers');
   assert.equal(workers.noDataCount, 0, 'every district with registrations has a worker figure');
   assert.equal(workers.ramp.scaleId, COUNT_SCALE.scaleId);
-  assert.deepEqual([workers.ramp.min, workers.ramp.max, workers.ramp.steps], [2, 264666, 41]);
+  assert.deepEqual([workers.ramp.min, workers.ramp.max, workers.ramp.steps], [2, 289471, 41]);
   assert.equal(workers.byId.get('7401').fill, COUNT_SCALE.lut[40], 'เมืองสมุทรสาคร (the national maximum) closes the ramp on sample 40');
   assert.ok(workers.areas.filter(a => a.state === 'measured_zero').every(a => a.workers === 0 && (a.count === 0 || a.figured === a.count)));
   const count = buildAreaModel(data.rows, index, {metric: 'count'});
   assert.equal(count.ramp.scaleId, COUNT_SCALE.scaleId);
   assert.deepEqual([count.zeroCount, count.ramp.min, count.ramp.max], [13, 1, 4346]);
-  // Only registrations without a figure: their districts are no_data (the hatch), never a measured 0 of workers.
-  const none = buildAreaModel(filterRows(data.rows, {size: 'none'}), index);
+  // Only registrations without a figure: their districts are no_data (the hatch), never a measured 0 of workers. Since
+  // release 0.9.0 every registration has a figure (`?size=none` is empty), so the rows of one province stand in.
+  assert.equal(filterRows(data.rows, {size: 'none'}).length, 0);
+  const none = buildAreaModel(data.rows.filter(r => r.province === 'SPK').map(r => ({...r, workers: null, ws: null, size: 'none'})), index);
   assert.ok(none.noDataCount > 0);
   assert.ok(none.areas.filter(a => a.count > 0).every(a => a.state === 'no_data'));
   assert.ok(none.areas.filter(a => a.state === 'measured_zero').every(a => a.count === 0));

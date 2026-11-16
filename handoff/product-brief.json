@@ -3,9 +3,9 @@
   "schemaVersion": "1.5.0",
   "documentType": "product-brief",
   "productId": "citymeter-factory",
-  "productVersion": "0.8.2",
-  "updatedOn": "2026-11-05",
-  "datasetCheckedOn": "2026-11-04",
+  "productVersion": "0.9.0",
+  "updatedOn": "2026-11-16",
+  "datasetCheckedOn": "2026-11-16",
   "language": "th",
   "productName": "CityMETER · Factory",
   "repository": "https://github.com/montri-th/factory",
@@ -28,7 +28,7 @@
     "charts / table",
     "CityMETER production"
   ],
-  "changesSince": "0.2.0 (2026-11-05): the rows are every core registration of 02_FACTORIES (74,047) instead of the 7,175 FIDs of 18_WORKERS_P90 (owner: “ขยายเลย”); worker figures from คนงานรวม of the DIW class 2/3 exports, checked against 18_WORKERS_P90; the 95+ registrations stay as the size filter p90 and a lens in every area panel; registrations without a worker figure read ไม่มีตัวเลขคนงาน and areas without any figure are EVID-05 no data; the separate registry context is gone. 0.1.0 (2026-11-05): first release, built from CityMETER · Hotel 0.3.6 (montri-th/hotel@177e592).",
+  "changesSince": "0.9.0 (2026-11-16, owner: “update web demo … ตามข้อมูลที่อัพเดท”): worker figures are DIW คนงานรวม first and, only for the 2,923 FIDs without one, MOI TOTAL_WORKER of 26_ICTC_METRICS (master rule 28_PRODUCT_BENEFITS: “คงยอด DIW เดิม และเติม MOI เฉพาะ FID ที่ DIW ว่าง”) — 4,387,259 workers = DIW 3,755,632 + MOI 631,627; every figure names its source (`ws`, the อก. tag, the row update date) and every total with MOI figures shows the split “กรอ. … · อก. เติม …”; 95 stays the fixed 95+ threshold (8,727 registrations); the registrations without a DIW group are the family `unstated` (“ไม่ระบุกลุ่มอุตสาหกรรม”, neutral, never ranked as an industry; master: “แยกกลุ่มไม่ระบุ”) instead of sitting in “การผลิตอื่น ๆ”. 0.2.0 (2026-11-05): the rows are every core registration of 02_FACTORIES (74,047) instead of the 7,175 FIDs of 18_WORKERS_P90 (owner: “ขยายเลย”); worker figures from คนงานรวม of the DIW class 2/3 exports, checked against 18_WORKERS_P90; the 95+ registrations stay as the size filter p90 and a lens in every area panel; registrations without a worker figure read ไม่มีตัวเลขคนงาน and areas without any figure are EVID-05 no data; the separate registry context is gone. 0.1.0 (2026-11-05): first release, built from CityMETER · Hotel 0.3.6 (montri-th/hotel@177e592).",
   "rowScopes": {
     "scopeRows": "rows after search · industry family · size · province · function, before any district selection or focus: the comparison base of the Aha, the choropleth, the charts and every rank",
     "baseRows": "scopeRows narrowed by the selected เขต/อำเภอ",
@@ -41,7 +41,7 @@
     "headlineTemplate": "{share}% ของ{คนงานโรงงาน|โรงงาน}ใน{home} อยู่ใน {n} {เขต|อำเภอ}นี้ (one district: อยู่ใน{เขต|อำเภอ}{name}); no worker figure in the selection: “{n} ทะเบียน · ไม่มีตัวเลขคนงาน” with the switch นับเป็นทะเบียน",
     "numerator": "Σ measure of the focused districts (matched membership)",
     "denominator": "Σ measure of every row of the home province in the selection (homeValue)",
-    "personality": "industries: up to three industry families of the focus rows ranked by the measure, each a bar in the family’s series colour with its cue and its share of the focus total; numerator and denominator in each bar’s title and accessible text",
+    "personality": "industries: up to three industry families of the focus rows ranked by the measure, each a bar in the family’s series colour with its cue and its share of the focus total; numerator and denominator in each bar’s title and accessible text; the registrations without a DIW group (family `unstated`) never take a rank — one neutral bar after the list, set apart, against the same base (release 0.9.0)",
     "secondaryFinding": "district(s) with the most of the measure outside the home province (every district tied); “อันดับ 1 นอก{home}”, “มากกว่าทุก{อำเภอ}ของ{home}” when it exceeds the first focus district, and its first family with its share; hidden with a province filter and when the top is < 2",
     "defaultFocus": "auto",
     "defaultCamera": "city preset, fitPitched over the focused districts",
@@ -152,7 +152,7 @@
     }
   },
   "countingUnitContract": {
-    "default": "workers (Σ DIW-reported workers of the registrations, คน)",
+    "default": "workers (Σ worker figures of the registrations, คน: DIW คนงานรวม first, MOI TOTAL_WORKER only where DIW has none — release 0.9.0)",
     "alternatives": [
       "registrations (ทะเบียน)"
     ],
@@ -160,7 +160,8 @@
       "workers": "คน",
       "count": "ทะเบียน"
     },
-    "rule": "one row = one FID of 02_FACTORIES (every size); a registration is not a plant or a company; a registration without a worker figure (null) adds nothing to a worker total and is never 0 or estimated"
+    "rule": "one row = one FID of 02_FACTORIES (every size); a registration is not a plant or a company; a registration without a worker figure (null) adds nothing to a worker total and is never 0 or estimated",
+    "sources": "every figure names its source: `ws` 0 DIW / 1 MOI in data/factories.json; the อก. tag and the MOI row update date (`wOn`, never a count date) on a registration; the split “กรอ. N คน · อก. เติม N คน (N ทะเบียน)” under every total that holds MOI figures"
   },
   "metricContract": {
     "areas": "Σ measure per เขต/อำเภอ (LDS count for both measures)",
@@ -260,9 +261,16 @@
         "series": 9,
         "th": "การผลิตอื่น ๆ",
         "diwGroups": [
-          "ไม่ระบุกลุ่มอุตสาหกรรม",
           "การผลิตอื่นๆ"
         ]
+      },
+      "unstated": {
+        "series": 11,
+        "th": "ไม่ระบุกลุ่มอุตสาหกรรม",
+        "diwGroups": [
+          "ไม่ระบุกลุ่มอุตสาหกรรม"
+        ],
+        "note": "release 0.9.0: not an industry — slot 11 outside the LDS series: the neutral state ink (--state-neutral-content) and an open circle of the full circle size; listed after the ranked families"
       }
     }
   },
@@ -501,15 +509,28 @@
   },
   "data": {
     "file": "data/factories.json",
-    "sha256": "f82e2ee5ab262baf0083d513becbd54bd53812c8434ef3fc1dfcc2fdd1004b1b",
+    "sha256": "ca774deb60e30429885cc2d73bec5a6ad796aeeeed1b323d10ded08e6dd1d713",
     "rows": 74047,
     "counts": {
       "rows": 74047,
-      "withWorkers": 71124,
-      "workers": 3755632,
-      "zeroWorkers": 391,
-      "p90": 7175,
-      "p90Workers": 2435798,
+      "withWorkers": 74047,
+      "workers": 4387259,
+      "zeroWorkers": 438,
+      "workerSources": {
+        "diw": {
+          "rows": 71124,
+          "workers": 3755632,
+          "zero": 391
+        },
+        "moi": {
+          "rows": 2923,
+          "workers": 631627,
+          "zero": 47
+        }
+      },
+      "p90": 8727,
+      "p90Workers": 3008749,
+      "p90Diw": 7175,
       "points": 15654,
       "persons": 6036,
       "admin": {
@@ -535,19 +556,19 @@
         "other": 6967
       },
       "possibleSameSite": 3328,
-      "ties": 122,
+      "ties": 127,
       "estates": 106,
       "sizes": {
-        "w6": 24,
-        "w5": 108,
-        "w4": 244,
-        "w3": 585,
-        "w2": 2216,
-        "w1": 3998,
-        "s3": 7309,
-        "s2": 33178,
-        "s1": 23462,
-        "none": 2923
+        "s1": 23609,
+        "s2": 33857,
+        "s3": 7854,
+        "w1": 4600,
+        "w2": 2839,
+        "w3": 821,
+        "w4": 327,
+        "w5": 115,
+        "w6": 25,
+        "none": 0
       },
       "estateContext": {
         "outside_estate_source_scope_DIW_catalog": 71126,
@@ -562,7 +583,7 @@
     "inputs": {
       "02_FACTORIES_cols": {
         "file": "02_FACTORIES_cols.csv",
-        "sha256": "c9489bde2157db6ff18b47e89fe06443c1dae6474446b844d2ec7821f809bd74"
+        "sha256": "1c47e20bf9f9a5568090790feda5c754d62faef40f2644b1240a9dcad590799d"
       },
       "02_FACTORIES_names": {
         "file": "02_FACTORIES_names.csv",
@@ -570,23 +591,23 @@
       },
       "02_FACTORIES_ops": {
         "file": "02_FACTORIES_ops.csv",
-        "sha256": "2425284b6752ced7cf13f933cbca96707266886e4360913c1298b0f9ca72670d"
+        "sha256": "78428dc0648e4632f561987b6b6d8430abe5e2ef1c4edc4a12fb3d52e883f2ce"
       },
       "18_WORKERS_P90": {
         "file": "18_WORKERS_P90.csv",
-        "sha256": "8b01cf75fdd2138bb3f35a5f12fa869159d6adffe878043749bcdb61b535c5a1"
+        "sha256": "251a502f0b3107c41af5dba08b3b068527bcec209a7916f340edbd349b6d69ac"
       },
       "02_TYPES": {
         "file": "02_TYPES.csv",
-        "sha256": "5565620b1c162d5358cdeced83007ee2e1d2c7c88f8bbbd76d419bdeaaccdaa9"
+        "sha256": "5104199fb1b9e7f29e8134871c93aa25f5c3bc7edc51d48b30edf67fd230bbaa"
       },
       "99_SOURCE_FILES": {
         "file": "99_SOURCE_FILES.csv",
-        "sha256": "d71d7aa13f22ff18c582f553e2f0a881caa02a1d394af785462d5d503a416c9e"
+        "sha256": "6c6250e6e2ade1589fc3d1931f4b5f55426b8acf769c37dbd3199bd97f8ed4dc"
       },
       "DIW_workers": {
         "file": "diw_workers.csv",
-        "sha256": "2dc634f9fb2454c9937c076a49ee5ea18cc7f21f3bf8e0193cb09116c1013f35",
+        "sha256": "ed6ed2f99b4932ad76d72249bef52cafdcd2a9a2a013f8d63d95c87bf58f2d44",
         "derivedFrom": [
           {
             "source": "DIW_factype2",
@@ -598,19 +619,34 @@
             "sha256": "4c3243bcd8dc6a9f3ac0d473f23491fdc475e11ae48960291b6f0db607c8f4af",
             "field": "คนงานรวม"
           }
-        ]
+        ],
+        "via": {
+          "file": "workers-comparison-all-core.csv",
+          "sha256": "d184519fc8ba0870db92176e02d7fc089d8b6658a1c7f1a6ec05e5b2631052a8",
+          "field": "DIW_workers"
+        }
       },
       "01_ESTATES": {
         "file": "01_ESTATES.csv",
-        "sha256": "faee12b2411006adecb34181a5cfa7f5cd8672042f1f6449e8706de6f533b191"
+        "sha256": "7208c5c43af284ba2ad26702236fb83e6d0bc9ce5868d1e7f70c719cc2cc982d"
+      },
+      "26_ICTC_METRICS": {
+        "file": "26_ICTC_METRICS.csv",
+        "sha256": "8dd901dc71b7b9ff9e503277dcd702a5e1582828ab0b9b005014c3074befc901",
+        "gid": 2026111626,
+        "fields": [
+          "fid",
+          "workers_source",
+          "source_last_update"
+        ]
       }
     },
     "scope": {
       "threshold": 95,
-      "percentile": "PERCENTILE.INC 0.9",
-      "withWorkers": 71124,
+      "percentile": "PERCENTILE.INC 0.9 of the DIW figures",
+      "withWorkers": 74047,
       "core": 74047,
-      "workersPeriod": "DIW class 2/3 exports (คนงานรวม), resource metadata updated 2026-10-01; observation date of the figure not exported",
+      "workersPeriod": "DIW class 2/3 exports (คนงานรวม), resource metadata updated 2026-10-01; observation date of the figure not exported; where DIW has no figure, MOI TOTAL_WORKER (ข้อมูลโรงงานอุตสาหกรรม ops_13_01, read 2026-11-16; per-row LAST_UPDATE is a row update date, not a count date)",
       "estates": "estate_context of 02_FACTORIES (counts.estateContext): outside_estate_source_scope_DIW_catalog for the DIW-listed FIDs — the DIW class 2/3 open-data exports cover registrations outside IEAT industrial estates; unknown_estate_context for the MOI-only FIDs",
       "note": "Core registrations (FID) of the research master, every size; not a census of operating plants."
     },
@@ -620,7 +656,24 @@
         "otherProvince": 128,
         "outsideFrames": 5
       }
-    }
+    },
+    "workerSources": [
+      {
+        "id": "diw",
+        "th": "กรอ.",
+        "en": "DIW",
+        "what": "คนงานรวม of the DIW class 2/3 exports",
+        "period": "2026-10-01"
+      },
+      {
+        "id": "moi",
+        "th": "อก.",
+        "en": "MOI",
+        "what": "TOTAL_WORKER of ข้อมูลโรงงานอุตสาหกรรม (ops_13_01), only where DIW has no figure",
+        "checkedOn": "2026-11-16",
+        "dateIs": "source row update date (LAST_UPDATE), not when the workers were counted"
+      }
+    ]
   },
   "visualSystem": {
     "lds": "Landometer-Design-System-v0.9.7.md (standalone-0.9.7-r1, v0.9.7-owner.1, color-srgb-10, sha256 d3085cbc…96)",
@@ -709,6 +762,6 @@
     "site": "GitHub Pages from main /root",
     "handoff": "dist/CityMETER-Factory-Developer-Handoff.zip (START_HERE.md, RELEASE_RECEIPT.json, evidence/, source/)",
     "liveCheck": "npm run verify:live",
-    "cacheTag": "?v=20261116-r1 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
+    "cacheTag": "?v=20261116-r2 on every entry file and, through the import map in index.html, on every ES module; the frame files take the same tag from import.meta.url; bump it with package.json version (tests/release.test.js); icon fonts inside the stylesheets carry ?v=<first 8 hex of their SHA-256> (tests/icons.test.js)"
   }
 }

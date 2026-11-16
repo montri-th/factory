@@ -38,8 +38,10 @@ export function industriesIn(rows, limit = 12, metric = 'workers') {
     m.set(g.index, e);
   }
   const key = metric === 'count' ? ['count', 'workers'] : ['workers', 'count'];
-  return [...m.values()].map(e => ({...e, value: e[key[0]]}))
-    .sort((a, b) => b[key[0]] - a[key[0]] || b[key[1]] - a[key[1]] || COLLATOR.compare(a.industry.th, b.industry.th)).slice(0, limit);
+  const ranked = [...m.values()].map(e => ({...e, value: e[key[0]], unstated: e.industry.raw === ''}))
+    .sort((a, b) => b[key[0]] - a[key[0]] || b[key[1]] - a[key[1]] || COLLATOR.compare(a.industry.th, b.industry.th));
+  // “ไม่ระบุกลุ่มอุตสาหกรรม” is no DIW group: it never takes a rank, and it follows the ranked groups (release 0.9.0).
+  return [...ranked.filter(e => !e.unstated).slice(0, limit), ...ranked.filter(e => e.unstated)];
 }
 
 /** Districts of a selection ranked by the measure (ties: the other measure, then name). */
@@ -94,6 +96,7 @@ export function buildAreaProfile(scopeRows, areaId, index, families, {metric = '
   return {
     area, words: levelWords(area.province), metric, value, count: mine.length, workers: sum(mine, 'workers'),
     figured: mine.filter(r => r.workers != null).length,
+    moi: mine.filter(r => r.ws === 'moi').length, moiWorkers: sum(mine.filter(r => r.ws === 'moi'), 'workers'),
     km2: area.km2, coverageState: selectionState(mine.length), scopeCount: scopeRows.length,
     rank: pos >= 0 && value > 0 ? pos + 1 : null, rankOf: ranking.filter(a => a.value > 0).length,
     rankProvince: posProvince >= 0 && value > 0 ? posProvince + 1 : null, rankProvinceOf: inProvince.filter(a => a.value > 0).length,

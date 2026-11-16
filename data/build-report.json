@@ -1,14 +1,27 @@
 {
-  "builtOn": "2026-11-05",
+  "builtOn": "2026-11-16",
   "output": "factories.json",
-  "outputSha256": "f82e2ee5ab262baf0083d513becbd54bd53812c8434ef3fc1dfcc2fdd1004b1b",
+  "outputSha256": "ca774deb60e30429885cc2d73bec5a6ad796aeeeed1b323d10ded08e6dd1d713",
   "counts": {
     "rows": 74047,
-    "withWorkers": 71124,
-    "workers": 3755632,
-    "zeroWorkers": 391,
-    "p90": 7175,
-    "p90Workers": 2435798,
+    "withWorkers": 74047,
+    "workers": 4387259,
+    "zeroWorkers": 438,
+    "workerSources": {
+      "diw": {
+        "rows": 71124,
+        "workers": 3755632,
+        "zero": 391
+      },
+      "moi": {
+        "rows": 2923,
+        "workers": 631627,
+        "zero": 47
+      }
+    },
+    "p90": 8727,
+    "p90Workers": 3008749,
+    "p90Diw": 7175,
     "points": 15654,
     "persons": 6036,
     "admin": {
@@ -34,19 +47,19 @@
       "other": 6967
     },
     "possibleSameSite": 3328,
-    "ties": 122,
+    "ties": 127,
     "estates": 106,
     "sizes": {
-      "w6": 24,
-      "w5": 108,
-      "w4": 244,
-      "w3": 585,
-      "w2": 2216,
-      "w1": 3998,
-      "s3": 7309,
-      "s2": 33178,
-      "s1": 23462,
-      "none": 2923
+      "s1": 23609,
+      "s2": 33857,
+      "s3": 7854,
+      "w1": 4600,
+      "w2": 2839,
+      "w3": 821,
+      "w4": 327,
+      "w5": 115,
+      "w6": 25,
+      "none": 0
     },
     "estateContext": {
       "outside_estate_source_scope_DIW_catalog": 71126,
@@ -68,7 +81,7 @@
   "inputs": {
     "02_FACTORIES_cols": {
       "file": "02_FACTORIES_cols.csv",
-      "sha256": "c9489bde2157db6ff18b47e89fe06443c1dae6474446b844d2ec7821f809bd74"
+      "sha256": "1c47e20bf9f9a5568090790feda5c754d62faef40f2644b1240a9dcad590799d"
     },
     "02_FACTORIES_names": {
       "file": "02_FACTORIES_names.csv",
@@ -76,23 +89,23 @@
     },
     "02_FACTORIES_ops": {
       "file": "02_FACTORIES_ops.csv",
-      "sha256": "2425284b6752ced7cf13f933cbca96707266886e4360913c1298b0f9ca72670d"
+      "sha256": "78428dc0648e4632f561987b6b6d8430abe5e2ef1c4edc4a12fb3d52e883f2ce"
     },
     "18_WORKERS_P90": {
       "file": "18_WORKERS_P90.csv",
-      "sha256": "8b01cf75fdd2138bb3f35a5f12fa869159d6adffe878043749bcdb61b535c5a1"
+      "sha256": "251a502f0b3107c41af5dba08b3b068527bcec209a7916f340edbd349b6d69ac"
     },
     "02_TYPES": {
       "file": "02_TYPES.csv",
-      "sha256": "5565620b1c162d5358cdeced83007ee2e1d2c7c88f8bbbd76d419bdeaaccdaa9"
+      "sha256": "5104199fb1b9e7f29e8134871c93aa25f5c3bc7edc51d48b30edf67fd230bbaa"
     },
     "99_SOURCE_FILES": {
       "file": "99_SOURCE_FILES.csv",
-      "sha256": "d71d7aa13f22ff18c582f553e2f0a881caa02a1d394af785462d5d503a416c9e"
+      "sha256": "6c6250e6e2ade1589fc3d1931f4b5f55426b8acf769c37dbd3199bd97f8ed4dc"
     },
     "DIW_workers": {
       "file": "diw_workers.csv",
-      "sha256": "2dc634f9fb2454c9937c076a49ee5ea18cc7f21f3bf8e0193cb09116c1013f35",
+      "sha256": "ed6ed2f99b4932ad76d72249bef52cafdcd2a9a2a013f8d63d95c87bf58f2d44",
       "derivedFrom": [
         {
           "source": "DIW_factype2",
@@ -104,11 +117,26 @@
           "sha256": "4c3243bcd8dc6a9f3ac0d473f23491fdc475e11ae48960291b6f0db607c8f4af",
           "field": "คนงานรวม"
         }
-      ]
+      ],
+      "via": {
+        "file": "workers-comparison-all-core.csv",
+        "sha256": "d184519fc8ba0870db92176e02d7fc089d8b6658a1c7f1a6ec05e5b2631052a8",
+        "field": "DIW_workers"
+      }
     },
     "01_ESTATES": {
       "file": "01_ESTATES.csv",
-      "sha256": "faee12b2411006adecb34181a5cfa7f5cd8672042f1f6449e8706de6f533b191"
+      "sha256": "7208c5c43af284ba2ad26702236fb83e6d0bc9ce5868d1e7f70c719cc2cc982d"
+    },
+    "26_ICTC_METRICS": {
+      "file": "26_ICTC_METRICS.csv",
+      "sha256": "8dd901dc71b7b9ff9e503277dcd702a5e1582828ab0b9b005014c3074befc901",
+      "gid": 2026111626,
+      "fields": [
+        "fid",
+        "workers_source",
+        "source_last_update"
+      ]
     }
   }
 }

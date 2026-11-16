@@ -4,8 +4,9 @@
  * Rows are the factory registrations of “CityMETER Factory Thailand — Factory, Operator & Company Research Master
  * 2026-11-04” (data/factories.json, built by scripts/build-data.py). One row = one FID of the core registry 02_FACTORIES
  * (every size). A registration is not a verified physical site, a legal entity or proof of operation today. Nothing here
- * merges, moves or mutates a row. The 95+ lens (`row.p90`) = the registrations at or above the P90 of the worker figures
- * (95 workers; the FIDs of the sheet's tab 18_WORKERS_P90).
+ * merges, moves or mutates a row. The 95+ lens (`row.p90`) = the registrations with 95 workers or more: 95 is the P90 of
+ * the DIW worker figures (the FIDs of the sheet's tab 18_WORKERS_P90) and stays a fixed threshold when MOI fills a figure
+ * (release 0.9.0; never a P90 recomputed with MOI figures).
  *
  * Two measures (a contract, see DATA_METHOD.md §2):
  *   workers (default) — Σ workers of the registrations (“คน”): คนงานรวม of the DIW class 2/3 exports (resource metadata
@@ -27,8 +28,10 @@ export const SCOPE = Object.freeze({th: 'ทะเบียนโรงงาน
 /** Short labels for tight places (matrix columns); the full Thai label stays in titles, legends and lists. */
 export const FAMILY_SHORT = Object.freeze({
   food: 'อาหาร', electrical: 'ไฟฟ้า', vehicle: 'ยานพาหนะ', textile: 'สิ่งทอ', metal: 'โลหะ', polymer: 'พลาสติก/ยาง',
-  wood: 'ไม้/กระดาษ', mineral: 'อโลหะ', plant: 'พืช', other: 'อื่น ๆ',
+  wood: 'ไม้/กระดาษ', mineral: 'อโลหะ', plant: 'พืช', other: 'อื่น ๆ', unstated: 'ไม่ระบุกลุ่ม',
 });
+/** The family of the registrations without a DIW industry group (release 0.9.0): kept apart, never ranked as an industry. */
+export const UNSTATED = 'unstated';
 
 /** Measures: `workers` (default) and `count`. `aha` is the subject of the first finding (scope included). */
 export const METRICS = Object.freeze({
@@ -188,6 +191,8 @@ export function decodeDataset(json, index) {
     const industry = industries[c.group[i]] || industries.at(-1);
     const family = industry?.familyRec || families.at(-1);
     const workers = Number.isFinite(c.workers[i]) && c.workers[i] >= 0 ? c.workers[i] : null;
+    // Worker source (release 0.9.0): DIW first; MOI TOTAL_WORKER only where DIW has none (`ws` 1, its row update date `wOn`).
+    const ws = workers == null ? null : c.ws?.[i] === 1 ? 'moi' : 'diw';
     const lat = c.lat[i], lon = c.lon[i];
     const type = types[c.type[i]] || {code: '', th: ''};
     const name = c.name[i] || '';
@@ -196,7 +201,8 @@ export function decodeDataset(json, index) {
       id: c.key[i], name, op: c.op[i] || '', person: c.person[i] === 1, short: short === name ? '' : short, index: i,
       group: family.index, groupId: family.id, series: family.series, family, industry, type,
       cls: classes[c.cls[i]] || null, fcls: c.fcls[i] || null,
-      workers, size: sizeOf(workers), rank: workers == null ? null : rankOf.get(workers) || null,
+      workers, ws, wOn: ws === 'moi' && c.wOn?.[i] >= 0 ? dates[c.wOn[i]] || '' : '',
+      size: sizeOf(workers), rank: workers == null ? null : rankOf.get(workers) || null,
       p90: workers != null && workers >= SCOPE.threshold, tie: workers === SCOPE.threshold,
       area, province, admin: ADMIN_LIST[c.admin[i]] || 'province', sub: c.sub[i] >= 0 ? subs[c.sub[i]] || '' : '',
       longitude: Number.isFinite(lon) ? lon : null, latitude: Number.isFinite(lat) ? lat : null,
@@ -213,7 +219,7 @@ export function decodeDataset(json, index) {
   const scores = importanceScores(rows);
   rows.forEach((r, i) => { r.importance = scores[i]; });
   return {meta: json.meta || {}, rows, groups: families, families, industries, classes, types, sources: json.sources || [],
-    figured: figures.length, estates: json.estates || [], dropped};
+    figured: figures.length, estates: json.estates || [], dropped, workerSources: json.meta?.workerSources || []};
 }
 
 /**
@@ -235,17 +241,18 @@ export function filterRows(rows, f = {}) {
 
 /** Totals for a selection: registrations, workers, points, placement; `figured` = registrations with a worker figure. */
 export function summarize(rows) {
-  let points = 0, placed = 0, provinced = 0, workers = 0, big = 0, figured = 0, lens = 0, lensWorkers = 0;
+  let points = 0, placed = 0, provinced = 0, workers = 0, big = 0, figured = 0, lens = 0, lensWorkers = 0, moi = 0, moiWorkers = 0;
   const areas = new Set(), provinces = new Set();
   for (const r of rows) {
     if (hasPoint(r)) points++;
     if (r.area) { placed++; areas.add(r.area); }
     if (r.province) { provinced++; provinces.add(r.province); }
     if (r.workers != null) { figured++; workers += r.workers; }
+    if (r.ws === 'moi') { moi++; moiWorkers += r.workers; }
     if (r.workers >= 1000) big++;
     if (r.p90) { lens++; lensWorkers += r.workers; }
   }
-  return {count: rows.length, workers, figured, points, placed, provinced, big, lens, lensWorkers, areas: areas.size, provinces: provinces.size};
+  return {count: rows.length, workers, figured, points, placed, provinced, big, lens, lensWorkers, moi, moiWorkers, areas: areas.size, provinces: provinces.size};
 }
 
 /** Registrations and workers per industry family for a selection (every family listed, zero kept as a measured 0). */
@@ -285,8 +292,11 @@ export function familyShares(rows, families, metric = 'workers', limit = 3) {
   const mix = mixOf(rows, families).byGroup;
   const base = rows.reduce((s, r) => s + rowValue(r, metric), 0);
   const val = g => (metric === 'count' ? g.count : g.workers);
-  return {base, list: mix.filter(g => val(g) > 0).sort((a, b) => val(b) - val(a) || a.index - b.index).slice(0, limit)
-    .map(g => ({...g, value: val(g), share: base ? (val(g) / base) * 100 : 0}))};
+  const share = g => ({...g, value: val(g), share: base ? (val(g) / base) * 100 : 0});
+  // “Not stated” is no industry: it never takes a rank; it is reported beside the list against the same base.
+  const unstated = mix.find(g => g.id === UNSTATED);
+  return {base, list: mix.filter(g => g.id !== UNSTATED && val(g) > 0).sort((a, b) => val(b) - val(a) || a.index - b.index).slice(0, limit)
+    .map(share), unstated: unstated && val(unstated) > 0 ? share(unstated) : null};
 }
 
 export const safeURL = value => {

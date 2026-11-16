@@ -1101,7 +1101,7 @@ function renderTable() {
   const rs = renderTable.sorted.slice(start, start + pageSize);
   $('result-rows').innerHTML = rs.map(r => `<tr>
       <td><button type="button" class="row-name brand-row" data-id="${esc(r.id)}">${cueMarkup(r.series, {className: 'row-cue'})}<span>${esc(r.title)}</span></button><small>${esc(state.data.families[r.group]?.th || '')}</small></td>
-      <td class="num">${r.workers == null ? '<span class="hint" title="ไม่มีตัวเลขคนงาน">—<span class="sr-only">ไม่มีตัวเลขคนงาน</span></span>' : `<span class="data-number">${num(r.workers)}</span>`}</td>
+      <td class="num">${r.workers == null ? '<span class="hint" title="ไม่มีตัวเลขคนงาน">—<span class="sr-only">ไม่มีตัวเลขคนงาน</span></span>' : `<span class="data-number">${num(r.workers)}</span>${r.ws === 'moi' ? ' <span class="src-tag" title="ตัวเลขคนงานจาก อก.">อก.</span>' : ''}`}</td>
       <td>${esc(r.industry?.th || '')}${r.type?.code ? `<small class="data-number">${esc(r.type.code)}</small>` : ''}</td>
       <td>${areaCell(r)}</td>
       <td>${r.moi ? esc(r.moi) : '<span class="hint">ไม่พบ</span>'}</td></tr>`).join('') ||
