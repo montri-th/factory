@@ -292,6 +292,10 @@ def main():
     fids = cols['key']
     fid_index = {k: i for i, k in enumerate(fids)}
     family_of_group = [g['family'] for g in fdata['groups']]
+    # Factory 0.9.0: `ws` = the source of each worker figure (0 DIW, 1 MOI TOTAL_WORKER where DIW has none, -1 none) and
+    # the family `unstated` (no DIW industry group) — kept apart here too, never ranked as an industry.
+    ws_col = cols.get('ws') or [0 if w is not None else -1 for w in cols['workers']]
+    unstated_family = next((k for k, f in enumerate(fdata['families']) if f['id'] == 'unstated'), None)
     points = [(i, cols['lon'][i], cols['lat'][i]) for i in range(len(fids)) if cols['lat'][i] is not None and cols['lon'][i] is not None]
 
     # ---------- estates ----------
@@ -356,19 +360,29 @@ def main():
             near = [i for i, lon, lat in points if bx[0] - pad_lon <= lon <= bx[2] + pad_lon and bx[1] - pad_lat <= lat <= bx[3] + pad_lat
                     and distance_m(lon, lat, f['geometry'], lat0) <= AROUND_KM * 1000]
             workers = [cols['workers'][i] for i in near if cols['workers'][i] is not None]
-            fam = {}
+            fam, unstated = {}, [0, 0]
             for i in near:
                 w = cols['workers'][i]
                 fi = family_of_group[cols['group'][i]] if cols['group'][i] is not None else None
                 if fi is None:
                     continue
+                if fi == unstated_family:
+                    unstated[0] += w or 0
+                    unstated[1] += 1
+                    continue
                 e = fam.setdefault(fi, [fi, 0, 0])
                 e[1] += w or 0
                 e[2] += 1
+            moi = [i for i in near if ws_col[i] == 1]
             rec['around'] = {
                 'km': AROUND_KM, 'n': len(near), 'withWorkers': len(workers), 'workers': sum(workers),
                 'families': sorted(fam.values(), key=lambda x: (-x[1], -x[2], x[0]))[:5],
             }
+            if unstated[1]:
+                rec['around']['unstated'] = unstated
+            if moi:
+                rec['around']['moi'] = len(moi)
+                rec['around']['moiWorkers'] = sum(cols['workers'][i] for i in moi)
             around_points[eid] = sorted(near, key=lambda i: (-(cols['workers'][i] or 0), fids[i]))
             shown += 1
         rec['boundary'] = boundary
@@ -482,7 +496,11 @@ def main():
                '(10_FIELD_EVIDENCE_R8, source_supported), outline QA (29_BOUNDARY_QA_R8: more than 15 % from the source area; whole coverage '
                'unconfirmed for every outline) and owner customer lists (DEMO_DIRECTORY_SOURCES_R8, linked, counts never shown). No new geometry.'},
         'around': {'km': AROUND_KM, 'source': 'CityMETER Factory rows with a published point (data/factories.json of this repository)',
-                   'rule': 'straight-line distance from the point to the OpenStreetMap outline ≤ 3 km (0 inside it); a context set, never membership'},
+                   'rule': 'straight-line distance from the point to the OpenStreetMap outline ≤ 3 km (0 inside it); a context set, never membership',
+                   'workers': 'CityMETER Factory worker figures: DIW คนงานรวม first; MOI TOTAL_WORKER only where DIW has none (Factory 0.9.0) — '
+                              '`moi`/`moiWorkers` count the MOI figures of a set; `unstated` = [workers, registrations] without a DIW '
+                              'industry group, kept apart from the ranked families',
+                   'workerSources': fdata['meta'].get('workerSources', [])},
         'inputs': {
             'sheet': {'file': Path(args.sheet).name, 'sha256': sha256(args.sheet), 'tabs': ['DEMO_CATALOG', 'DEMO_BOUNDARIES', 'DEMO_FACTORY_LINKS', 'DEMO_FID_CANDIDATES', 'DEMO_LINK_SUMMARY', 'LOGO_LIBRARY', '01_ESTATES', '12_ALIASES', 'DEMO_README']
                       + [t for t in ('LOGO_LIBRARY_R8', '10_FIELD_EVIDENCE_R8', '29_BOUNDARY_QA_R8', 'DEMO_DIRECTORY_SOURCES_R8') if has(t)]},
@@ -512,10 +530,11 @@ def main():
     slot = {i: k for k, i in enumerate(used)}
     (out / 'around.json').write_text(json.dumps({
         'meta': {'source': 'CityMETER Factory data/factories.json (same repository)', 'km': AROUND_KM, 'rule': meta['around']['rule'],
-                 'row': '[slot, workers|null, family index|null] per estate, heaviest first; slot indexes rows[]',
+                 'row': '[slot, workers|null, family index|null(, 1 when the figure is MOI’s)] per estate, heaviest first; slot indexes rows[]',
                  'families': [f['th'] for f in fdata['families']], 'familiesEn': [f['en'] for f in fdata['families']]},
         'rows': [[fids[i], cols['name'][i], round(cols['lon'][i], 6), round(cols['lat'][i], 6)] for i in used],
-        'estates': {eid: [[slot[i], cols['workers'][i], family_of_group[cols['group'][i]] if cols['group'][i] is not None else None] for i in v]
+        'estates': {eid: [[slot[i], cols['workers'][i], family_of_group[cols['group'][i]] if cols['group'][i] is not None else None]
+                          + ([1] if ws_col[i] == 1 else []) for i in v]
                     for eid, v in sorted(around_points.items())},
     }, ensure_ascii=False, separators=(',', ':')) + '\n')
 

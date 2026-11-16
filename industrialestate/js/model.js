@@ -162,9 +162,9 @@ export function logoCaption(e) {
 /** Around-estate set of one estate from data/around.json → rows [{fid, name, lon, lat, workers, family}]. */
 export function aroundRows(around, id) {
   const list = around?.estates?.[id] || [];
-  return list.map(([slot, workers, family]) => {
+  return list.map(([slot, workers, family, moi]) => {
     const [fid, name, lon, lat] = around.rows[slot];
-    return {fid, name, lon, lat, workers, family};
+    return {fid, name, lon, lat, workers, family, moi: moi === 1};
   });
 }
 
@@ -178,4 +178,4 @@ export function directoryRows(directory, id) {
 export const aroundRadius = w => (Number.isFinite(w) && w > 0 ? Math.max(5, Math.min(12, 4.4 + Math.sqrt(w) / 5)) : 4.4);
 
 /** Factory family index → LDS series (js/cues.js GROUP_SERIES order of CityMETER Factory). */
-export const FAMILY_IDS = Object.freeze(['food', 'electrical', 'vehicle', 'textile', 'metal', 'polymer', 'wood', 'mineral', 'plant', 'other']);
+export const FAMILY_IDS = Object.freeze(['food', 'electrical', 'vehicle', 'textile', 'metal', 'polymer', 'wood', 'mineral', 'plant', 'other', 'unstated']);

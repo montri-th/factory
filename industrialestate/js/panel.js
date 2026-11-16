@@ -212,14 +212,22 @@ function aroundSection(e, {families, factoryHref}) {
   const fam = a.families.filter(f => f[1] > 0 || f[2] > 0);
   const top = Math.max(1, ...fam.map(f => f[1] || 0));
   const famName = i => (EN ? families.en[i] : families.th[i]) || '';
-  const bars = fam.length && fam.some(f => f[1] > 0) ? `<ul class="mix-list" aria-label="${T('อุตสาหกรรมรอบนิคม (คนงาน)', 'Industries around the estate (workers)')}">${fam.filter(f => f[1] > 0).map(([i, w, n]) => `
-    <li><span class="mix-row is-static" title="${esc(`${famName(i)}: ${num(w)} ${T('คน', 'workers')} · ${num(n)} ${T('ทะเบียน', 'registrations')}`)}"><span class="mix-label">${cueMarkup(seriesOf(FAMILY_IDS[i]))}${esc(famName(i))}</span>
-      <span class="mix-track" aria-hidden="true"><span class="mix-fill category-${seriesOf(FAMILY_IDS[i])}" style="width:${Math.max(3, Math.round((w / top) * 100))}%"></span></span>
+  // Factory 0.9.0: the registrations without a DIW group (`unstated`) follow the ranked families, set apart, never ranked.
+  const unstatedIndex = FAMILY_IDS.indexOf('unstated');
+  const rows = [...fam.filter(f => f[1] > 0), ...(a.unstated?.[0] > 0 ? [[unstatedIndex, a.unstated[0], a.unstated[1]]] : [])];
+  const scale = Math.max(top, ...rows.map(f => f[1] || 0));
+  const bars = rows.length ? `<ul class="mix-list" aria-label="${T('อุตสาหกรรมรอบนิคม (คนงาน)', 'Industries around the estate (workers)')}">${rows.map(([i, w, n]) => `
+    <li${i === unstatedIndex ? ' class="is-unstated"' : ''}><span class="mix-row is-static" title="${esc(`${famName(i)}: ${num(w)} ${T('คน', 'workers')} · ${num(n)} ${T('ทะเบียน', 'registrations')}`)}"><span class="mix-label">${cueMarkup(seriesOf(FAMILY_IDS[i]))}${esc(famName(i))}</span>
+      <span class="mix-track" aria-hidden="true"><span class="mix-fill category-${seriesOf(FAMILY_IDS[i])}" style="width:${Math.max(3, Math.round((w / scale) * 100))}%"></span></span>
       <span class="mix-value data-number">${num(w)}</span></span></li>`).join('')}</ul>` : '';
+  // The two sources stay apart under the total (as in Factory): DIW figures, then the MOI figures that fill a blank.
+  const split = a.moi > 0 ? `<p class="hint source-split" title="${esc(T('ทะเบียนที่ กรอ. ไม่มีตัวเลขคนงาน ใช้คนงานรวมตามข้อมูลโรงงานอุตสาหกรรมของ อก.', 'Registrations without a DIW worker figure take the MOI factory data total'))}">${T(
+    `${nw(`กรอ. ${num(a.workers - a.moiWorkers)} คน`)} · ${nw(`อก. เติม ${num(a.moiWorkers)} คน (${num(a.moi)} ทะเบียน)`)}`,
+    `${nw(`DIW ${num(a.workers - a.moiWorkers)} workers`)} · ${nw(`MOI fills ${num(a.moiWorkers)} workers (${num(a.moi)} registrations)`)}`)}</p>` : '';
   const workers = a.withWorkers ? T(`คนงาน ${nw(`<strong class="data-number">${num(a.workers)}</strong> คน`)} จาก ${nw(`${num(a.withWorkers)} ทะเบียน`)}ที่มีตัวเลข`, `${nw(`<strong class="data-number">${num(a.workers)}</strong> workers`)} at the ${nw(`${num(a.withWorkers)} registrations`)} with a figure`) : (a.n ? T('ทะเบียนรอบนิคมไม่มีตัวเลขคนงาน', 'No worker figure at these registrations') : '');
   return `
     <section aria-labelledby="es-around">${heading('distance', T(`โรงงานรอบนิคม ${AROUND_KM} กม.`, `Factories within ${AROUND_KM} km`), 'es-around')}
-      <p>${a.n ? T(`${nw(`<strong class="data-number">${num(a.n)}</strong> ทะเบียน`)}ใน CityMETER Factory`, `${nw(`<strong class="data-number">${num(a.n)}</strong> registrations`)} in CityMETER Factory`) : T('ไม่มีทะเบียนที่มีพิกัดในระยะนี้', 'No registration with a point in this range')}${workers ? ` · ${workers}` : ''}</p>
+      <p>${a.n ? T(`${nw(`<strong class="data-number">${num(a.n)}</strong> ทะเบียน`)}ใน CityMETER Factory`, `${nw(`<strong class="data-number">${num(a.n)}</strong> registrations`)} in CityMETER Factory`) : T('ไม่มีทะเบียนที่มีพิกัดในระยะนี้', 'No registration with a point in this range')}${workers ? ` · ${workers}` : ''}</p>${split}
       ${bars ? `<p class="hint">${T('คนงานตามอุตสาหกรรม (คน)', 'Workers by industry')}</p>${bars}` : ''}
       ${a.n ? `<p><button type="button" class="link-button" data-action="show-around">${T('ดูจุดบนแผนที่', 'Show them on the map')}</button>${factoryHref ? ` · <a class="source-link" href="${esc(factoryHref)}">${T('เปิดใน CityMETER Factory', 'Open in CityMETER Factory')}</a>` : ''}</p>` : (factoryHref ? `<p><a class="source-link" href="${esc(factoryHref)}">${T('เปิดใน CityMETER Factory', 'Open in CityMETER Factory')}</a></p>` : '')}
     </section>`;
