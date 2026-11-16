@@ -12,7 +12,7 @@
  * (a distance set, never membership), and from one provenance line per view: dataset · source · date · boundary, then
  * “วิธีนับ” (DATA_METHOD.md, where the method and its limits live). A natural person's name is never shown.
  */
-import {EN, T, nameOf, typeOf, provinceName, boundaryWords, logoCaption, shortLabel, AROUND_KM, FAMILY_IDS} from './model.js';
+import {EN, T, nameOf, typeOf, provinceName, boundaryWords, outlineLabel, outlineNote, logoCaption, shortLabel, AROUND_KM, FAMILY_IDS} from './model.js';
 import {cueMarkup, seriesOf} from './cues.js';
 import {actionBar} from './ask.js';
 
@@ -102,10 +102,10 @@ export function estateList(estates, {base = '', ramp = null} = {}) {
   if (!estates.length) return `<p class="hint">${T('ไม่มีรายการตามตัวกรอง', 'No record matches the filters')}</p>`;
   return `<ul class="estate-list">${estates.map(e => {
     const c = ramp?.byId.get(e.id);
-    const swatch = e.outline ? (c?.fill ? `<i class="estate-swatch" style="background:${esc(c.fill)}" aria-hidden="true"></i>` : '<i class="estate-swatch is-hatch" aria-hidden="true"></i>') : '<i class="estate-swatch is-none" aria-hidden="true"></i>';
+    const swatch = e.outline ? (c?.fill ? `<i class="estate-swatch" style="background:${esc(c.fill)}" aria-hidden="true"></i>` : '<i class="estate-swatch is-hatch" aria-hidden="true"></i>') : e.context ? '<i class="estate-swatch is-context" aria-hidden="true"></i>' : '<i class="estate-swatch is-none" aria-hidden="true"></i>';
     const listed = e.listed ? nw(`<strong class="data-number">${num(e.dir.n)}</strong> ${T('รายชื่อ', e.dir.n === 1 ? 'listing' : 'listings')}`) : `<span class="muted">${T('ไม่มีในทำเนียบรอบนี้', 'not in this directory snapshot')}</span>`;
     return `<li><button type="button" class="estate-row" data-action="select-estate" data-id="${esc(e.id)}">
-      ${swatch}<span class="estate-row-main"><span class="estate-row-name">${esc(nameOf(e))}</span><span class="estate-row-meta">${esc(typeOf(e))} · ${esc(provinceName(e.province))}${e.outline ? '' : ` · ${T('ไม่มีขอบเขต', 'no outline')}`}</span></span>
+      ${swatch}<span class="estate-row-main"><span class="estate-row-name">${esc(nameOf(e))}</span><span class="estate-row-meta">${esc(typeOf(e))} · ${esc(provinceName(e.province))}${e.outline ? '' : e.context ? ` · ${T('พื้นที่บริบท', 'context area')}` : ` · ${T('ไม่มีขอบเขต', 'no outline')}`}</span></span>
       <span class="estate-row-count">${listed}</span>${logoMark(e, {size: 'xs', base})}</button></li>`;
   }).join('')}</ul>`;
 }
@@ -177,7 +177,7 @@ export function renderEstate(ctx) {
     </div>`;
   const aroundHTML = e.around ? aroundSection(e, {families, factoryHref}) : `
     <section aria-labelledby="es-around">${heading('distance', T(`โรงงานรอบนิคม ${AROUND_KM} กม.`, `Factories within ${AROUND_KM} km`), 'es-around')}
-      <p class="hint">${esc(boundaryWords(e))}</p>
+      <p class="hint">${esc(e.context ? T('พื้นที่บริบทไม่ใช่ขอบนิคม จึงไม่วัดระยะโรงงานรอบนิคม', 'A context area is not the estate outline, so no around-estate set is measured') : boundaryWords(e))}</p>
       ${factoryHref ? `<p><a class="source-link" href="${esc(factoryHref)}">${T(`ดูโรงงาน${provinceName(e.province)}ใน CityMETER Factory`, `See the factories of ${provinceName(e.province)} in CityMETER Factory`)}</a></p>` : ''}
     </section>`;
   // R8 (1.1.0): the developer's own customer list, linked — its counts stay in the register, never shown or summed.
@@ -190,8 +190,15 @@ export function renderEstate(ctx) {
   // R8 outline QA: the outline's area is more than 15 % from the area its source states (neither area is shown).
   const qa = e.boundary.qa;
   const qaText = qa ? `${esc(qa.dir === 'smaller' ? T('กรอบเล็กกว่าพื้นที่ที่แหล่งระบุเกิน 15% อาจไม่ครบทั้งโครงการ', 'The outline is over 15% smaller than the area its source states and may miss part of the project') : T('กรอบใหญ่กว่าพื้นที่ที่แหล่งระบุเกิน 15% อาจรวมพื้นที่อื่น', 'The outline is over 15% larger than the area its source states and may take in other land'))}${qa.url ? ` · ${link(qa.url, T('แหล่งพื้นที่', 'area source'))}` : ''} · ${esc(T(`ตรวจ ${dateText(qa.on)}`, `checked ${dateText(qa.on)}`))}` : '';
+  // R9: the register's label and note for the drawn shape stay beside it (Thai kept when no English is given).
+  const said = x => (x ? (x.th ? `<span lang="th">${esc(x.text)}</span>` : esc(x.text)) : '');
+  const label = outlineLabel(e), note = outlineNote(e);
+  const parts = e.boundary.parts || (e.boundary.osm ? [{osm: e.boundary.osm, osmVersion: e.boundary.osmVersion}] : []);
+  const osmLinks = parts.map(p => link(`https://www.openstreetmap.org/${p.osm}`, `${p.osm} v${p.osmVersion}`)).join(' · ');
+  const drawn = e.outline || e.context;
   const facts = [
-    [T('ขอบเขต', 'Outline'), e.outline ? `${esc(boundaryWords(e))} · ${link(`https://www.openstreetmap.org/${e.boundary.osm}`, `${e.boundary.osm} v${e.boundary.osmVersion}`)} · ${esc(dateText(e.boundary.snapshot))}` : esc(boundaryWords(e))],
+    [T('ขอบเขต', 'Outline'), drawn ? `${label ? `${said(label)} · ` : ''}${e.context ? `${esc(T('พื้นที่บริบท', 'Context area'))} · ` : ''}${osmLinks}${parts.length > 1 ? ` · ${esc(T(`${parts.length} ส่วนตามแหล่ง แยกกัน`, `${parts.length} separate parts as the source has them`))}` : ''} · ${esc(dateText(e.boundary.snapshot))}` : esc(boundaryWords(e))],
+    ...(drawn && note ? [[T('หมายเหตุขอบเขต', 'Outline note'), `${note.th ? `${esc(T('', 'Register note (Thai): '))}` : ''}${said(note)}`]] : []),
     ...(qa ? [[T('เทียบพื้นที่', 'Area check'), qaText]] : []),
     [T('ผู้พัฒนาตามแหล่ง', 'Developer named by the source'), esc(developer || e.developer || '—')],
     [T('หน้าในบัญชี กนอ.', 'IEAT catalogue page'), e.url ? link(e.url, T('industrial-estates.ieat.go.th', 'industrial-estates.ieat.go.th')) : '—'],
@@ -203,7 +210,7 @@ export function renderEstate(ctx) {
     ${dirHTML}
     ${actionBar({kind: 'estate', estate: e})}
     <details class="source-details"><summary>${T('ที่มาและขอบเขต', 'Sources and outline')}</summary><dl class="facts">${facts.map(([k, v]) => `<dt>${esc(k)}</dt><dd>${v}</dd>`).join('')}</dl></details>
-    ${provenance(meta, {factory: Boolean(e.around), boundary: e.outline ? T(`ขอบเขต OSM ${e.boundary.osm}`, `OSM outline ${e.boundary.osm}`) : T(`จังหวัด${provinceName(e.province)}ตามแหล่ง`, `${provinceName(e.province)} as the source labels it`)})}`;
+    ${provenance(meta, {factory: Boolean(e.around), boundary: e.outline ? T(`ขอบเขต OSM ${e.boundary.osm}${e.boundary.parts ? ` +${e.boundary.parts.length - 1}` : ''}`, `OSM outline ${e.boundary.osm}${e.boundary.parts ? ` +${e.boundary.parts.length - 1}` : ''}`) : e.context ? T(`พื้นที่บริบท OSM ${e.boundary.osm}`, `OSM context area ${e.boundary.osm}`) : T(`จังหวัด${provinceName(e.province)}ตามแหล่ง`, `${provinceName(e.province)} as the source labels it`)})}`;
 }
 
 /** Around-estate set: registrations and workers within 3 km (CityMETER Factory), families as bars, a link to Factory. */

@@ -662,6 +662,8 @@ button.fact-chip:hover { background: var(--surface-alt); }
 /* Release 0.9.0: workers keep their two sources apart — a filled MOI figure carries a tag, a selection its split line. */
 .src-tag { display: inline-block; padding: 1px 5px; border: 1px solid var(--border-default); border-radius: 4px; color: var(--text-secondary); font: 600 10px/1.3 var(--font-body); white-space: nowrap; vertical-align: 1px; }
 .source-split { display: flex; align-items: flex-start; gap: 6px; margin: 8px 0 0; font-size: 12px; }
+.outline-label { display: flex; align-items: flex-start; gap: 6px; margin: 6px 0 0; }
+.outline-label .pictogram { flex: none; width: 16px; height: 16px; font-size: 16px; }
 .source-split .pictogram { flex: none; width: 16px; height: 16px; font-size: 16px; }
 .fact-line { display: flex; align-items: center; flex-wrap: wrap; gap: 4px; margin-top: 8px; font-size: 13px; color: var(--text-secondary); }
 /* Nearby-set rule as chips (industry · workers · radius) and the list's “ดูทั้งหมด” link. */

@@ -8,7 +8,7 @@ import {readdirSync, readFileSync, existsSync} from 'node:fs';
 import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {ROOT, readJSON} from './helpers.js';
-import {decodeData, summarize, ahaOf, estateRamp, developerGroups, filterEstates, shortLabel, logoCaption, directoryRows, aroundRows} from '../industrialestate/js/model.js';
+import {decodeData, summarize, ahaOf, estateRamp, developerGroups, filterEstates, shortLabel, logoCaption, directoryRows, aroundRows, partialOutline} from '../industrialestate/js/model.js';
 import {renderOverview, renderProvince, renderEstate, renderDirectory} from '../industrialestate/js/panel.js';
 import {shortName, placeChips} from '../industrialestate/js/labels.js';
 
@@ -21,22 +21,24 @@ const raw = json('data/estates.json');
 const index = json('data/area-index.json');
 const model = () => decodeData(raw, index);
 
-test('data contract industrial-estate-demo/1.0.0: 106 records, 46 outlines, 6,811 listings in 56 estates, 50 no data, verified no data', () => {
+test('data contract industrial-estate-demo/1.0.0: 106 records, 64 outlines from 66 parts and 3 context areas (R9), 6,811 listings in 56 estates, 50 no data, verified no data', () => {
   const {meta, estates} = model();
   assert.equal(meta.contract, 'industrial-estate-demo/1.0.0');
   assert.equal(meta.registryId, 'research.TH.industrial_estates');
   assert.equal(estates.length, 106);
   assert.deepEqual(meta.counts.types, {estate: 84, park: 16, zone: 6});
   assert.equal(new Set(estates.map(e => e.province)).size, 21);
-  assert.equal(estates.filter(e => e.outline).length, 46);
-  assert.equal(json('data/boundaries.geojson').features.length, 46);
+  assert.equal(estates.filter(e => e.outline).length, 64);
+  assert.equal(estates.filter(e => e.context).length, 3);
+  const shapes = json('data/boundaries.geojson').features;
+  assert.deepEqual([shapes.filter(f => !f.properties.ctx).length, shapes.filter(f => f.properties.ctx).length], [66, 3]);
   const listed = estates.filter(e => e.listed);
   assert.equal(listed.length, 56);
   assert.equal(listed.reduce((s, e) => s + e.dir.n, 0), 6811);
   for (const e of estates.filter(x => !x.listed)) assert.equal(e.dir.n, null, `${e.id}: no listing is no data, never 0`);
   assert.equal(meta.counts.verifiedFactories, null);
-  for (const e of estates) if (!e.outline) assert.ok(['hold', 'scope', 'missing', 'license'].includes(e.boundary.state), e.id);
-  assert.deepEqual(meta.counts.boundaryStates, {shown: 46, hold: 40, scope: 4, missing: 9, license: 7});
+  for (const e of estates) if (!e.outline) assert.ok(['context', 'hold', 'scope', 'missing', 'license'].includes(e.boundary.state), e.id);
+  assert.deepEqual(meta.counts.boundaryStates, {shown: 64, hold: 25, scope: 0, missing: 9, license: 5, context: 3});
   assert.match(json('data/boundaries.geojson').attribution, /OpenStreetMap contributors · ODbL 1\.0/);
 });
 
@@ -144,7 +146,8 @@ test('R8 review round (1.1.0): the rejected Bluetech artwork is gone; recovered 
   const families = {th: json('data/around.json').meta.families, en: json('data/around.json').meta.familiesEn};
   const html = text(renderEstate({estate: byId.get('EST-AREA-SAHA-KABINBURI'), meta, base: '', families, factoryHref: '', factoryRowHref: () => '', directoryState: ''}));
   assert.ok(html.includes('กรอบเล็กกว่าพื้นที่ที่แหล่งระบุเกิน 15%') && html.includes('รายชื่อลูกค้าบนเว็บผู้พัฒนา'), 'area check and owner list');
-  assert.ok(!/\d[\d,]* ไร่/.test(html), 'no area figure on the page');
+  // R8: the area check carries no area figure. R9 (1.3.0): the register's own outline note is shown as written (it may name rai).
+  assert.ok(!/\d[\d,]* ไร่/.test(html.replace(text(byId.get('EST-AREA-SAHA-KABINBURI').boundary.note || ''), '')), 'no area figure outside the register note');
 });
 
 test('map names: short, never overlapping, the open estate first', () => {
@@ -156,7 +159,7 @@ test('map names: short, never overlapping, the open estate first', () => {
   assert.deepEqual([...shown], ['b']);
   const {estates} = model();
   assert.equal(filterEstates(estates, {listed: 'yes'}).length, 56);
-  assert.equal(filterEstates(estates, {outline: 'no'}).length, 60);
+  assert.equal(filterEstates(estates, {outline: 'no'}).length, 42, 'R9: 39 without an outline and 3 context areas');
 });
 
 test('page: noindex, Thai and English, one cache tag on every entry and module, the shared shell bytes', () => {
@@ -200,4 +203,40 @@ test('around-estate workers (1.2.0, Factory 0.9.0): DIW first, MOI only where DI
   const html = renderEstate({estate: esb, meta, base: '', families, factoryHref: '', factoryRowHref: () => '', directoryState: ''});
   assert.ok(text(html).includes('กรอ. 288 คน · อก. เติม 38,241 คน (148 ทะเบียน)'), 'the two sources apart under the total');
   assert.ok(text(html).includes('ผลิตภัณฑ์อโลหะ 7 ไม่ระบุกลุ่มอุตสาหกรรม 38,241') && html.includes('<li class="is-unstated">'), 'not stated after the ranked families, set apart');
+});
+
+test('R9 (1.3.0): 64 estates from 66 source parts kept apart, 3 context areas never counted, the register label and note beside every shape', () => {
+  const {meta, estates, byId} = model();
+  const shapes = json('data/boundaries.geojson').features;
+  // Parts stay apart and the estate counts once.
+  for (const id of ['EST-AREA-ROJANA-AYUTTHAYA', 'EST-AREA-304-PRACHINBURI']) {
+    assert.equal(shapes.filter(f => f.properties.id === id && !f.properties.ctx).length, 2, id);
+    assert.equal(byId.get(id).boundary.parts.length, 2, id);
+  }
+  assert.equal(new Set(shapes.filter(f => !f.properties.ctx).map(f => f.properties.id)).size, 64);
+  // Context areas: drawn apart, no outline, no around set; Map Ta Phut, the Southern estate (Rubber City), Kaeng Khoi.
+  assert.deepEqual(estates.filter(e => e.context).map(e => e.id).sort(), ['EST-IEAT-2672', 'EST-IEAT-2691', 'EST-IEAT-2745']);
+  for (const e of estates.filter(x => x.context)) assert.ok(!e.outline && !e.around && e.boundary.labelTh && e.boundary.note, e.id);
+  // Every drawn shape carries its label and note; the 39 without one carry the register's status label.
+  for (const e of estates.filter(x => x.outline || x.context)) assert.ok(e.boundary.labelTh && e.boundary.note && e.boundary.osm, e.id);
+  for (const e of estates.filter(x => !x.outline && !x.context)) assert.equal(e.boundary.labelTh, 'ยังไม่มีขอบเขตที่ใช้แสดงได้', e.id);
+  assert.equal(estates.filter(e => e.outline && e.boundary.r9).length, 18, 'outlines newly available for the demo (46 → 64)');
+  assert.equal(estates.filter(e => e.outline && e.around).length, 64, 'an around set for every drawn estate');
+  assert.deepEqual(meta.r9.counts, {outlines: 64, parts: 66, context: 3, none: 39});
+  // The panel shows them; the context area says it is not the estate outline.
+  const families = {th: json('data/around.json').meta.families, en: json('data/around.json').meta.familiesEn};
+  const view = id => text(renderEstate({estate: byId.get(id), meta, base: '', families, factoryHref: '', factoryRowHref: () => '', directoryState: ''}));
+  const amata = view('EST-IEAT-2718');
+  assert.ok(amata.includes('อมตะซิตี้ ชลบุรี — ส่วนที่ OSM เรียกโครงการ 1; ยังไม่ครอบทั้งนิคม') && amata.includes('หมายเหตุขอบเขต ใช้เฉพาะเส้นที่ระบุโครงการ 1'), amata.slice(0, 200));
+  const rojana = view('EST-AREA-ROJANA-AYUTTHAYA');
+  assert.ok(rojana.includes('2 ส่วนตามแหล่ง แยกกัน'), 'two source parts, said so');
+  const mtp = view('EST-IEAT-2745');
+  assert.ok(mtp.includes('ย่านอุตสาหกรรมมาบตาพุดตาม OSM — ไม่ใช่ขอบนิคมที่ยืนยันแล้ว · พื้นที่บริบท ·') && mtp.includes('พื้นที่บริบทไม่ใช่ขอบนิคม จึงไม่วัดระยะโรงงานรอบนิคม') && !mtp.includes('โรงงานรอบนิคม 3 กม. 0'), mtp.slice(0, 200));
+  // A part-only outline keeps a dashed edge on the map (R9 roles), so the shape never reads as the whole estate.
+  assert.deepEqual(estates.filter(partialOutline).map(e => e.id).sort(), ['EST-AREA-304-CHACHOENGSAO', 'EST-AREA-304-PRACHINBURI', 'EST-AREA-ROJANA-AYUTTHAYA', 'EST-IEAT-2687', 'EST-IEAT-2700', 'EST-IEAT-2717', 'EST-IEAT-2718', 'EST-IEAT-2720', 'EST-IEAT-2746', 'EST-IEAT-2747', 'EST-IEAT-2759'].sort());
+  // Factory reads the same 64 estates and their labels; never the context areas.
+  const ctx = readJSON('data/estate-context.json');
+  assert.equal(ctx.outlines.features.length, 66);
+  assert.deepEqual(ctx.estates.filter(e => e.outline).map(e => e.id).sort(), estates.filter(e => e.outline).map(e => e.id).sort());
+  assert.ok(ctx.estates.filter(e => !e.outline).every(e => !e.bbox && !e.outlineTh), 'no frame or label without a drawn outline');
 });
