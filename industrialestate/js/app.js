@@ -383,7 +383,8 @@ function updateMassing() {
   state.buildingUnits?.ensureMany(codes);
   if (!state.buildingUnits || codes.every(c => state.buildingUnits.settled(c))) {
     const zones = state.buildingUnits?.zonesFor(regions) || [];
-    state.massing.update({regions, hosts: [], anchors, zones, enabled: true, city: state.view3d, zoom: state.map.getZoom(), latitude: state.map.getCenter().lat})?.catch(err => console.warn('Massing', err));
+    // An open estate: every building inside its outline at once (js/massing.js#WHOLE_MIN_ZOOM; owner 2026-11-17 01:34).
+    state.massing.update({regions, hosts: [], anchors, zones, whole: regions.length > 0, enabled: true, city: state.view3d, zoom: state.map.getZoom(), latitude: state.map.getCenter().lat})?.catch(err => console.warn('Massing', err));
   }
 }
 
